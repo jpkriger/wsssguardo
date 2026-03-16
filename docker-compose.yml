@@ -26,7 +26,7 @@ services:
       DB_PASSWORD: wss
       DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       OTLP_ENABLED: "false"
-      SECURITY_AUTH_DISABLED: "false"
+      SECURITY_AUTH_DISABLED: "true"
     depends_on:
       db:
         condition: service_healthy
