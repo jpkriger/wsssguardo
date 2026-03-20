@@ -1,0 +1,42 @@
+stages:
+  - test
+
+backend:
+  stage: test
+  image: eclipse-temurin:25-jdk
+  variables:
+    SPRING_PROFILES_ACTIVE: dev
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - .m2/repository
+  before_script:
+    - cd backend
+    - chmod +x mvnw
+  script:
+    - ./mvnw --batch-mode --no-transfer-progress -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository clean verify
+
+frontend:
+  stage: test
+  image: node:20
+  cache:
+    key: "$CI_JOB_NAME"
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+  script:
+    - |
+      if [ -f package-lock.json ]; then
+        npm ci
+      else
+        npm install
+      fi
+    - npm run test --if-present
+    - npm run build
+    - |
+      if [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f eslint.config.cjs ]; then
+        npm run lint
+      else
+        echo "Skipping lint: no eslint.config.(js|mjs|cjs) found"
+      fi
