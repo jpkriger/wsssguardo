@@ -30,6 +30,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    profiles:
+      - prod
 
   frontend:
     build: ./frontend
@@ -37,6 +39,51 @@ services:
       - "80:80"
     depends_on:
       - backend
+    profiles:
+      - prod
+
+  backend-dev:
+    build:
+      context: ./backend
+      target: dev
+    working_dir: /workspace
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/wssdb
+      DB_DRIVER: org.postgresql.Driver
+      DB_USERNAME: wss
+      DB_PASSWORD: wss
+      DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      OTLP_ENABLED: "false"
+      SECURITY_AUTH_DISABLED: "true"
+    volumes:
+      - maven_cache:/root/.m2
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - dev
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    working_dir: /app
+    environment:
+      VITE_PROXY_TARGET: http://backend-dev:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend-dev
+    profiles:
+      - dev
 
 volumes:
   postgres_data:
+  maven_cache:

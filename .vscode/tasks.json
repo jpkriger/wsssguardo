@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compose Dev Up",
+      "type": "shell",
+      "command": "docker compose --profile dev down --remove-orphans && docker compose --profile dev up -d --build && timeout 600 bash -c 'until docker compose --profile dev logs backend-dev --tail 200 | grep -q \"Listening for transport dt_socket at address: 5005\"; do sleep 1; done'",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Compose Backend Restart",
+      "type": "shell",
+      "command": "docker compose --profile dev up -d --build backend-dev && timeout 600 bash -c 'until docker compose --profile dev logs backend-dev --tail 200 | grep -q \"Listening for transport dt_socket at address: 5005\"; do sleep 1; done'",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    }
+  ]
+}

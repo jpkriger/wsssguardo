@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend",
+      "type": "java",
+      "request": "attach",
+      "preLaunchTask": "Compose Backend Restart",
+      "hostName": "localhost",
+      "port": 5005,
+      "timeout": 300000
+    },
+    {
+      "name": "Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "sourceMaps": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Front + Back",
+      "preLaunchTask": "Compose Dev Up",
+      "configurations": [
+        "Backend",
+        "Frontend (Chrome)"
+      ],
+      "stopAll": false
+    }
+  ]
+}
