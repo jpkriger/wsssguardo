@@ -1,53 +1,83 @@
-# Backend - Estrutura de API por Entidade
+# Backend
 
-Este backend segue um modelo vertical por entidade. Cada entidade fica em sua propria pasta e inclui os componentes necessarios para expor endpoints.
+Backend Spring Boot organizado por feature (vertical slice), com camadas explícitas por entidade.
 
-## Estrutura sugerida
+## Stack
+
+- Java 25
+- Spring Boot 4.0.4
+- Spring Data JPA
+- Spring Security
+- Liquibase
+- PostgreSQL (prod) / H2 (dev)
+
+## Estrutura canônica por feature
+
+Cada feature deve seguir este template:
 
 ```text
-src/main/java/wsssguardo/
-	entityobject/
-		EntityObject.java
-		dto/
-			EntityObjectCreateRequest.java
-			EntityObjectResponse.java
-		repository/
-			EntityObjectRepository.java
-		service/
-			EntityObjectService.java
-			EntityObjectServiceImpl.java
-		controller/
-			EntityObjectController.java
+src/main/java/wsssguardo/<feature>/
+  <Feature>.java
+  controller/
+    <Feature>Controller.java
+  dto/
+    <Feature>CreateRequest.java
+    <Feature>Response.java
+  mapper/
+    <Feature>Mapper.java
+  repository/
+    <Feature>Repository.java
+  service/
+    <Feature>Service.java
+    <Feature>ServiceImpl.java
 ```
 
-## Exemplo ja implementado
+Referência implementada: `entityobject`.
 
-- Entidade: EntityObject
-- Endpoints:
-	- POST /api/entity-objects
-	- GET /api/entity-objects/{id}
-	- GET /api/entity-objects
+## Regras obrigatórias da baseline
 
-### Payload de criacao
+1. Controller nunca expõe entidade JPA diretamente.
+2. Entrada via DTO com Bean Validation (`@Valid`, `@NotBlank`, etc).
+3. Conversão DTO ↔ Entity via mapper dedicado.
+4. Service contém regra de negócio e usa interface.
+5. Erros passam pelo `GlobalExceptionHandler`.
+6. Toda mudança de schema exige migration Liquibase.
+7. Toda feature nova exige testes unitários e de integração.
+
+## Endpoints de exemplo
+
+- `POST /api/entity-objects`
+- `GET /api/entity-objects/{id}`
+- `GET /api/entity-objects`
+
+Payload de criação:
 
 ```json
 {
-	"name": "Qualquer Nome"
+  "name": "Qualquer Nome"
 }
 ```
 
-## Ambiente local com H2
+## Rodando localmente
 
-- Banco em memoria: `jdbc:h2:mem:wssdb`
-- Console H2: `/h2-console`
-- Usuario: `sa`
-- Senha: (vazia)
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
-## Como replicar para nova entidade
+Com profile `dev`:
 
-1. Crie a pasta da entidade em `wsssguardo/<entidade>/`.
-2. Adicione a classe de entidade JPA (`<Entidade>.java`).
-3. Crie DTOs em `dto/` para entrada e saida.
-4. Crie o repository em `repository/` extendendo `JpaRepository`.
-5. Crie service interface + implementacao em `service/`.
-6. Crie controller REST em `controller/` com os endpoints basicos.
+- H2 em memória: `jdbc:h2:mem:wssdb`
+- H2 console: `/h2-console`
+
+## Testes e qualidade
+
+```bash
+./mvnw clean verify
+```
+
+Checklist mínimo por feature:
+
+- teste unitário de service;
+- teste de integração dos endpoints principais;
+- teste de validação (400);
+- teste de cenário não encontrado (404).

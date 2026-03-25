@@ -5,6 +5,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +31,7 @@ public class EntityObjectController {
 
     @Operation(summary = "Criar EntityObject")
     @PostMapping
-    public ResponseEntity<EntityObjectResponse> create(@RequestBody EntityObjectCreateRequest request) {
+    public ResponseEntity<EntityObjectResponse> create(@Valid @RequestBody EntityObjectCreateRequest request) {
         EntityObjectResponse created = service.create(request);
         return ResponseEntity
             .created(URI.create("/api/entity-objects/" + created.id()))

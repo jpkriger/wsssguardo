@@ -1,41 +1,50 @@
 # Frontend
 
-React + Vite application using [Bun](https://bun.sh) as the runtime and package manager.
+Aplicação React + TypeScript + Vite com Bun.
 
-## Requirements
+## Requisitos
 
-- [Bun](https://bun.sh) >= 1.1
+- Bun >= 1.1
 
-## Getting started
+## Rodando localmente
 
 ```bash
-# Install dependencies
 bun install
-
-# Start dev server (proxies /api → http://localhost:8080)
 bun run dev
+```
 
-# Type-check + build for production
+Dev server: `http://localhost:5173`.
+
+Chamadas para `/api/*` são proxied para `http://localhost:8080`.
+
+## Qualidade obrigatória
+
+```bash
+bun run lint
+bun run test
 bun run build
-
-# Preview production build locally
-bun run preview
 ```
 
-The dev server runs at `http://localhost:5173`.
-API calls to `/api/*` are proxied to the backend at `http://localhost:8080`.
+## Estrutura
 
-## Structure
-
-```
+```text
 src/
-  api/          # Typed fetch wrappers for each backend resource
-  App.tsx       # Root component with EntityObject sample
-  main.tsx      # Entry point
+  api/            # Wrappers tipados para endpoints do backend
+  App.tsx         # Exemplo de fluxo ponta-a-ponta
+  main.tsx        # Entry point
 ```
 
-## Adding a new page / resource
+## Regras da baseline
 
-1. Add a typed fetch wrapper in `src/api/<resource>.ts` mirroring the backend DTO.
-2. Create your component/page in `src/`.
-3. Wire up routing if needed (add `react-router-dom` via `bun add react-router-dom`).
+1. Toda chamada HTTP deve ficar em `src/api/*`.
+2. Componentes de UI não fazem `fetch` direto.
+3. Fluxos devem tratar estados: loading, error, empty e success.
+4. Mudanças em contrato backend exigem atualização de tipos e testes.
+5. Toda feature deve passar em lint, test e build no CI.
+
+## Como adicionar uma nova feature
+
+1. Criar módulo em `src/api/<resource>.ts` com tipos de request/response.
+2. Criar teste do módulo API em `src/api/<resource>.test.ts`.
+3. Criar/ajustar componente de UI com tratamento de estados.
+4. Garantir compatibilidade com os contratos da API backend.

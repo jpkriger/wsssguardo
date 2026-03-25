@@ -1,46 +1,47 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 import {
   listEntityObjects,
   createEntityObject,
   type EntityObjectResponse,
-} from './api/entityObject'
-import styles from './App.module.css'
+} from "./api/entityObject";
+import styles from "./App.module.css";
 
 export default function App() {
-  const [items, setItems] = useState<EntityObjectResponse[]>([])
-  const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [items, setItems] = useState<EntityObjectResponse[]>([]);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetchItems()
-  }, [])
+    void fetchItems();
+  }, []);
 
   async function fetchItems() {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      setItems(await listEntityObjects())
+      setItems(await listEntityObjects());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
+      setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    setError(null);
+    console.log("Teste", name);
     try {
-      const created = await createEntityObject({ name: name.trim() })
-      setItems((prev) => [...prev, created])
-      setName('')
+      const created = await createEntityObject({ name: name.trim() });
+      setItems((prev) => [...prev, created]);
+      setName("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
+      setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -63,8 +64,12 @@ export default function App() {
               onChange={(e) => setName(e.target.value)}
               disabled={loading}
             />
-            <button className={styles.button} type="submit" disabled={loading || !name.trim()}>
-              {loading ? 'Saving…' : 'Create'}
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={loading || !name.trim()}
+            >
+              {loading ? "Saving…" : "Create"}
             </button>
           </form>
         </section>
@@ -72,7 +77,9 @@ export default function App() {
         <section className={styles.card}>
           <h2>Entity Objects</h2>
           {error && <p className={styles.error}>{error}</p>}
-          {loading && items.length === 0 && <p className={styles.muted}>Loading…</p>}
+          {loading && items.length === 0 && (
+            <p className={styles.muted}>Loading…</p>
+          )}
           {!loading && items.length === 0 && !error && (
             <p className={styles.muted}>No entities yet. Create one above.</p>
           )}
@@ -90,5 +97,5 @@ export default function App() {
         </section>
       </main>
     </div>
-  )
+  );
 }
