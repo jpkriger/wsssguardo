@@ -1,48 +1,48 @@
 # Backend
 
-Backend Spring Boot organizado por feature (vertical slice), com camadas explícitas por entidade.
+API Spring Boot organizada por feature (vertical slice).
 
-## Stack
+## Fluxo oficial (Docker-first)
 
-- Java 25
-- Spring Boot 4.0.4
-- Spring Data JPA
-- Spring Security
-- Liquibase
-- PostgreSQL (prod) / H2 (dev)
+No dia a dia, o backend roda no serviço `backend-dev` do [docker-compose.yml](../docker-compose.yml), iniciado via VS Code F5.
+
+- API: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui.html`
+- Debug attach (Java): `localhost:5005`
+
+Arquivos de referência:
+
+- [../.vscode/launch.json](../.vscode/launch.json)
+- [../.vscode/tasks.json](../.vscode/tasks.json)
+- [Dockerfile](Dockerfile)
+
+## Banco de dados no Docker dev
+
+No perfil `dev` do compose, o backend usa PostgreSQL (`db`), não H2.
+
+Variáveis principais vêm do compose:
+
+- `DB_URL=jdbc:postgresql://db:5432/wssdb`
+- `DB_DRIVER=org.postgresql.Driver`
+- `DB_USERNAME=wss`
+- `DB_PASSWORD=wss`
+
+## Execução fora do Docker (opcional)
+
+Se executar fora do Docker com profile `dev`, então o backend usa H2 conforme [src/main/resources/application-dev.properties](src/main/resources/application-dev.properties).
 
 ## Estrutura canônica por feature
-
-Cada feature deve seguir este template:
 
 ```text
 src/main/java/wsssguardo/<feature>/
   <Feature>.java
   controller/
-    <Feature>Controller.java
   dto/
-    <Feature>CreateRequest.java
-    <Feature>Response.java
-  mapper/
-    <Feature>Mapper.java
   repository/
-    <Feature>Repository.java
   service/
-    <Feature>Service.java
-    <Feature>ServiceImpl.java
 ```
 
 Referência implementada: `entityobject`.
-
-## Regras obrigatórias da baseline
-
-1. Controller nunca expõe entidade JPA diretamente.
-2. Entrada via DTO com Bean Validation (`@Valid`, `@NotBlank`, etc).
-3. Conversão DTO ↔ Entity via mapper dedicado.
-4. Service contém regra de negócio e usa interface.
-5. Erros passam pelo `GlobalExceptionHandler`.
-6. Toda mudança de schema exige migration Liquibase.
-7. Toda feature nova exige testes unitários e de integração.
 
 ## Endpoints de exemplo
 
@@ -50,34 +50,8 @@ Referência implementada: `entityobject`.
 - `GET /api/entity-objects/{id}`
 - `GET /api/entity-objects`
 
-Payload de criação:
-
-```json
-{
-  "name": "Qualquer Nome"
-}
-```
-
-## Rodando localmente
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-Com profile `dev`:
-
-- H2 em memória: `jdbc:h2:mem:wssdb`
-- H2 console: `/h2-console`
-
-## Testes e qualidade
+## Qualidade
 
 ```bash
 ./mvnw clean verify
 ```
-
-Checklist mínimo por feature:
-
-- teste unitário de service;
-- teste de integração dos endpoints principais;
-- teste de validação (400);
-- teste de cenário não encontrado (404).
