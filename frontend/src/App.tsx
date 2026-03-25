@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent, type ReactElement } from "react";
 import {
   listEntityObjects,
   createEntityObject,
@@ -6,7 +6,7 @@ import {
 } from "./api/entityObject";
 import styles from "./App.module.css";
 
-export default function App() {
+export default function App(): ReactElement {
   const [items, setItems] = useState<EntityObjectResponse[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function App() {
     void fetchItems();
   }, []);
 
-  async function fetchItems() {
+  async function fetchItems(): Promise<void> {
     setLoading(true);
     setError(null);
     try {
@@ -28,12 +28,11 @@ export default function App() {
     }
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
     setError(null);
-    console.log("Teste", name);
     try {
       const created = await createEntityObject({ name: name.trim() });
       setItems((prev) => [...prev, created]);
