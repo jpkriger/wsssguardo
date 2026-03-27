@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Backend (Attach Docker)",
+      "name": "Backend",
       "type": "java",
       "request": "attach",
       "hostName": "localhost",
@@ -10,29 +10,29 @@
       "timeout": 300000
     },
     {
-      "name": "Backend (Restart + Attach Docker)",
-      "type": "java",
-      "request": "attach",
-      "preLaunchTask": "Compose Backend Restart",
-      "hostName": "localhost",
-      "port": 5005,
-      "timeout": 300000
-    },
-    {
-      "name": "Frontend (Chrome)",
-      "type": "chrome",
+      "name": "Frontend",
+      "type": "editor-browser",
       "request": "launch",
       "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/frontend",
-      "sourceMaps": true
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./": "${webRoot}/",
+        "webpack:///src/": "${webRoot}/src/",
+        "webpack:///": "",
+        "C:/": "c:/"
+      }
     }
   ],
   "compounds": [
     {
       "name": "Debug Front + Back",
       "preLaunchTask": "Compose Dev Up",
-      "configurations": ["Backend (Attach Docker)", "Frontend (Chrome)"],
-      "stopAll": true
+      "configurations": [
+        "Backend",
+        "Frontend"
+      ],
+      "stopAll": false
     }
   ]
 }
