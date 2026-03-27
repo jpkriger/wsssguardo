@@ -2,7 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Backend",
+      "name": "Backend (Attach Docker)",
+      "type": "java",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "timeout": 300000
+    },
+    {
+      "name": "Backend (Restart + Attach Docker)",
       "type": "java",
       "request": "attach",
       "preLaunchTask": "Compose Backend Restart",
@@ -23,11 +31,8 @@
     {
       "name": "Debug Front + Back",
       "preLaunchTask": "Compose Dev Up",
-      "configurations": [
-        "Backend",
-        "Frontend (Chrome)"
-      ],
-      "stopAll": false
+      "configurations": ["Backend (Attach Docker)", "Frontend (Chrome)"],
+      "stopAll": true
     }
   ]
 }

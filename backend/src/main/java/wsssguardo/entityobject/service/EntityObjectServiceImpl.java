@@ -1,6 +1,5 @@
 package wsssguardo.entityobject.service;
 
-import java.time.Instant;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -8,6 +7,7 @@ import org.springframework.stereotype.Service;
 import wsssguardo.entityobject.EntityObject;
 import wsssguardo.entityobject.dto.EntityObjectCreateRequest;
 import wsssguardo.entityobject.dto.EntityObjectResponse;
+import wsssguardo.entityobject.mapper.EntityObjectMapper;
 import wsssguardo.entityobject.repository.EntityObjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
@@ -15,19 +15,18 @@ import wsssguardo.shared.exception.ResourceNotFoundException;
 public class EntityObjectServiceImpl implements EntityObjectService {
 
     private final EntityObjectRepository repository;
+    private final EntityObjectMapper mapper;
 
-    public EntityObjectServiceImpl(EntityObjectRepository repository) {
+    public EntityObjectServiceImpl(EntityObjectRepository repository, EntityObjectMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
     public EntityObjectResponse create(EntityObjectCreateRequest request) {
-        EntityObject entityObject = new EntityObject();
-        entityObject.setName(request.name());
-        entityObject.setCreatedAt(Instant.now());
-
+        EntityObject entityObject = mapper.toEntity(request);
         EntityObject saved = repository.save(entityObject);
-        return toResponse(saved);
+        return mapper.toResponse(saved);
     }
 
     @Override
@@ -35,21 +34,13 @@ public class EntityObjectServiceImpl implements EntityObjectService {
         EntityObject entityObject = repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("EntityObject", id));
 
-        return toResponse(entityObject);
+        return mapper.toResponse(entityObject);
     }
 
     @Override
     public List<EntityObjectResponse> listAll() {
         return repository.findAll().stream()
-            .map(this::toResponse)
+            .map(mapper::toResponse)
             .toList();
-    }
-
-    private EntityObjectResponse toResponse(EntityObject entityObject) {
-        return new EntityObjectResponse(
-            entityObject.getId(),
-            entityObject.getName(),
-            entityObject.getCreatedAt()
-        );
     }
 }

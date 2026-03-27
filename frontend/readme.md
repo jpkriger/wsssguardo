@@ -1,41 +1,50 @@
 # Frontend
 
-React + Vite application using [Bun](https://bun.sh) as the runtime and package manager.
+Aplicação React + TypeScript + Vite.
 
-## Requirements
+## Fluxo oficial (Docker-first)
 
-- [Bun](https://bun.sh) >= 1.1
+O frontend de desenvolvimento roda no serviço `frontend-dev` do compose (perfil `dev`) e é iniciado no F5 junto com backend e banco.
 
-## Getting started
+- URL: `http://localhost:5173`
+- Proxy `/api`: `http://backend-dev:8080`
+
+Referências:
+
+- [../docker-compose.yml](../docker-compose.yml)
+- [vite.config.ts](vite.config.ts)
+- [Dockerfile](Dockerfile)
+
+## Lint no fluxo Docker
+
+No container de dev, o comando de startup executa:
+
+1. `bun run lint`
+2. `bun run dev --host 0.0.0.0 --port 5173`
+
+Se houver erro de lint, o frontend-dev não sobe.
+
+## Build
+
+`build` também é bloqueado por lint:
+
+```json
+"build": "eslint . && tsc -b && vite build"
+```
+
+## Qualidade
 
 ```bash
-# Install dependencies
-bun install
-
-# Start dev server (proxies /api → http://localhost:8080)
-bun run dev
-
-# Type-check + build for production
+bun run lint
+bun run test
 bun run build
-
-# Preview production build locally
-bun run preview
 ```
 
-The dev server runs at `http://localhost:5173`.
-API calls to `/api/*` are proxied to the backend at `http://localhost:8080`.
+## Estrutura
 
-## Structure
-
-```
+```text
 src/
-  api/          # Typed fetch wrappers for each backend resource
-  App.tsx       # Root component with EntityObject sample
-  main.tsx      # Entry point
+  api/
+  App.tsx
+  main.tsx
 ```
-
-## Adding a new page / resource
-
-1. Add a typed fetch wrapper in `src/api/<resource>.ts` mirroring the backend DTO.
-2. Create your component/page in `src/`.
-3. Wire up routing if needed (add `react-router-dom` via `bun add react-router-dom`).

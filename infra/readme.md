@@ -1,62 +1,62 @@
 # Infra
 
-Terraform configuration that provisions the AWS infrastructure for the frontend.
+Configuração Terraform para infraestrutura cloud do frontend.
 
-## What it creates
+## Escopo atual (hoje)
 
-| Resource | Description |
-|---|---|
-| `aws_s3_bucket` | Private S3 bucket that holds the built frontend assets |
-| `aws_cloudfront_origin_access_control` | OAC so CloudFront can read from the private bucket |
-| `aws_cloudfront_distribution` | CDN that serves the frontend over HTTPS globally |
+Provisiona apenas frontend estático:
 
-SPA routing is handled by returning `index.html` for 403/404 responses from S3.
+| Resource                               | Description                            |
+| -------------------------------------- | -------------------------------------- |
+| `aws_s3_bucket`                        | Bucket privado para assets do frontend |
+| `aws_cloudfront_origin_access_control` | OAC para acesso seguro ao bucket       |
+| `aws_cloudfront_distribution`          | CDN HTTPS para servir a SPA            |
 
-## Requirements
+Roteamento SPA: erros 403/404 retornam `index.html`.
 
-- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.6
-- AWS credentials configured (`aws configure` or environment variables)
+## Escopo planejado (próximo passo)
 
-## Usage
+Definir caminho de deploy do backend para tornar o runtime cloud completo:
+
+1. runtime backend gerenciado (ex.: ECS Fargate ou App Runner);
+2. banco gerenciado (RDS PostgreSQL) por ambiente;
+3. integração de domínio/API entre frontend cloud e backend cloud;
+4. pipeline CI/CD com deploy automatizado por ambiente.
+
+## Requisitos
+
+- Terraform >= 1.6
+- Credenciais AWS configuradas (`aws configure` ou variáveis de ambiente)
+
+## Uso
 
 ```bash
 cd infra
-
-# First time only
 terraform init
-
-# Preview changes
 terraform plan -var="environment=dev"
-
-# Apply
 terraform apply -var="environment=dev"
 ```
 
-After `apply`, Terraform prints the CloudFront URL:
+Após `apply`, a saída inclui:
 
-```
+```text
 cloudfront_domain_name = "https://xxxx.cloudfront.net"
 ```
 
-## Deploying the frontend build
+## Deploy manual do frontend
 
 ```bash
-# Build the frontend
 cd ../frontend && bun run build
-
-# Sync dist/ to S3
 aws s3 sync dist/ s3://$(terraform -chdir=../infra output -raw frontend_bucket_name) --delete
-
-# Invalidate CloudFront cache
 aws cloudfront create-invalidation \
   --distribution-id $(terraform -chdir=../infra output -raw cloudfront_distribution_id) \
   --paths "/*"
 ```
 
-## Variables
+## Variáveis
 
-| Name | Default | Description |
-|---|---|---|
-| `aws_region` | `us-east-1` | AWS region |
-| `project` | `wsssguardo` | Prefix for resource names |
-| `environment` | `dev` | Environment tag (dev / staging / prod) |
+| Name          | Default      | Description                           |
+| ------------- | ------------ | ------------------------------------- |
+| `aws_region`  | `us-east-1`  | Região AWS                            |
+| `project`     | `wsssguardo` | Prefixo de nomes                      |
+| `environment` | `dev`        | Ambiente (`dev` / `staging` / `prod`) |
