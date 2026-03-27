@@ -4,6 +4,7 @@ import {
   createEntityObject,
   type EntityObjectResponse,
 } from "./api/entityObject";
+import { ApiErrorResponse } from "./api/errors";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
@@ -22,7 +23,11 @@ export default function App(): ReactElement {
     try {
       setItems(await listEntityObjects());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+      if (e instanceof ApiErrorResponse) {
+        setError(e.getUserMessage());
+      } else {
+        setError(e instanceof Error ? e.message : "Unknown error");
+      }
     } finally {
       setLoading(false);
     }
@@ -38,7 +43,11 @@ export default function App(): ReactElement {
       setItems((prev) => [...prev, created]);
       setName("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+      if (e instanceof ApiErrorResponse) {
+        setError(e.getUserMessage());
+      } else {
+        setError(e instanceof Error ? e.message : "Unknown error");
+      }
     } finally {
       setLoading(false);
     }

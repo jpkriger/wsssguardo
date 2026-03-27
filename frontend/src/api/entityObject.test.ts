@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ApiErrorResponse } from "./errors";
 import { createEntityObject, listEntityObjects } from "./entityObject";
 
 describe("entityObject api", () => {
@@ -43,11 +44,46 @@ describe("entityObject api", () => {
     });
   });
 
-  it("listEntityObjects throws when request fails", async () => {
+  it("listEntityObjects throws structured error when backend returns ApiErrorResponse", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 500 }),
+      new Response(
+        JSON.stringify({
+          status: 400,
+          error: "Bad Request",
+          message: "name: name is required",
+          timestamp: "2026-03-27T15:30:45.123456Z",
+          path: "/api/entity-objects",
+        }),
+        { status: 400 },
+      ),
     );
 
-    await expect(listEntityObjects()).rejects.toThrow("Failed to fetch: 500");
+    const request = listEntityObjects();
+
+    await expect(request).rejects.toBeInstanceOf(ApiErrorResponse);
+    await expect(request).rejects.toMatchObject({
+      status: 400,
+      errorType: "Bad Request",
+      message: "name: name is required",
+      path: "/api/entity-objects",
+    });
+  });
+
+  it("createEntityObject falls back to generic structured error when body is not JSON", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("gateway timeout", {
+        status: 504,
+        statusText: "Gateway Timeout",
+      }),
+    );
+
+    const request = createEntityObject({ name: "Second" });
+
+    await expect(request).rejects.toBeInstanceOf(ApiErrorResponse);
+    await expect(request).rejects.toMatchObject({
+      status: 504,
+      errorType: "Gateway Timeout",
+      path: "/api/entity-objects",
+    });
   });
 });
