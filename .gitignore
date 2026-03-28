@@ -17,16 +17,16 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
-infra/.terraform/
-infra/.terraform.lock.hcl
-infra/*.tfstate
-infra/*.tfstate.*
-infra/crash.log
-infra/crash.*.log
-infra/override.tf
-infra/override.tf.json
-infra/*_override.tf
-infra/*_override.tf.json
+infra/**/.terraform/
+infra/**/.terraform.lock.hcl
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/crash.log
+infra/**/crash.*.log
+infra/**/override.tf
+infra/**/override.tf.json
+infra/**/*_override.tf
+infra/**/*_override.tf.json
 
 .env
 .env.*
