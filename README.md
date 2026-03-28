@@ -9,9 +9,65 @@ Monorepo com backend Spring Boot, frontend React (Vite + Bun) e infraestrutura T
 - **Docker & Docker Compose** (Docker Desktop ou engine compatível)
 - **Visual Studio Code** >= 1.113 (recomendado para Quick Start / F5)
 - VS Code extensions: **Container Tools**, **Extension Pack for Java**, **Debugger for Java**
-- **Java 25** is required for local builds (the project and Dockerfiles use Eclipse Temurin 25)
+- **Java 25** é necessário para debuggar o backend
 
-Observação: com o fluxo Docker-first você não precisa instalar Java, Maven ou Bun no host para desenvolvimento; eles são providos pelos containers.
+## Fluxo Git e convenções
+
+Branches principais:
+
+- `main`: produção (código estável)
+- `develop`: integração contínua
+
+Não desenvolver direto em `main` ou `develop`. Todo trabalho deve passar por Pull Request.
+
+### Tipos de branch
+
+| Tipo          | Prefixo    | Exemplo                 | Objetivo                                                  |
+| ------------- | ---------- | ----------------------- | --------------------------------------------------------- |
+| Feature       | `feat/`    | `feat/user-auth`        | Desenvolver nova funcionalidade a partir de `develop`.    |
+| Bugfix        | `fix/`     | `fix/header-bug`        | Corrigir bug não crítico a partir de `develop`.           |
+| Hotfix        | `hotfix/`  | `hotfix/security-patch` | Corrigir problema crítico de produção a partir de `main`. |
+| Release       | `release/` | `release/v1.0.1`        | Preparar nova versão a partir de `develop`.               |
+| Documentation | `docs/`    | `docs/update-readme`    | Alteração somente de documentação.                        |
+
+### Regras de nomenclatura
+
+- usar letras minúsculas
+- separar palavras com hífen (`-`)
+- não usar espaços, underscore (`_`) ou caracteres especiais (`*`, `?`, `[`, `]`)
+- nome descritivo e curto
+
+### Padrão de commit
+
+Formato:
+
+```text
+TIPO(escopo): descrição curta no imperativo
+
+- tópicos descrevendo as mudanças
+
+Tarefa xxxxxxxx
+```
+
+Boas práticas:
+
+- 1 commit = 1 mudança lógica
+- assunto objetivo (ideal até 72 caracteres)
+- usar escopo claro para monorepo (`backend`, `frontend`, `infra`, `docs`, `entityobject`)
+- explicar o que mudou no corpo quando necessário
+- referenciar tarefa no final
+
+Exemplo:
+
+```text
+FEAT(home): adiciona botão
+
+- adiciona botão vermelho
+
+Tarefa 86e0cdk74
+```
+
+### Pré-requisitos
 
 Arquivos de referência:
 
