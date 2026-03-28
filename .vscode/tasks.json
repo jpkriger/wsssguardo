@@ -3,24 +3,61 @@
   "tasks": [
     {
       "label": "Compose Dev Up",
-      "type": "shell",
-      "command": "docker compose --profile dev down --remove-orphans && docker compose --profile dev up -d --build db backend-dev frontend-dev && timeout 600 bash -c 'until docker compose --profile dev logs backend-dev --tail 200 | grep -q \"Listening for transport dt_socket at address: 5005\"; do sleep 1; done'",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Compose Dev Down",
+        "Compose Dev Start"
+      ]
+    },
+    {
+      "label": "Compose Dev Start",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--profile",
+        "dev",
+        "up",
+        "-d",
+        "--wait",
+        "--build",
+        "db",
+        "backend-dev",
+        "frontend-dev"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       }
     },
     {
       "label": "Compose Backend Restart",
-      "type": "shell",
-      "command": "docker compose --profile dev up -d --build backend-dev && timeout 600 bash -c 'until docker compose --profile dev logs backend-dev --tail 200 | grep -q \"Listening for transport dt_socket at address: 5005\"; do sleep 1; done'",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--profile",
+        "dev",
+        "up",
+        "-d",
+        "--wait",
+        "--build",
+        "backend-dev"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       }
     },
     {
       "label": "Compose Dev Down",
-      "type": "shell",
-      "command": "docker compose --profile dev down --remove-orphans",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--profile",
+        "dev",
+        "down",
+        "--remove-orphans"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       }
