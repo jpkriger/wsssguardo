@@ -1,51 +1,42 @@
 # WssSguardo
 
-Monorepo com backend Spring Boot, frontend React e infraestrutura Terraform.
+Monorepo com backend Spring Boot, frontend React (Vite + Bun) e infraestrutura Terraform.
 
-## Fluxo oficial de desenvolvimento
+**Resumo rápido**: O fluxo oficial é "Docker-first": o `Compose Dev Up` inicia `db`, `backend-dev` e `frontend-dev` em containers. Use o atalho VS Code **F5** (compound `Debug Front + Back`) para subir tudo e anexar o debugger Java.
 
-O fluxo oficial é **Docker-first** com VS Code **F5**.
+## Requisitos para rodar o projeto
 
-Você não precisa instalar Java, Maven ou Bun no host para desenvolver.
+- **Docker & Docker Compose** (Docker Desktop ou engine compatível)
+- **Visual Studio Code** >= 1.113 (recomendado para Quick Start / F5)
+- VS Code extensions: **Container Tools**, **Extension Pack for Java**, **Debugger for Java**
+- **Java 25** is required for local builds (the project and Dockerfiles use Eclipse Temurin 25)
 
-### Pré-requisitos
+Observação: com o fluxo Docker-first você não precisa instalar Java, Maven ou Bun no host para desenvolvimento; eles são providos pelos containers.
 
-- Docker + Docker Compose
-- VS Code com extensões Java e JavaScript debugging
-
-## Executar com F5 (recomendado)
-
-1. Abra o workspace no VS Code.
-2. Vá em Run and Debug.
-3. Selecione **Debug Front + Back**.
-4. Pressione **F5**.
-
-Isso executa a task `Compose Dev Up`, sobe os serviços Docker de desenvolvimento e conecta o debugger Java no backend.
-
-Arquivos relevantes:
+Arquivos de referência:
 
 - [.vscode/launch.json](.vscode/launch.json)
 - [.vscode/tasks.json](.vscode/tasks.json)
 - [docker-compose.yml](docker-compose.yml)
 
-## Perfis Docker
+## Executar (recomendado: VS Code F5)
 
-O compose possui dois perfis:
+1. Abra o workspace no VS Code.
+2. Vá em Run and Debug.
+3. Selecione **Debug Front + Back** (compound que executa a task `Compose Dev Up`).
+4. Pressione **F5**.
 
-- **dev**: `db`, `backend-dev`, `frontend-dev` (usado no F5)
-- **prod**: `db`, `backend`, `frontend`
+O fluxo F5 executa a task `Compose Dev Up` (veja [`.vscode/tasks.json`](.vscode/tasks.json)) que chama `docker compose --profile dev up -d --wait --build db backend-dev frontend-dev`. O backend fica disponível em `http://localhost:8080` e o frontend em `http://localhost:5173`.
 
-### Portas no perfil dev
+### Portas importantes (perfil `dev`)
 
-- Frontend dev server: `http://localhost:5173`
-- Backend API: `http://localhost:8080`
-- Swagger: `http://localhost:8080/swagger-ui.html`
-- Backend debugger (attach): `localhost:5005`
-- PostgreSQL: `localhost:5432`
+- Frontend dev server: http://localhost:5173
+- Backend API: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui.html (springdoc)
+- Backend debugger (attach): localhost:5005
+- PostgreSQL: localhost:5432
 
-> No Docker dev, o banco é **PostgreSQL** (não H2).
-
-## Comandos úteis
+## Comandos manuais úteis
 
 Subir ambiente dev manualmente:
 
@@ -65,25 +56,39 @@ Subir ambiente prod local:
 docker compose --profile prod up -d --build
 ```
 
-## Lint e build do frontend
+Reiniciar apenas o backend (dev):
 
-No frontend, `build` roda lint antes de compilar:
+```bash
+docker compose --profile dev up -d --wait --build backend-dev
+```
 
-- [frontend/package.json](frontend/package.json)
+## Notas por componente
+
+- Backend: a imagem de desenvolvimento usa `maven:3.9.11-eclipse-temurin-25` e expõe a porta de depuração `5005` (veja [backend/Dockerfile](backend/Dockerfile)). O `pom.xml` define `<java.version>25</java.version>`.
+- Backend profile `dev` dentro do container usa PostgreSQL quando executado via Docker (variáveis são passadas pelo compose). Se executar o backend localmente fora do Docker com o profile `dev`, o projeto pode usar H2 conforme [backend/src/main/resources/application-dev.properties](backend/src/main/resources/application-dev.properties).
+- Frontend: o fluxo dev usa Bun dentro do container (`bun` é instalado no Dockerfile) e executa lint antes de iniciar o servidor Vite. Veja [frontend/Dockerfile](frontend/Dockerfile) e [frontend/package.json](frontend/package.json).
+
+## Lint / Build
+
+- Frontend build (bloqueado por lint): conforme [frontend/package.json](frontend/package.json)
 
 ```json
 "build": "eslint . && tsc -b && vite build"
 ```
 
-No perfil **dev**, o container do frontend também executa lint antes de iniciar o Vite.
+- Backend build e testes:
 
-## Estrutura
+```bash
+./mvnw clean verify
+```
+
+## Estrutura resumida
 
 ```text
 .
-├── backend/
-├── frontend/
-├── infra/
-├── .vscode/
+├── backend/        # Spring Boot API (Java 25, Maven)
+├── frontend/       # React + Vite + Bun
+├── infra/          # Terraform
+├── .vscode/        # VS Code debug / tasks
 └── docker-compose.yml
 ```
