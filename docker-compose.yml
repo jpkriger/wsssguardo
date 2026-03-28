@@ -63,6 +63,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'echo > /dev/tcp/127.0.0.1/5005'"]
+      interval: 2s
+      timeout: 2s
+      retries: 120
+      start_period: 10s
     profiles:
       - dev
 
@@ -74,6 +80,8 @@ services:
     working_dir: /app
     environment:
       VITE_PROXY_TARGET: http://backend-dev:8080
+      VITE_USE_POLLING: "true"
+      VITE_POLL_INTERVAL: "250"
     volumes:
       - ./frontend:/app
       - /app/node_modules
