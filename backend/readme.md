@@ -1,53 +1,57 @@
-# Backend - Estrutura de API por Entidade
+# Backend
 
-Este backend segue um modelo vertical por entidade. Cada entidade fica em sua propria pasta e inclui os componentes necessarios para expor endpoints.
+API Spring Boot organizada por feature (vertical slice).
 
-## Estrutura sugerida
+## Fluxo oficial (Docker-first)
+
+No dia a dia, o backend roda no serviço `backend-dev` do [docker-compose.yml](../docker-compose.yml), iniciado via VS Code F5.
+
+- API: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui.html`
+- Debug attach (Java): `localhost:5005`
+
+Arquivos de referência:
+
+- [../.vscode/launch.json](../.vscode/launch.json)
+- [../.vscode/tasks.json](../.vscode/tasks.json)
+- [Dockerfile](Dockerfile)
+
+## Banco de dados no Docker dev
+
+No perfil `dev` do compose, o backend usa PostgreSQL (`db`), não H2.
+
+Variáveis principais vêm do compose:
+
+- `DB_URL=jdbc:postgresql://db:5432/wssdb`
+- `DB_DRIVER=org.postgresql.Driver`
+- `DB_USERNAME=wss`
+- `DB_PASSWORD=wss`
+
+## Execução fora do Docker (opcional)
+
+Se executar fora do Docker com profile `dev`, então o backend usa H2 conforme [src/main/resources/application-dev.properties](src/main/resources/application-dev.properties).
+
+## Estrutura canônica por feature
 
 ```text
-src/main/java/wsssguardo/
-	entityobject/
-		EntityObject.java
-		dto/
-			EntityObjectCreateRequest.java
-			EntityObjectResponse.java
-		repository/
-			EntityObjectRepository.java
-		service/
-			EntityObjectService.java
-			EntityObjectServiceImpl.java
-		controller/
-			EntityObjectController.java
+src/main/java/wsssguardo/<feature>/
+  <Feature>.java
+  controller/
+  dto/
+  repository/
+  service/
 ```
 
-## Exemplo ja implementado
+Referência implementada: `entityobject`.
 
-- Entidade: EntityObject
-- Endpoints:
-	- POST /api/entity-objects
-	- GET /api/entity-objects/{id}
-	- GET /api/entity-objects
+## Endpoints de exemplo
 
-### Payload de criacao
+- `POST /api/entity-objects`
+- `GET /api/entity-objects/{id}`
+- `GET /api/entity-objects`
 
-```json
-{
-	"name": "Qualquer Nome"
-}
+## Qualidade
+
+```bash
+./mvnw clean verify
 ```
-
-## Ambiente local com H2
-
-- Banco em memoria: `jdbc:h2:mem:wssdb`
-- Console H2: `/h2-console`
-- Usuario: `sa`
-- Senha: (vazia)
-
-## Como replicar para nova entidade
-
-1. Crie a pasta da entidade em `wsssguardo/<entidade>/`.
-2. Adicione a classe de entidade JPA (`<Entidade>.java`).
-3. Crie DTOs em `dto/` para entrada e saida.
-4. Crie o repository em `repository/` extendendo `JpaRepository`.
-5. Crie service interface + implementacao em `service/`.
-6. Crie controller REST em `controller/` com os endpoints basicos.

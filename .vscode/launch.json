@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend",
+      "type": "java",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "timeout": 300000
+    },
+    {
+      "name": "Frontend",
+      "type": "editor-browser",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./": "${webRoot}/",
+        "webpack:///src/": "${webRoot}/src/",
+        "webpack:///": "",
+        "C:/": "c:/"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Front + Back",
+      "preLaunchTask": "Compose Dev Up",
+      "configurations": [
+        "Backend",
+        "Frontend"
+      ],
+      "stopAll": false
+    }
+  ]
+}

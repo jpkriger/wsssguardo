@@ -7,14 +7,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  backend "s3" {
-    bucket       = "wsssguardo-tfstate-prod"
-    key          = "terraform.tfstate"
-    region       = "us-east-2"
-    use_lockfile = true
-    encrypt      = true
-  }
 }
 
 provider "aws" {

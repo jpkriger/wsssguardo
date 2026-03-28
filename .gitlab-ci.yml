@@ -32,16 +32,6 @@ frontend:
       else
         bun install
       fi
-    - |
-      if grep -q '"test"\s*:' package.json; then
-        bun run test
-      else
-        echo "Skipping tests: no test script found in package.json"
-      fi
+    - bun run lint
+    - bun run test
     - bun run build
-    - |
-      if [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f eslint.config.cjs ]; then
-        bun run lint
-      else
-        echo "Skipping lint: no eslint.config.(js|mjs|cjs) found"
-      fi
