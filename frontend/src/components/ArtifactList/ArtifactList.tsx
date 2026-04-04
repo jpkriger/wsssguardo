@@ -1,23 +1,8 @@
-import { Fragment, useEffect, useState, type ReactElement } from "react";
-import {
-  listArtifacts,
-  type ArtifactContentType,
-  type ArtifactResponse,
-} from "../../api/artifact";
+import { useEffect, useState, type ReactElement } from "react";
+import { listArtifacts, type ArtifactResponse } from "../../api/artifact";
 import { ApiErrorResponse } from "../../api/errors";
+import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import styles from "./ArtifactList.module.css";
-
-const CONTENT_TYPE_LABELS: Record<ArtifactContentType, string> = {
-  document: "Documento",
-  image: "Imagem",
-  note: "Nota",
-};
-
-function getBadgeClass(contentType: ArtifactContentType): string {
-  if (contentType === "document") return styles.badgeDocument;
-  if (contentType === "image") return styles.badgeImage;
-  return styles.badgeNote;
-}
 
 export default function ArtifactList(): ReactElement {
   const [artifacts, setArtifacts] = useState<ArtifactResponse[]>([]);
@@ -62,6 +47,10 @@ export default function ArtifactList(): ReactElement {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
+  function handleEdit(_id: number): void {}
+  function handleDelete(_id: number): void {}
+  function handleDownload(_id: number): void {}
+
   return (
     <div className={styles.wrapper}>
       <h2 className={styles.title}>Artefatos</h2>
@@ -85,47 +74,17 @@ export default function ArtifactList(): ReactElement {
             </thead>
             <tbody>
               {artifacts.map((artifact) => (
-                <Fragment key={artifact.id}>
-                  <tr className={styles.row}>
-                    <td className={styles.td}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={selectedIds.has(artifact.id)}
-                        onChange={() => toggleSelect(artifact.id)}
-                      />
-                    </td>
-                    <td className={styles.td}>{artifact.name}</td>
-                    <td className={styles.td}>
-                      <span
-                        className={`${styles.badge} ${getBadgeClass(artifact.contentType)}`}
-                      >
-                        {CONTENT_TYPE_LABELS[artifact.contentType]}
-                      </span>
-                    </td>
-                    <td className={styles.td}>{artifact.author}</td>
-                    <td className={styles.td}>
-                      {new Date(artifact.createdAt).toLocaleString()}
-                    </td>
-                    <td className={styles.td}>
-                      <button
-                        className={styles.expandBtn}
-                        onClick={() => toggleExpand(artifact.id)}
-                      >
-                        {expandedId === artifact.id ? "▴" : "▾"}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedId === artifact.id && (
-                    <tr className={styles.expandedRow}>
-                      <td colSpan={6} className={styles.expandedCell}>
-                        <p className={styles.description}>
-                          {artifact.description}
-                        </p>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <ArtifactRow
+                  key={artifact.id}
+                  artifact={artifact}
+                  isSelected={selectedIds.has(artifact.id)}
+                  isExpanded={expandedId === artifact.id}
+                  onToggleSelect={toggleSelect}
+                  onToggleExpand={toggleExpand}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onDownload={handleDownload}
+                />
               ))}
             </tbody>
           </table>
