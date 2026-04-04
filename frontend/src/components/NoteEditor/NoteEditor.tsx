@@ -1,5 +1,4 @@
-import { useMemo, useRef, useState, type ReactElement } from "react";
-import { marked } from "marked";
+import { useRef, type ReactElement } from "react";
 import NoteToolbar from "../NoteToolbar/NoteToolbar";
 import styles from "./NoteEditor.module.css";
 
@@ -7,8 +6,6 @@ interface NoteEditorProps {
   content: string;
   onChange: (content: string) => void;
 }
-
-type EditorTab = "write" | "preview";
 
 interface FormatRule {
   before: string;
@@ -27,13 +24,7 @@ const FORMAT_MAP: Record<string, FormatRule> = {
 };
 
 export default function NoteEditor({ content, onChange }: NoteEditorProps): ReactElement {
-  const [tab, setTab] = useState<EditorTab>("write");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const preview = useMemo(() => {
-    const result = marked.parse(content);
-    return typeof result === "string" ? result : "";
-  }, [content]);
 
   function applyFormat(action: string): void {
     const el = textareaRef.current;
@@ -46,16 +37,11 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
     let newCursor: number;
     if (fmt.prefix) {
       const lineStart = content.lastIndexOf("\n", start - 1) + 1;
-      newContent =
-        content.slice(0, lineStart) + fmt.prefix + content.slice(lineStart);
+      newContent = content.slice(0, lineStart) + fmt.prefix + content.slice(lineStart);
       newCursor = start + fmt.prefix.length;
     } else {
       newContent =
-        content.slice(0, start) +
-        fmt.before +
-        selected +
-        fmt.after +
-        content.slice(end);
+        content.slice(0, start) + fmt.before + selected + fmt.after + content.slice(end);
       newCursor = end + fmt.before.length + fmt.after.length;
     }
     onChange(newContent);
@@ -67,37 +53,14 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
 
   return (
     <div className={styles.editor}>
-      <div className={styles.tabBar}>
-        <button
-          type="button"
-          className={`${styles.tab} ${tab === "write" ? styles.tabActive : ""}`}
-          onClick={() => setTab("write")}
-        >
-          Escrever
-        </button>
-        <button
-          type="button"
-          className={`${styles.tab} ${tab === "preview" ? styles.tabActive : ""}`}
-          onClick={() => setTab("preview")}
-        >
-          Visualizar
-        </button>
-        {tab === "write" && <NoteToolbar onAction={applyFormat} />}
-      </div>
-      {tab === "write" ? (
-        <textarea
-          ref={textareaRef}
-          className={styles.textarea}
-          placeholder="Escreva em markdown..."
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : (
-        <div
-          className={styles.preview}
-          dangerouslySetInnerHTML={{ __html: preview }}
-        />
-      )}
+      <NoteToolbar onAction={applyFormat} />
+      <textarea
+        ref={textareaRef}
+        className={styles.textarea}
+        placeholder="Escreva sua nota aqui..."
+        value={content}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
