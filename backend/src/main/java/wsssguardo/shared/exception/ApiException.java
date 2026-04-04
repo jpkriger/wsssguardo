@@ -4,8 +4,12 @@ import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
+@Getter
+@Setter
 @JsonIgnoreProperties({"cause", "stackTrace", "suppressed", "localizedMessage"})
 public class ApiException extends RuntimeException {
 
@@ -23,25 +27,5 @@ public class ApiException extends RuntimeException {
     @JsonIgnore
     public HttpStatus getStatusCode() {
         return HttpStatus.valueOf(status);
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public Instant getTimestamp() {
-        return timestamp;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 }
