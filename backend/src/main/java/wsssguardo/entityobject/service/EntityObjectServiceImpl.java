@@ -25,7 +25,7 @@ public class EntityObjectServiceImpl implements EntityObjectService {
 
     @Override
     public EntityObjectResponseDTO create(EntityObjectRequestDTO request) {
-        return mapper.toResponse(repository.save(mapper.toEntity(request)));
+        return mapper.toResponse(repository.saveAndFlush(mapper.toEntity(request)));
     }
 
     @Override

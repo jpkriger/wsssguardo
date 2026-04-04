@@ -48,14 +48,14 @@ class EntityObjectServiceImplTest {
         saved.setName("Example");
         saved.setCreatedAt(Instant.now());
 
-        when(repository.save(org.mockito.ArgumentMatchers.any(EntityObject.class))).thenReturn(saved);
+        when(repository.saveAndFlush(org.mockito.ArgumentMatchers.any(EntityObject.class))).thenReturn(saved);
 
         EntityObjectResponseDTO response = service.create(request);
 
         assertEquals(id, response.id());
         assertEquals("Example", response.name());
         assertNotNull(response.createdAt());
-        verify(repository).save(org.mockito.ArgumentMatchers.any(EntityObject.class));
+        verify(repository).saveAndFlush(org.mockito.ArgumentMatchers.any(EntityObject.class));
     }
 
     @Test
