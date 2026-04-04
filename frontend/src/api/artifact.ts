@@ -11,6 +11,12 @@ export interface ArtifactResponse {
   description: string;
 }
 
+export interface ArtifactFilterState {
+  search: string;
+  contentType: ArtifactContentType | "";
+  author: string;
+}
+
 const BASE = "/api/artifacts";
 
 export async function listArtifacts(): Promise<ArtifactResponse[]> {

@@ -5,6 +5,7 @@ import {
   type EntityObjectResponse,
 } from "./api/entityObject";
 import { ApiErrorResponse } from "./api/errors";
+import ArtifactList from "./components/ArtifactList/ArtifactList";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
@@ -102,6 +103,10 @@ export default function App(): ReactElement {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className={styles.card}>
+          <ArtifactList />
         </section>
       </main>
     </div>
