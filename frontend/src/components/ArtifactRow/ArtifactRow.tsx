@@ -1,5 +1,6 @@
 import { type ReactElement } from "react";
 import { type ArtifactContentType, type ArtifactResponse } from "../../api/artifact";
+import ArtifactExpandedContent from "../ArtifactExpandedContent/ArtifactExpandedContent";
 import styles from "./ArtifactRow.module.css";
 
 const CONTENT_TYPE_LABELS: Record<ArtifactContentType, string> = {
@@ -31,9 +32,9 @@ export default function ArtifactRow({
   isExpanded,
   onToggleSelect,
   onToggleExpand,
-  onEdit: _onEdit,
-  onDelete: _onDelete,
-  onDownload: _onDownload,
+  onEdit,
+  onDelete,
+  onDownload,
 }: ArtifactRowProps): ReactElement {
   return (
     <>
@@ -70,7 +71,12 @@ export default function ArtifactRow({
       {isExpanded && (
         <tr className={styles.expandedRow}>
           <td colSpan={6} className={styles.expandedCell}>
-            <p className={styles.description}>{artifact.description}</p>
+            <ArtifactExpandedContent
+              artifact={artifact}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDownload={onDownload}
+            />
           </td>
         </tr>
       )}
