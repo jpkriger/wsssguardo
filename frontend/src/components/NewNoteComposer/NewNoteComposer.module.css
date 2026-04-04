@@ -98,6 +98,12 @@
   color: #475569;
 }
 
+.footerError {
+  flex: 1;
+  color: #f87171;
+  font-size: 0.775rem;
+}
+
 .footer {
   display: flex;
   align-items: center;

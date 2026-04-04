@@ -10,6 +10,7 @@ import NewNoteComposer from "./components/NewNoteComposer/NewNoteComposer";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
+  const [noteRefreshKey, setNoteRefreshKey] = useState(0);
   const [items, setItems] = useState<EntityObjectResponse[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,10 +108,10 @@ export default function App(): ReactElement {
         </section>
 
         <section className={styles.card}>
-          <ArtifactList />
+          <ArtifactList refreshKey={noteRefreshKey} />
         </section>
       </main>
-      <NewNoteComposer />
+      <NewNoteComposer onSave={() => setNoteRefreshKey((k) => k + 1)} />
     </div>
   );
 }

@@ -1,12 +1,20 @@
 import { useState, type ReactElement } from "react";
+import { createNote } from "../../api/note";
+import { ApiErrorResponse } from "../../api/errors";
 import NoteEditor from "../NoteEditor/NoteEditor";
 import styles from "./NewNoteComposer.module.css";
 
-export default function NewNoteComposer(): ReactElement {
+interface NewNoteComposerProps {
+  onSave?: () => void;
+}
+
+export default function NewNoteComposer({ onSave }: NewNoteComposerProps): ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const hasChanges = title.trim().length > 0 || content.trim().length > 0;
 
@@ -22,10 +30,7 @@ export default function NewNoteComposer(): ReactElement {
     ) {
       return;
     }
-    setTitle("");
-    setContent("");
-    setIsOpen(false);
-    setIsMinimized(false);
+    reset();
   }
 
   function toggleMinimize(): void {
@@ -39,10 +44,37 @@ export default function NewNoteComposer(): ReactElement {
     ) {
       return;
     }
+    reset();
+  }
+
+  function reset(): void {
     setTitle("");
     setContent("");
+    setError(null);
     setIsOpen(false);
     setIsMinimized(false);
+  }
+
+  async function handleSave(): Promise<void> {
+    if (!title.trim()) {
+      setError("O título é obrigatório.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await createNote({ title: title.trim(), content });
+      reset();
+      onSave?.();
+    } catch (e) {
+      if (e instanceof ApiErrorResponse) {
+        setError(e.getUserMessage());
+      } else {
+        setError(e instanceof Error ? e.message : "Erro ao salvar nota.");
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!isOpen) {
@@ -84,24 +116,31 @@ export default function NewNoteComposer(): ReactElement {
               type="text"
               placeholder="Título"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setError(null);
+              }}
+              disabled={saving}
             />
             <NoteEditor content={content} onChange={setContent} />
           </div>
           <div className={styles.footer}>
+            {error && <span className={styles.footerError}>{error}</span>}
             <button
               className={styles.cancelBtn}
               type="button"
               onClick={handleCancel}
+              disabled={saving}
             >
               Cancelar
             </button>
             <button
               className={styles.saveBtn}
               type="button"
-              disabled={!title.trim() && !content.trim()}
+              disabled={saving || (!title.trim() && !content.trim())}
+              onClick={() => void handleSave()}
             >
-              Salvar
+              {saving ? "Salvando…" : "Salvar"}
             </button>
           </div>
         </>

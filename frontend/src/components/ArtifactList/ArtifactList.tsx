@@ -15,7 +15,11 @@ const EMPTY_FILTERS: ArtifactFilterState = {
   author: "",
 };
 
-export default function ArtifactList(): ReactElement {
+interface ArtifactListProps {
+  refreshKey?: number;
+}
+
+export default function ArtifactList({ refreshKey = 0 }: ArtifactListProps): ReactElement {
   const [artifacts, setArtifacts] = useState<ArtifactResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +29,7 @@ export default function ArtifactList(): ReactElement {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [refreshKey]);
 
   async function load(): Promise<void> {
     setLoading(true);
