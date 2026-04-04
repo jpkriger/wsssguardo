@@ -1,9 +1,10 @@
 package wsssguardo.entityobject.dto;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public record EntityObjectResponse(
-    Long id,
+    UUID id,
     String name,
     Instant createdAt
 ) {
