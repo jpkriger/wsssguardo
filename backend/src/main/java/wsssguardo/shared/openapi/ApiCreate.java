@@ -13,8 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @Retention(RetentionPolicy.RUNTIME)
 @Operation(summary = "Create resource")
 @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Created successfully"),
-    @ApiResponse(responseCode = "400", description = "Validation error")
+        @ApiResponse(responseCode = "201", description = "Created successfully"),
+        @ApiResponse(responseCode = "400", description = "Validation error"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
 })
 public @interface ApiCreate {
     String summary() default "Create resource";

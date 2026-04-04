@@ -13,8 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @Retention(RetentionPolicy.RUNTIME)
 @Operation(summary = "Get resource by ID")
 @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Found"),
-    @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Found"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "404", description = "Not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
 })
 public @interface ApiGetById {
     String summary() default "Get resource by ID";

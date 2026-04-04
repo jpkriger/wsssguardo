@@ -13,7 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @Retention(RetentionPolicy.RUNTIME)
 @Operation(summary = "List all resources")
 @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Success")
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "500", description = "Internal server error"),
+        @ApiResponse(responseCode = "404", description = "Not found")
 })
 public @interface ApiListAll {
     String summary() default "List all resources";
