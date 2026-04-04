@@ -1,6 +1,5 @@
 package wsssguardo.shared.exception;
 
-import java.time.Instant;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,42 +19,37 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiException> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         String message = ex.getBindingResult().getFieldErrors().stream()
             .map(e -> e.getField() + ": " + e.getDefaultMessage())
             .collect(Collectors.joining("; "));
 
-        return respond(HttpStatus.BAD_REQUEST, message, request);
+        return respond(new ApiException(message, HttpStatus.BAD_REQUEST), request);
     }
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiErrorResponse> handleApiException(ApiException ex, HttpServletRequest request) {
-        return respond(ex.getStatusCode(), ex.getMessage(), request);
+    public ResponseEntity<ApiException> handleApiException(ApiException ex, HttpServletRequest request) {
+        return respond(ex, request);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNoHandler(NoHandlerFoundException ex, HttpServletRequest request) {
-        return respond(HttpStatus.NOT_FOUND, "No endpoint: " + ex.getRequestURL(), request);
+    public ResponseEntity<ApiException> handleNoHandler(NoHandlerFoundException ex, HttpServletRequest request) {
+        return respond(new ApiException("No endpoint: " + ex.getRequestURL(), HttpStatus.NOT_FOUND), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        return respond(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), request);
+    public ResponseEntity<ApiException> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return respond(new ApiException(ex.getMessage(), HttpStatus.METHOD_NOT_ALLOWED), request);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<ApiException> handleUnexpected(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
-        return respond(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request);
+        return respond(new ApiException("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR), request);
     }
 
-    private ResponseEntity<ApiErrorResponse> respond(HttpStatus status, String message, HttpServletRequest request) {
-        return ResponseEntity.status(status).body(new ApiErrorResponse(
-            status.value(),
-            status.getReasonPhrase(),
-            message,
-            Instant.now(),
-            request.getRequestURI()
-        ));
+    private ResponseEntity<ApiException> respond(ApiException ex, HttpServletRequest request) {
+        ex.setPath(request.getRequestURI());
+        return ResponseEntity.status(ex.getStatusCode()).body(ex);
     }
 }
