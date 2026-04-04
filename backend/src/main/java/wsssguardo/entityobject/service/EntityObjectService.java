@@ -3,14 +3,14 @@ package wsssguardo.entityobject.service;
 import java.util.List;
 import java.util.UUID;
 
-import wsssguardo.entityobject.dto.requestdto.EntityObjectCreateRequest;
-import wsssguardo.entityobject.dto.responsedto.EntityObjectResponse;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectRequestDTO;
+import wsssguardo.entityobject.dto.responsedto.EntityObjectResponseDTO;
 
 public interface EntityObjectService {
 
-    EntityObjectResponse create(EntityObjectCreateRequest request);
+    EntityObjectResponseDTO create(EntityObjectRequestDTO request);
 
-    EntityObjectResponse getById(UUID id);
+    EntityObjectResponseDTO getById(UUID id);
 
-    List<EntityObjectResponse> listAll();
+    List<EntityObjectResponseDTO> listAll();
 }

@@ -18,8 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import wsssguardo.entityobject.EntityObject;
-import wsssguardo.entityobject.dto.requestdto.EntityObjectCreateRequest;
-import wsssguardo.entityobject.dto.responsedto.EntityObjectResponse;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectRequestDTO;
+import wsssguardo.entityobject.dto.responsedto.EntityObjectResponseDTO;
 import wsssguardo.entityobject.mapper.EntityObjectMapper;
 import wsssguardo.entityobject.repository.EntityObjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
@@ -42,7 +42,7 @@ class EntityObjectServiceImplTest {
     @Test
     void createShouldPersistAndReturnResponse() {
         UUID id = UUID.randomUUID();
-        EntityObjectCreateRequest request = new EntityObjectCreateRequest("Example");
+        EntityObjectRequestDTO request = new EntityObjectRequestDTO("Example");
         EntityObject saved = new EntityObject();
         saved.setId(id);
         saved.setName("Example");
@@ -50,7 +50,7 @@ class EntityObjectServiceImplTest {
 
         when(repository.save(org.mockito.ArgumentMatchers.any(EntityObject.class))).thenReturn(saved);
 
-        EntityObjectResponse response = service.create(request);
+        EntityObjectResponseDTO response = service.create(request);
 
         assertEquals(id, response.id());
         assertEquals("Example", response.name());
@@ -68,7 +68,7 @@ class EntityObjectServiceImplTest {
 
         when(repository.findById(id)).thenReturn(Optional.of(entityObject));
 
-        EntityObjectResponse response = service.getById(id);
+        EntityObjectResponseDTO response = service.getById(id);
 
         assertEquals(id, response.id());
         assertEquals("Found", response.name());
@@ -96,7 +96,7 @@ class EntityObjectServiceImplTest {
 
         when(repository.findAll()).thenReturn(List.of(first, second));
 
-        List<EntityObjectResponse> responses = service.listAll();
+        List<EntityObjectResponseDTO> responses = service.listAll();
 
         assertEquals(2, responses.size());
         assertEquals("A", responses.get(0).name());

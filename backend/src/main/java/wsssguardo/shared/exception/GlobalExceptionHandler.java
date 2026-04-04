@@ -28,9 +28,9 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.BAD_REQUEST, message, request);
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
-        return respond(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiErrorResponse> handleApiException(ApiException ex, HttpServletRequest request) {
+        return respond(ex.getStatusCode(), ex.getMessage(), request);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

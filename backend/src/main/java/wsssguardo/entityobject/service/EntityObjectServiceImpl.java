@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import wsssguardo.entityobject.dto.requestdto.EntityObjectCreateRequest;
-import wsssguardo.entityobject.dto.responsedto.EntityObjectResponse;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectRequestDTO;
+import wsssguardo.entityobject.dto.responsedto.EntityObjectResponseDTO;
 import wsssguardo.entityobject.mapper.EntityObjectMapper;
 import wsssguardo.entityobject.repository.EntityObjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
@@ -24,13 +24,13 @@ public class EntityObjectServiceImpl implements EntityObjectService {
     }
 
     @Override
-    public EntityObjectResponse create(EntityObjectCreateRequest request) {
+    public EntityObjectResponseDTO create(EntityObjectRequestDTO request) {
         return mapper.toResponse(repository.save(mapper.toEntity(request)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public EntityObjectResponse getById(UUID id) {
+    public EntityObjectResponseDTO getById(UUID id) {
         return repository.findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException("EntityObject", id));
@@ -38,7 +38,7 @@ public class EntityObjectServiceImpl implements EntityObjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EntityObjectResponse> listAll() {
+    public List<EntityObjectResponseDTO> listAll() {
         return repository.findAll().stream()
             .map(mapper::toResponse)
             .toList();
