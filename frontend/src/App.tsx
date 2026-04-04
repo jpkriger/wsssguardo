@@ -6,6 +6,7 @@ import {
 } from "./api/entityObject";
 import { ApiErrorResponse } from "./api/errors";
 import ArtifactList from "./components/ArtifactList/ArtifactList";
+import NewNoteComposer from "./components/NewNoteComposer/NewNoteComposer";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
@@ -109,6 +110,7 @@ export default function App(): ReactElement {
           <ArtifactList />
         </section>
       </main>
+      <NewNoteComposer />
     </div>
   );
 }
