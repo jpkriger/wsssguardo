@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,8 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import wsssguardo.entityobject.EntityObject;
-import wsssguardo.entityobject.dto.EntityObjectCreateRequest;
-import wsssguardo.entityobject.dto.EntityObjectResponse;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectCreateRequest;
+import wsssguardo.entityobject.dto.responsedto.EntityObjectResponse;
 import wsssguardo.entityobject.mapper.EntityObjectMapper;
 import wsssguardo.entityobject.repository.EntityObjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
@@ -40,9 +41,10 @@ class EntityObjectServiceImplTest {
 
     @Test
     void createShouldPersistAndReturnResponse() {
+        UUID id = UUID.randomUUID();
         EntityObjectCreateRequest request = new EntityObjectCreateRequest("Example");
         EntityObject saved = new EntityObject();
-        saved.setId(1L);
+        saved.setId(id);
         saved.setName("Example");
         saved.setCreatedAt(Instant.now());
 
@@ -50,7 +52,7 @@ class EntityObjectServiceImplTest {
 
         EntityObjectResponse response = service.create(request);
 
-        assertEquals(1L, response.id());
+        assertEquals(id, response.id());
         assertEquals("Example", response.name());
         assertNotNull(response.createdAt());
         verify(repository).save(org.mockito.ArgumentMatchers.any(EntityObject.class));
@@ -58,35 +60,37 @@ class EntityObjectServiceImplTest {
 
     @Test
     void getByIdShouldReturnEntityWhenFound() {
+        UUID id = UUID.randomUUID();
         EntityObject entityObject = new EntityObject();
-        entityObject.setId(10L);
+        entityObject.setId(id);
         entityObject.setName("Found");
         entityObject.setCreatedAt(Instant.now());
 
-        when(repository.findById(10L)).thenReturn(Optional.of(entityObject));
+        when(repository.findById(id)).thenReturn(Optional.of(entityObject));
 
-        EntityObjectResponse response = service.getById(10L);
+        EntityObjectResponse response = service.getById(id);
 
-        assertEquals(10L, response.id());
+        assertEquals(id, response.id());
         assertEquals("Found", response.name());
     }
 
     @Test
     void getByIdShouldThrowWhenNotFound() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.getById(99L));
+        assertThrows(ResourceNotFoundException.class, () -> service.getById(id));
     }
 
     @Test
     void listAllShouldMapAllEntities() {
         EntityObject first = new EntityObject();
-        first.setId(1L);
+        first.setId(UUID.randomUUID());
         first.setName("A");
         first.setCreatedAt(Instant.now());
 
         EntityObject second = new EntityObject();
-        second.setId(2L);
+        second.setId(UUID.randomUUID());
         second.setName("B");
         second.setCreatedAt(Instant.now());
 

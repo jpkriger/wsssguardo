@@ -7,7 +7,7 @@
 
     <changeSet id="0001" author="wsssguardo">
         <createTable tableName="entity_objects">
-            <column name="id" type="BIGINT" autoIncrement="true">
+            <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)">

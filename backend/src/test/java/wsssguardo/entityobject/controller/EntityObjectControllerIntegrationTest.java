@@ -15,11 +15,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
 @TestPropertySource(properties = "security.auth.disabled=true")
+@Transactional
 class EntityObjectControllerIntegrationTest {
 
     @Autowired
@@ -35,7 +37,7 @@ class EntityObjectControllerIntegrationTest {
                     }
                     """))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").isNumber())
+            .andExpect(jsonPath("$.id").isString())
             .andExpect(jsonPath("$.name", is("Starter Item")))
             .andExpect(jsonPath("$.createdAt").isString());
 
