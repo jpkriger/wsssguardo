@@ -1,4 +1,5 @@
 import { useState, type ReactElement } from "react";
+import NoteEditor from "../NoteEditor/NoteEditor";
 import styles from "./NewNoteComposer.module.css";
 
 export default function NewNoteComposer(): ReactElement {
@@ -23,12 +24,7 @@ export default function NewNoteComposer(): ReactElement {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <textarea
-          className={styles.contentArea}
-          placeholder="Escreva sua nota aqui..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
+        <NoteEditor content={content} onChange={setContent} />
       </div>
       <div className={styles.footer}>
         <button className={styles.cancelBtn} type="button" onClick={handleCancel}>
