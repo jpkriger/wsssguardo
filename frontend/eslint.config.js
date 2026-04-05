@@ -31,6 +31,10 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/explicit-module-boundary-types": "warn",
       "@typescript-eslint/explicit-function-return-type": [
