@@ -1,4 +1,4 @@
-# AI_AGENTS
+# AGENTS
 
 Guia obrigatório para agentes de IA que contribuírem no repositório.
 
