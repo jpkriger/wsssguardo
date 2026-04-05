@@ -1,11 +1,11 @@
 import { type ReactElement } from "react";
-import { type ArtifactContentType, type ArtifactFilterState } from "../../api/artifact";
+import { ArtifactContentTypes, type ArtifactContentType, type ArtifactFilterState } from "../../api/artifact";
 import styles from "./ArtifactFilters.module.css";
 
 const CONTENT_TYPE_OPTIONS: { value: ArtifactContentType; label: string }[] = [
-  { value: "document", label: "Documento" },
-  { value: "image", label: "Imagem" },
-  { value: "note", label: "Nota" },
+  { value: ArtifactContentTypes.Document, label: "Documento" },
+  { value: ArtifactContentTypes.Image, label: "Imagem" },
+  { value: ArtifactContentTypes.Note, label: "Nota" },
 ];
 
 interface ArtifactFiltersProps {

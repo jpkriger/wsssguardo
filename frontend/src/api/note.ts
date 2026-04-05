@@ -1,3 +1,4 @@
+import { ArtifactContentTypes } from "./artifact";
 import { parseApiErrorResponse } from "./errors";
 
 export interface NoteCreateRequest {
@@ -22,7 +23,7 @@ export async function createNote(body: NoteCreateRequest): Promise<NoteResponse>
     body: JSON.stringify({
       name: body.title,
       description: body.content,
-      contentType: "note",
+      contentType: ArtifactContentTypes.Note,
     }),
   });
   if (!res.ok) throw await parseApiErrorResponse(res, BASE);

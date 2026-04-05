@@ -1,5 +1,5 @@
 import { type ReactElement } from "react";
-import { type ArtifactResponse } from "../../api/artifact";
+import { ArtifactContentTypes, type ArtifactResponse } from "../../api/artifact";
 import styles from "./ArtifactExpandedContent.module.css";
 
 interface ArtifactExpandedContentProps {
@@ -34,13 +34,13 @@ export default function ArtifactExpandedContent({
   return (
     <div className={styles.container}>
       <div className={styles.preview}>
-        {artifact.contentType === "document" && (
+        {artifact.contentType === ArtifactContentTypes.Document && (
           <DocumentPreview description={artifact.description} />
         )}
-        {artifact.contentType === "image" && (
+        {artifact.contentType === ArtifactContentTypes.Image && (
           <ImagePreview description={artifact.description} name={artifact.name} />
         )}
-        {artifact.contentType === "note" && (
+        {artifact.contentType === ArtifactContentTypes.Note && (
           <NotePreview description={artifact.description} />
         )}
       </div>

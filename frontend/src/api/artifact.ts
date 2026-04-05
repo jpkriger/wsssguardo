@@ -1,6 +1,12 @@
 import { parseApiErrorResponse } from "./errors";
 
-export type ArtifactContentType = "document" | "image" | "note";
+export const ArtifactContentTypes = {
+  Document: "document",
+  Image: "image",
+  Note: "note",
+} as const;
+
+export type ArtifactContentType = typeof ArtifactContentTypes[keyof typeof ArtifactContentTypes];
 
 export interface ArtifactResponse {
   id: number;

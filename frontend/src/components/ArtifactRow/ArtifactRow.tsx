@@ -1,17 +1,17 @@
 import { type ReactElement } from "react";
-import { type ArtifactContentType, type ArtifactResponse } from "../../api/artifact";
+import { ArtifactContentTypes, type ArtifactContentType, type ArtifactResponse } from "../../api/artifact";
 import ArtifactExpandedContent from "../ArtifactExpandedContent/ArtifactExpandedContent";
 import styles from "./ArtifactRow.module.css";
 
 const CONTENT_TYPE_LABELS: Record<ArtifactContentType, string> = {
-  document: "Documento",
-  image: "Imagem",
-  note: "Nota",
+  [ArtifactContentTypes.Document]: "Documento",
+  [ArtifactContentTypes.Image]: "Imagem",
+  [ArtifactContentTypes.Note]: "Nota",
 };
 
 function getBadgeClass(contentType: ArtifactContentType): string {
-  if (contentType === "document") return styles.badgeDocument;
-  if (contentType === "image") return styles.badgeImage;
+  if (contentType === ArtifactContentTypes.Document) return styles.badgeDocument;
+  if (contentType === ArtifactContentTypes.Image) return styles.badgeImage;
   return styles.badgeNote;
 }
 
