@@ -6,5 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <include file="db/changelog/migrations/0001-create-entity-objects.xml"/>
+    <include file="db/changelog/migrations/0002-create-initial-project-entities.xml"/>
 
 </databaseChangeLog>
