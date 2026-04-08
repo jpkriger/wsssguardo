@@ -5,9 +5,12 @@ import {
   type EntityObjectResponse,
 } from "./api/entityObject";
 import { ApiErrorResponse } from "./api/errors";
+import ArtifactList from "./components/ArtifactList/ArtifactList";
+import NewNoteComposer from "./components/NewNoteComposer/NewNoteComposer";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
+  const [noteRefreshKey, setNoteRefreshKey] = useState(0);
   const [items, setItems] = useState<EntityObjectResponse[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -103,7 +106,12 @@ export default function App(): ReactElement {
             ))}
           </ul>
         </section>
+
+        <section className={styles.card}>
+          <ArtifactList refreshKey={noteRefreshKey} />
+        </section>
       </main>
+      <NewNoteComposer onSave={() => setNoteRefreshKey((k) => k + 1)} />
     </div>
   );
 }
