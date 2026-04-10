@@ -1,8 +1,9 @@
 locals {
-  ecr_name = "${var.project}-backend-ecr"
+  ecr_name      = "${var.project}-backend-ecr"
   iam_role_name = "${var.project}-backend-IAM"
-  key_name = "${var.project}-backend-key"
-
+  sg_name       = "${var.project}-backend-sg"
+  ec2_name      = "${var.project}-backend-ec2"
+  eip_name      = "${var.project}-backend-eip"
   tags = {
     Project     = var.project
     ManagedBy   = "terraform-backend"
@@ -65,9 +66,14 @@ resource "aws_iam_role" "backend" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "backend" {
+resource "aws_iam_role_policy_attachment" "backend_ecr" {
   role = aws_iam_role.backend.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "backend_ssm" {
+  role       = aws_iam_role.backend.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_instance_profile" "backend" {
@@ -76,21 +82,122 @@ resource "aws_iam_instance_profile" "backend" {
 }
 
 # ---------------------------------------------------------------------------
-# Key Pair SSH - Acesso Seguro na EC2
+# Data Sources — AMI e VPC default
 # ---------------------------------------------------------------------------
 
-resource "tls_private_key" "backend" {
-  algorithm = "RSA"
-  rsa_bits = 4096
+data "aws_ami" "amazon_linux_2023" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
-resource "local_file" "backend" {
-  content = tls_private_key.backend.private_key_pem
-  filename = "${path.module}/backend.pem"
-  file_permission = "0400"
+data "aws_vpc" "default" {
+  default = true
 }
 
-resource "aws_key_pair" "backend" {
-  key_name = local.key_name
-  public_key = tls_private_key.backend.public_key_openssh
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
+
+# ---------------------------------------------------------------------------
+# Security Group — Tráfego HTTP/HTTPS para o Nginx
+# ---------------------------------------------------------------------------
+
+resource "aws_security_group" "backend" {
+  name   = local.sg_name
+  vpc_id = data.aws_vpc.default.id
+  tags   = local.tags
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ---------------------------------------------------------------------------
+# EC2 — t3.small com Amazon Linux 2023
+# ---------------------------------------------------------------------------
+
+resource "aws_instance" "backend" {
+  ami                    = data.aws_ami.amazon_linux_2023.id
+  instance_type          = "t3.small"
+  subnet_id              = data.aws_subnets.default.ids[0]
+  vpc_security_group_ids = [aws_security_group.backend.id]
+  iam_instance_profile   = aws_iam_instance_profile.backend.name
+  tags                   = merge(local.tags, { Name = local.ec2_name })
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    set -e
+
+    # Pacotes
+    dnf update -y
+    dnf install -y docker certbot
+
+    # Docker
+    systemctl enable --now docker
+    usermod -aG docker ec2-user
+
+    # Docker Compose
+    curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+      -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+
+    # Login no ECR
+    aws ecr get-login-password --region ${var.aws_region} | \
+      docker login --username AWS --password-stdin ${aws_ecr_repository.backend.repository_url}
+
+    # Diretório da aplicação
+    mkdir -p /opt/${var.project}
+
+    # Cron de renovação automática do certificado
+    echo "0 3 * * * root certbot renew --quiet --pre-hook 'docker stop nginx || true' --post-hook 'docker start nginx || true'" \
+      > /etc/cron.d/certbot-renew
+  EOF
+}
+
+# ---------------------------------------------------------------------------
+# Elastic IP — IP fixo para o backend
+# ---------------------------------------------------------------------------
+
+resource "aws_eip" "backend" {
+  instance = aws_instance.backend.id
+  domain   = "vpc"
+  tags     = merge(local.tags, { Name = local.eip_name })
+}
+
