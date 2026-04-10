@@ -3,15 +3,15 @@ import "./AssetTable.css";
 
 interface Asset {
   id: string;
-  type: string;
+  name: string;
   description: string;
   reference: string;
   linkedFindings: number;
 }
 
-const MOCK_ASSETS: Asset[] = Array.from({ length: 50 }, (_, i) => ({
+const MOCK_ASSETS: Asset[] = Array.from({ length: 1 }, (_, i) => ({
   id: String(i + 1),
-  type: "Servidor",
+  name: "Servidor",
   description: "ERP com dados sensíveis",
   reference: "https://www.google.com",
   linkedFindings: 1,
@@ -30,13 +30,6 @@ export default function AssetTable(): ReactElement {
 
   return (
     <table className="table">
-      <colgroup>
-        <col style={{ width: "15%" }} />
-        <col style={{ width: "30%" }} />
-        <col style={{ width: "30%" }} />
-        <col style={{ width: "15%" }} />
-        <col style={{ width: "10%" }} />
-      </colgroup>
       <thead>
         <tr>
           <th>Ativos</th>
@@ -49,14 +42,14 @@ export default function AssetTable(): ReactElement {
       <tbody>
         {pageAssets.map((asset) => (
           <tr key={asset.id}>
-            <td>{asset.type}</td>
+            <td>{asset.name}</td>
             <td>{asset.description}</td>
             <td>
               <div className="ref-cell">
-                <a href={asset.reference} target="_blank" rel="noreferrer">
+                <span className="ref-cell-text">
                   {asset.reference.slice(0, 20)}…
-                </a>
-                <span className="ref-icon">🔗</span>
+                </span>
+                <button className="delete-button">🔗</button>
               </div>
             </td>
             <td>{asset.linkedFindings}</td>
