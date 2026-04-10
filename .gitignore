@@ -35,3 +35,6 @@ infra/**/*_override.tf.json
 *.local
 
 .gitlab-ci-local/
+
+*.pem
+*.key
