@@ -7,6 +7,7 @@ import {
 import { ApiErrorResponse } from "./api/errors";
 import ArtifactList from "./components/ArtifactList/ArtifactList";
 import NewNoteComposer from "./components/NewNoteComposer/NewNoteComposer";
+import AssetTable from "./components/AssetTable/AssetTable";
 import styles from "./App.module.css";
 
 export default function App(): ReactElement {
@@ -110,6 +111,12 @@ export default function App(): ReactElement {
         <section className={styles.card}>
           <ArtifactList refreshKey={noteRefreshKey} />
         </section>
+
+        <section className={styles.card}>
+          <h2>Ativos</h2>
+          <AssetTable />
+        </section>
+
       </main>
       <NewNoteComposer onSave={() => setNoteRefreshKey((k) => k + 1)} />
     </div>

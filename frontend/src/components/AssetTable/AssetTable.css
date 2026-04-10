@@ -1,0 +1,136 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th {
+  text-align: left;
+  font-size: 12px;
+  color: #666;
+  font-weight: 400;
+  padding: 8px 16px;
+  border-bottom: 0.5px solid #2e2e2e;
+}
+
+.table td {
+  font-size: 13px;
+  color: #ccc;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid #1e1e1e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ref-cell {
+  overflow: visible;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ref-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #555;
+  font-size: 13px;
+}
+
+.ref-cell a {
+  color: #555;
+  text-decoration: none;
+}
+
+.ref-icon {
+  font-size: 14px;
+  color: #555;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: #c0392b;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  opacity: 0.8;
+}
+
+.delete-button:hover {
+  opacity: 1;
+}
+
+.table tfoot td {
+  border-bottom: none;
+  padding-top: 20px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-info {
+  font-size: 12px;
+  color: #555;
+  margin-right: auto;
+}
+
+.page-button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 5px;
+  border: 0.5px solid #2e2e2e;
+  background: transparent;
+  color: #777;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.page-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.page-button:not(:disabled):hover {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.page-button-active {
+  background: #2e2e2e;
+  color: #fff;
+  border-color: #444;
+}
+
+.page-button-next {
+  color: #b8963e;
+  border-color: #2e2e2e;
+  font-weight: 500;
+}
+
+.page-dots {
+  font-size: 12px;
+  color: #555;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.page-button-nav {
+  background: transparent;
+  border: none;
+  color: #777;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.page-button-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
