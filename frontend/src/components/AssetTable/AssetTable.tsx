@@ -1,5 +1,26 @@
 import { useState, type ReactElement } from "react";
 import "./AssetTable.css";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { LinkIcon, TrashIcon } from "lucide-react";
 
 interface Asset {
   id: string;
@@ -11,7 +32,7 @@ interface Asset {
 
 const MOCK_ASSETS: Asset[] = Array.from({ length: 18 }, (_, i) => ({
   id: String(i + 1),
-  name: String ("Servidor " + (i+1)),
+  name: String("Servidor " + (i + 1)),
   description: "ERP com dados sensíveis",
   reference: "https://www.google.com",
   linkedFindings: i++,
@@ -29,101 +50,112 @@ export default function AssetTable(): ReactElement {
   );
 
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Ativos</th>
-          <th>Descrição</th>
-          <th>Referência</th>
-          <th className="linkedF">Achados ligados</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {pageAssets.map((asset) => (
-          <tr key={asset.id}>
-            <td>{asset.name}</td>
-            <td>{asset.description}</td>
-            <td>
-              <div className="ref-cell">
-                <span className="ref-cell-text">
-                  {asset.reference.slice(0, 20)}…
-                </span>
-                <button onClick={() => window.open(asset.reference, '_blank')} className="icon-button">🔗</button>
-              </div>
-            </td>
-            <td className="linkedF">{asset.linkedFindings}</td>
-            <td>
-              <button className="icon-button" aria-label="icon">
-                🗑
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colSpan={5}>
-            <div className="pagination">
-              <span className="page-info">
-                Mostrando {(page - 1) * PAGE_SIZE + 1}–
-                {Math.min(page * PAGE_SIZE, MOCK_ASSETS.length)} de{" "}
-                {MOCK_ASSETS.length} ativos
-              </span>
-
-              <button
-                className="page-button-nav"
-                onClick={() => setPage((p) => p - 1)}
-                disabled={page === 1}
-              >
-                ← Anterior
-              </button>
-
-              <button
-                className={`page-button ${page === 1 ? "page-button-active" : ""}`}
-                onClick={() => setPage(1)}
-              >
-                1
-              </button>
-
-              {page > 3 && <span className="page-dots">…</span>}
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (p) => p !== 1 && p !== totalPages && Math.abs(p - page) <= 1,
-                )
-                .map((p) => (
-                  <button
-                    key={p}
-                    className={`page-button ${p === page ? "page-button-active" : ""}`}
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
+    <Card>
+      <CardHeader>
+        <CardTitle>Ativos</CardTitle>
+        <CardDescription>Ativos registrados e vinculados ao escopo da avaliação</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table className="Table">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Ativos</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Referência</TableHead>
+              <TableHead className="linkedF">Achados ligados</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageAssets.map((asset) => (
+              <TableRow key={asset.id}>
+                <TableCell>{asset.name}</TableCell>
+                <TableCell>{asset.description}</TableCell>
+                <TableCell>
+                  <div className="ref-cell">
+                    <span className="ref-cell-text">
+                      {asset.reference.slice(0, 20)}…
+                    </span>
+                    <button
+                      onClick={() => window.open(asset.reference, "_blank")}
+                      className="icon-button"
+                    >
+                      <LinkIcon />
+                    </button>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  {asset.linkedFindings}
+                </TableCell>
+                <TableCell>
+                  <button className="icon-button">
+                    <TrashIcon className="text-red-500" />
                   </button>
-                ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+      <CardFooter className="flex justify-between items-center w-full">
+        <span className="page-info">
+          Mostrando {(page - 1) * PAGE_SIZE + 1}–
+          {Math.min(page * PAGE_SIZE, MOCK_ASSETS.length)} de{" "}
+          {MOCK_ASSETS.length} ativos
+        </span>
 
-              {page < totalPages - 2 && <span className="page-dots">…</span>}
+        <div className="flex items-center gap-1">
+          <button
+            className="page-button-nav"
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 1}
+          >
+            ← Anterior
+          </button>
 
-              {totalPages > 1 && (
-                <button
-                  className={`page-button ${page === totalPages ? "page-button-active" : ""}`}
-                  onClick={() => setPage(totalPages)}
-                >
-                  {totalPages}
-                </button>
-              )}
+          <button
+            className={`page-button ${page === 1 ? "page-button-active" : ""}`}
+            onClick={() => setPage(1)}
+          >
+            1
+          </button>
 
+          {page > 3 && <span className="page-dots">…</span>}
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(
+              (p) => p !== 1 && p !== totalPages && Math.abs(p - page) <= 1,
+            )
+            .map((p) => (
               <button
-                className="page-button-nav page-button-next"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page === totalPages}
+                key={p}
+                className={`page-button ${p === page ? "page-button-active" : ""}`}
+                onClick={() => setPage(p)}
               >
-                Próximo →
+                {p}
               </button>
-            </div>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+            ))}
+
+          {page < totalPages - 2 && <span className="page-dots">…</span>}
+
+          {totalPages > 1 && (
+            <button
+              className={`page-button ${page === totalPages ? "page-button-active" : ""}`}
+              onClick={() => setPage(totalPages)}
+            >
+              {totalPages}
+            </button>
+          )}
+
+          <button
+            className="page-button-nav page-button-next"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page === totalPages}
+          >
+            Próximo →
+          </button>
+        </div>
+      </CardFooter>
+    </Card>
   );
 }
