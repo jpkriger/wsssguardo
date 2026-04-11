@@ -169,13 +169,13 @@ protocol    = "-1"
 ### `root_block_device`
 
 ```hcl
-volume_size = 20
+volume_size = 30
 volume_type = "gp3"
 ```
 
 **Por que `gp3` e não `gp2`:** O `gp3` entrega 3000 IOPS base sem custo adicional (o `gp2` cobra por IOPS acima do baseline). É mais barato e mais performático para o mesmo tamanho.
 
-**Por que 20GB:** Espaço para o SO (~4GB), Docker, imagens de container (~2-3GB cada) e logs.
+**Por que 30GB:** A AMI do Amazon Linux 2023 exige no mínimo 30GB. Espaço para o SO (~4GB), Docker, imagens de container (~2-3GB cada) e logs.
 
 ### `user_data`
 
@@ -331,33 +331,45 @@ restart: unless-stopped
 ## Fluxo completo de provisionamento
 
 ```
-1. terraform apply
+1. terraform apply (fase 1 — só o certificado ACM)
+   └── Cria aws_acm_certificate.frontend (us-east-1)
+       └── Output: CNAME para validação no Cloudflare
+
+2. Adiciona o CNAME de validação no Cloudflare (DNS only)
+   Aguarda aws acm wait certificate-validated
+
+3. terraform apply (fase 2 — resto da infra)
    ├── Cria ECR, IAM Role, Security Group
    ├── Cria EC2 → user_data roda no primeiro boot
    │     ├── Instala Docker, Docker Compose, Certbot
    │     ├── Faz login no ECR via IAM Role
    │     ├── Cria /opt/wsssguardo
    │     └── Configura cron de renovação do certificado
-   └── Cria e associa Elastic IP → output mostra o IP
+   ├── Cria e associa Elastic IP → output mostra o IP
+   └── Cria S3 + CloudFront + OAC (com alias ages-app.kriger.dev)
 
-2. Aponta ages-api.kriger.dev → Elastic IP no DNS
+4. Configura DNS:
+   ages-api.kriger.dev → output.backend_ip  (A record, DNS only)
+   ages-app.kriger.dev → output.cloudfront_domain_name (CNAME, DNS only)
 
-3. Aguarda propagação DNS
+5. Aguarda propagação DNS do backend
 
-4. Via SSM — emissão do certificado (uma única vez):
-   sudo certbot certonly --standalone \
+6. SSM — emissão do certificado TLS (uma única vez, automático via deploy.sh):
+   certbot certonly --standalone \
      -d ages-api.kriger.dev \
      --non-interactive --agree-tos \
      -m jpsk145@gmail.com
 
-5. Pipeline de deploy (cada nova versão):
+7. Pipeline de deploy (cada nova versão):
    ├── docker build + push para o ECR
-   └── SSM send-command na EC2:
-         cd /opt/wsssguardo
-         docker-compose --profile prod pull
-         docker-compose --profile prod up -d
+   └── SSM send-command na EC2 (script base64-encoded):
+         echo '...' | base64 -d | bash
+         # Dentro do script:
+         # - Escreve /opt/wsssguardo/.env com credenciais
+         # - Escreve docker-compose.yml e nginx.conf
+         # - docker-compose pull && docker-compose up -d
 
-6. Renovação automática (cron — todo dia às 3h):
+8. Renovação automática (cron — todo dia às 3h):
    └── certbot renew
          ├── Para o nginx (pre-hook)
          ├── Renova o certificado
