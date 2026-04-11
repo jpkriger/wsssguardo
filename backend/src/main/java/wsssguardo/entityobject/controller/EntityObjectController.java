@@ -2,8 +2,8 @@ package wsssguardo.entityobject.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import wsssguardo.entityobject.dto.EntityObjectCreateRequest;
-import wsssguardo.entityobject.dto.EntityObjectResponse;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectRequestDTO;
+import wsssguardo.entityobject.dto.responsedto.EntityObjectResponseDTO;
 import wsssguardo.entityobject.service.EntityObjectService;
+import wsssguardo.shared.openapi.ApiCreate;
+import wsssguardo.shared.openapi.ApiGetById;
+import wsssguardo.shared.openapi.ApiListAll;
 
-@Tag(name = "EntityObject", description = "Operações de EntityObject")
+@Tag(name = "EntityObject", description = "EntityObject operations")
 @RestController
 @RequestMapping("/api/entity-objects")
 public class EntityObjectController {
@@ -29,24 +32,22 @@ public class EntityObjectController {
         this.service = service;
     }
 
-    @Operation(summary = "Criar EntityObject")
+    @ApiCreate
     @PostMapping
-    public ResponseEntity<EntityObjectResponse> create(@Valid @RequestBody EntityObjectCreateRequest request) {
-        EntityObjectResponse created = service.create(request);
-        return ResponseEntity
-            .created(URI.create("/api/entity-objects/" + created.id()))
-            .body(created);
+    public ResponseEntity<EntityObjectResponseDTO> create(@Valid @RequestBody EntityObjectRequestDTO request) {
+        EntityObjectResponseDTO created = service.create(request);
+        return ResponseEntity.created(URI.create("/api/entity-objects/" + created.id())).body(created);
     }
 
-    @Operation(summary = "Buscar EntityObject por ID")
+    @ApiGetById
     @GetMapping("/{id}")
-    public EntityObjectResponse getById(@PathVariable Long id) {
-        return service.getById(id);
+    public ResponseEntity<EntityObjectResponseDTO> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getById(id));
     }
 
-    @Operation(summary = "Listar todos os EntityObjects")
+    @ApiListAll
     @GetMapping
-    public List<EntityObjectResponse> listAll() {
+    public List<EntityObjectResponseDTO> listAll() {
         return service.listAll();
     }
 }
