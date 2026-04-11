@@ -2,7 +2,6 @@ import { useState, type ReactElement } from "react";
 import "./AssetTable.css";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -13,7 +12,6 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -30,7 +28,7 @@ interface Asset {
   linkedFindings: number;
 }
 
-const MOCK_ASSETS: Asset[] = Array.from({ length: 18 }, (_, i) => ({
+const MOCK_ASSETS: Asset[] = Array.from({ length: 40 }, (_, i) => ({
   id: String(i + 1),
   name: String("Servidor " + (i + 1)),
   description: "ERP com dados sensíveis",
@@ -53,7 +51,9 @@ export default function AssetTable(): ReactElement {
     <Card>
       <CardHeader>
         <CardTitle>Ativos</CardTitle>
-        <CardDescription>Ativos registrados e vinculados ao escopo da avaliação</CardDescription>
+        <CardDescription>
+          Ativos registrados e vinculados ao escopo da avaliação
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table className="Table">
@@ -62,7 +62,7 @@ export default function AssetTable(): ReactElement {
               <TableHead>Ativos</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Referência</TableHead>
-              <TableHead className="linkedF">Achados ligados</TableHead>
+              <TableHead className="text-center">Achados ligados</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -113,42 +113,38 @@ export default function AssetTable(): ReactElement {
             ← Anterior
           </button>
 
-          <button
-            className={`page-button ${page === 1 ? "page-button-active" : ""}`}
-            onClick={() => setPage(1)}
-          >
-            1
-          </button>
+          {(() => {
+            const pages: (number | string)[] = [];
 
-          {page > 3 && <span className="page-dots">…</span>}
+            if (totalPages <= 5) {
+              for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else if (page <= 3) {
+              pages.push(1, 2, 3, "...", totalPages);
+            } else if (page >= totalPages - 2) {
+              pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
+            } else {
+              pages.push(1, "...", page, "...", totalPages);
+            }
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter(
-              (p) => p !== 1 && p !== totalPages && Math.abs(p - page) <= 1,
-            )
-            .map((p) => (
-              <button
-                key={p}
-                className={`page-button ${p === page ? "page-button-active" : ""}`}
-                onClick={() => setPage(p)}
-              >
-                {p}
-              </button>
-            ))}
-
-          {page < totalPages - 2 && <span className="page-dots">…</span>}
-
-          {totalPages > 1 && (
-            <button
-              className={`page-button ${page === totalPages ? "page-button-active" : ""}`}
-              onClick={() => setPage(totalPages)}
-            >
-              {totalPages}
-            </button>
-          )}
+            return pages.map((p, i) =>
+              p === "..." ? (
+                <span key={`dots-${i}`} className="page-dots">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  className={`page-button ${p === page ? "page-button-active" : ""}`}
+                  onClick={() => setPage(p as number)}
+                >
+                  {p}
+                </button>
+              ),
+            );
+          })()}
 
           <button
-            className="page-button-nav page-button-next"
+            className="page-button-nav"
             onClick={() => setPage((p) => p + 1)}
             disabled={page === totalPages}
           >
