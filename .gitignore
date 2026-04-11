@@ -32,7 +32,11 @@ infra/**/*_override.tf.json
 
 .env
 .env.*
+!.env.example
 *.local
+
+terraform.tfstate
+terraform.tfstate.backup
 
 .gitlab-ci-local/
 
