@@ -23,7 +23,7 @@ export interface ArtifactFilterState {
   author: string;
 }
 
-const BASE = "/api/artifacts";
+const BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/artifacts`;
 
 export async function listArtifacts(): Promise<ArtifactResponse[]> {
   const res = await fetch(BASE);
