@@ -39,19 +39,42 @@ const MOCK_ASSETS: Asset[] = Array.from({ length: 30 }, (_, i) => ({
   name: String("Servidor " + (i + 1)),
   description: "ERP com dados sensíveis",
   reference: "https://www.google.com",
-  linkedFindings: i++,
+  linkedFindings: i,
 }));
 
 const PAGE_SIZE = 5;
 
+// TODO: substituir por chamadas reais à API
+async function fetchAssets(): Promise<Asset[]> {
+  return MOCK_ASSETS;
+}
+
+async function deleteAsset(id: string): Promise<void> {
+  // await fetch(`/api/assets/${id}`, { method: "DELETE" });
+  console.log("deleteAsset", id);
+}
+
+async function updateAsset(asset: Asset): Promise<void> {
+  //  await fetch(`/api/assets/${asset.id}`, { method: "PUT", body: JSON.stringify(asset) });
+  console.log("updateAsset", asset);
+}
+
 export default function AssetTable(): ReactElement {
+  const [assets, setAssets] = useState<Asset[]>(MOCK_ASSETS);
   const [page, setPage] = useState(1);
 
-  const totalPages = Math.ceil(MOCK_ASSETS.length / PAGE_SIZE);
-  const pageAssets = MOCK_ASSETS.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
+  const totalPages = Math.ceil(assets.length / PAGE_SIZE);
+  const pageAssets = assets.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  async function handleDelete(id: string) {
+    await deleteAsset(id);
+    setAssets((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  async function handleEdit(asset: Asset) {
+    await updateAsset(asset);
+    // TODO: abrir modal de edição
+  }
 
   return (
     <Card>
@@ -97,12 +120,18 @@ export default function AssetTable(): ReactElement {
                   {asset.linkedFindings}
                 </TableCell>
                 <TableCell className="text-center">
-                  <button className="icon-button inline-flex items-center justify-center w-full">
+                  <button
+                    className="icon-button inline-flex items-center justify-center w-full"
+                    onClick={() => handleEdit(asset)}
+                  >
                     <PencilIcon />
                   </button>
                 </TableCell>
                 <TableCell className="text-center">
-                  <button className="icon-button inline-flex items-center justify-center w-full">
+                  <button
+                    className="icon-button inline-flex items-center justify-center w-full"
+                    onClick={() => handleDelete(asset.id)}
+                  >
                     <TrashIcon className="text-red-500" />
                   </button>
                 </TableCell>
@@ -114,8 +143,7 @@ export default function AssetTable(): ReactElement {
       <CardFooter className="flex justify-between items-center w-full">
         <span className="page-info">
           Mostrando {(page - 1) * PAGE_SIZE + 1}–
-          {Math.min(page * PAGE_SIZE, MOCK_ASSETS.length)} de{" "}
-          {MOCK_ASSETS.length} ativos
+          {Math.min(page * PAGE_SIZE, assets.length)} de {assets.length} ativos
         </span>
 
         <div className="flex items-center gap-1">
@@ -142,9 +170,7 @@ export default function AssetTable(): ReactElement {
 
             return pages.map((p, i) =>
               p === "..." ? (
-                <span key={`dots-${i}`} className="page-dots">
-                  …
-                </span>
+                <span key={`dots-${i}`} className="page-dots">…</span>
               ) : (
                 <button
                   key={p}
