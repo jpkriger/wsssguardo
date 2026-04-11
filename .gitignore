@@ -16,7 +16,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-frontend/package-lock.json
+frontend/bun.lock
 
 
 infra/**/.terraform/
@@ -35,3 +35,4 @@ infra/**/*_override.tf.json
 *.local
 
 .gitlab-ci-local/
+.claude
