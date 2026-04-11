@@ -15,13 +15,13 @@ locals {
 # ---------------------------------------------------------------------------
 
 resource "aws_ecr_repository" "backend" {
-  name = local.ecr_name
-  tags = local.tags
-  
+  name         = local.ecr_name
+  force_delete = true
+  tags         = local.tags
+
   image_scanning_configuration {
     scan_on_push = true
   }
-
 }
 
 resource "aws_ecr_lifecycle_policy" "backend" {
@@ -157,7 +157,7 @@ resource "aws_instance" "backend" {
   tags                   = merge(local.tags, { Name = local.ec2_name })
 
   root_block_device {
-    volume_size = 20
+    volume_size = 30
     volume_type = "gp3"
   }
 

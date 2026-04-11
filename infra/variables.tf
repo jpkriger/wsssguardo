@@ -21,3 +21,9 @@ variable "domain" {
   type        = string
   default     = "ages-api.kriger.dev"
 }
+
+variable "frontend_domain" {
+  description = "Domínio customizado do frontend"
+  type        = string
+  default     = "ages-app.kriger.dev"
+}
