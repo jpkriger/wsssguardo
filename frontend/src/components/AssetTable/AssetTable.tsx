@@ -9,12 +9,12 @@ interface Asset {
   linkedFindings: number;
 }
 
-const MOCK_ASSETS: Asset[] = Array.from({ length: 1 }, (_, i) => ({
+const MOCK_ASSETS: Asset[] = Array.from({ length: 18 }, (_, i) => ({
   id: String(i + 1),
-  name: "Servidor",
+  name: String ("Servidor " + (i+1)),
   description: "ERP com dados sensíveis",
   reference: "https://www.google.com",
-  linkedFindings: 1,
+  linkedFindings: i++,
 }));
 
 const PAGE_SIZE = 5;
@@ -35,7 +35,7 @@ export default function AssetTable(): ReactElement {
           <th>Ativos</th>
           <th>Descrição</th>
           <th>Referência</th>
-          <th>Achados ligados</th>
+          <th className="linkedF">Achados ligados</th>
           <th></th>
         </tr>
       </thead>
@@ -49,12 +49,12 @@ export default function AssetTable(): ReactElement {
                 <span className="ref-cell-text">
                   {asset.reference.slice(0, 20)}…
                 </span>
-                <button className="delete-button">🔗</button>
+                <button onClick={() => window.open(asset.reference, '_blank')} className="icon-button">🔗</button>
               </div>
             </td>
-            <td>{asset.linkedFindings}</td>
+            <td className="linkedF">{asset.linkedFindings}</td>
             <td>
-              <button className="delete-button" aria-label="Delete">
+              <button className="icon-button" aria-label="icon">
                 🗑
               </button>
             </td>

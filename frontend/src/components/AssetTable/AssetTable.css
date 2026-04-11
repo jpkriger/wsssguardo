@@ -49,7 +49,7 @@
   color: #555;
 }
 
-.delete-button {
+.icon-button {
   background: none;
   border: none;
   color: #c0392b;
@@ -122,4 +122,12 @@
 
 .page-button-next {
   font-weight: 500;
+}
+
+.linkedF {
+  text-align: center;
+}
+
+.table th.linkedF {
+  text-align: center;
 }
