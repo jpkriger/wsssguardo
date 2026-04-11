@@ -5,7 +5,7 @@
 }
 
 .ref-cell-text {
-  color: #555;
+  color: #9A9DA0;
   filter: blur(1.5px);
   user-select: none;
 }
@@ -27,16 +27,15 @@
   min-width: 28px;
   height: 28px;
   padding: 0 8px;
-  border-radius: 5px;
-  border: 0.5px solid #2e2e2e;
   background: transparent;
-  color: #777;
+  color: #9A9DA0;
   font-size: 12px;
   cursor: pointer;
 }
 
 .page-button:not(:disabled):hover {
   background: #2a2a2a;
+  border-radius: 5px;
   color: #fff;
 }
 
@@ -47,32 +46,26 @@
 }
 
 .page-button-active {
-  background: #2e2e2e;
   color: #fff;
-  border-color: #444;
+  border-radius: 5px;
+  border: 0.5px solid #ffffff;
+  
 }
 
 .page-dots {
   font-size: 12px;
-  color: #555;
+  color: #9A9DA0;
   padding: 0 4px;
   user-select: none;
 }
 
 .page-button-nav {
   background: transparent;
-  border: none;
-  color: #777;
-  font-size: 12px;
   cursor: pointer;
   padding: 0 4px;
-}
-
-.page-button-next {
-  font-weight: 500;
+  color: #9A9DA0;
 }
 
 .page-info {
-  font-size: 12px;
-  color: #555;
+  color: #9A9DA0;
 }

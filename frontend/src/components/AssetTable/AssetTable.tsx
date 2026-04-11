@@ -18,7 +18,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { LinkIcon, TrashIcon } from "lucide-react";
+import {
+  LinkIcon,
+  TrashIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  PencilIcon,
+} from "lucide-react";
 
 interface Asset {
   id: string;
@@ -28,7 +34,7 @@ interface Asset {
   linkedFindings: number;
 }
 
-const MOCK_ASSETS: Asset[] = Array.from({ length: 40 }, (_, i) => ({
+const MOCK_ASSETS: Asset[] = Array.from({ length: 30 }, (_, i) => ({
   id: String(i + 1),
   name: String("Servidor " + (i + 1)),
   description: "ERP com dados sensíveis",
@@ -59,11 +65,14 @@ export default function AssetTable(): ReactElement {
         <Table className="Table">
           <TableHeader>
             <TableRow>
-              <TableHead>Ativos</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Referência</TableHead>
-              <TableHead className="text-center">Achados ligados</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="w-[15%]">Ativo</TableHead>
+              <TableHead className="w-[30%]">Descrição</TableHead>
+              <TableHead className="w-[15%]">Referência</TableHead>
+              <TableHead className="text-center w-[15%]">
+                Achados ligados
+              </TableHead>
+              <TableHead className="w-[3%]"></TableHead>
+              <TableHead className="w-[3%]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,8 +96,13 @@ export default function AssetTable(): ReactElement {
                 <TableCell className="text-center">
                   {asset.linkedFindings}
                 </TableCell>
-                <TableCell>
-                  <button className="icon-button">
+                <TableCell className="text-center">
+                  <button className="icon-button inline-flex items-center justify-center w-full">
+                    <PencilIcon />
+                  </button>
+                </TableCell>
+                <TableCell className="text-center">
+                  <button className="icon-button inline-flex items-center justify-center w-full">
                     <TrashIcon className="text-red-500" />
                   </button>
                 </TableCell>
@@ -106,11 +120,11 @@ export default function AssetTable(): ReactElement {
 
         <div className="flex items-center gap-1">
           <button
-            className="page-button-nav"
+            className="page-button-nav flex items-center gap-1"
             onClick={() => setPage((p) => p - 1)}
             disabled={page === 1}
           >
-            ← Anterior
+            <ChevronLeftIcon /> Anterior
           </button>
 
           {(() => {
@@ -144,11 +158,11 @@ export default function AssetTable(): ReactElement {
           })()}
 
           <button
-            className="page-button-nav"
+            className="page-button-nav flex items-center gap-1"
             onClick={() => setPage((p) => p + 1)}
             disabled={page === totalPages}
           >
-            Próximo →
+            Próximo <ChevronRightIcon />
           </button>
         </div>
       </CardFooter>
