@@ -2,7 +2,7 @@ import { ThemeToggle } from "../theme-toggle";
 
 export default function GlobalHeader() {
   return (
-    <div className="w-full h-22 px-50 border-b-2 flex items-center justify-between">
+    <div className="w-full h-22 px-50 border-b flex items-center justify-between">
       <div className="w-186 py-3 flex justify-start gap-5">
         <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="25" cy="25" r="24.5" stroke="#998457" />
@@ -20,8 +20,8 @@ export default function GlobalHeader() {
           </defs>
         </svg>
         <div className="flex flex-col items-center justify-center pt-1 gap-[-2px]!">
-          <h2 className="text-[#998457] text-3xl! font-300! -m-0.5">WSS</h2>
-          <p className="text-sm! -m-0.5 opacity-45">SGUARDO</p>
+          <h2 className="text-[#998457] text-3xl! font-300! -m-0.5 tracking-widest! text-center!">WSS</h2>
+          <p className="text-sm! -m-0.5 opacity-45 text-center!">SGUARDO</p>
         </div>
       </div>
       <div>
