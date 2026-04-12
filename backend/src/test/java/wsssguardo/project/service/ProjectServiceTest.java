@@ -2,6 +2,8 @@ package wsssguardo.project.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -76,6 +78,39 @@ class ProjectServiceTest {
     void projectsByIdShouldReturnEmptyListWhenIdsAreMissing() {
         assertTrue(service.projectsById(null).isEmpty());
         assertTrue(service.projectsById(List.of()).isEmpty());
+    }
+
+    @Test
+    void projectsByUserIdShouldReturnProjectIds() {
+        UUID userId = UUID.randomUUID();
+        List<UUID> expected = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+        when(repository.findProjectIdsByUserId(userId)).thenReturn(expected);
+
+        List<UUID> actual = service.projectsByUserId(userId);
+
+        assertEquals(expected, actual);
+        verify(repository).findProjectIdsByUserId(userId);
+    }
+
+    @Test
+    void projectsByUserIdShouldReturnEmptyListWhenNoProjectsAreFound() {
+        UUID userId = UUID.randomUUID();
+
+        when(repository.findProjectIdsByUserId(userId)).thenReturn(List.of());
+
+        List<UUID> actual = service.projectsByUserId(userId);
+
+        assertTrue(actual.isEmpty());
+        verify(repository).findProjectIdsByUserId(userId);
+    }
+
+    @Test
+    void projectsByUserIdShouldReturnEmptyListWhenUserIdIsNull() {
+        List<UUID> actual = service.projectsByUserId(null);
+
+        assertTrue(actual.isEmpty());
+        verifyNoInteractions(repository);
     }
 
     private static Project project(UUID id, String name, UUID customerId, ProjectStatus status) {

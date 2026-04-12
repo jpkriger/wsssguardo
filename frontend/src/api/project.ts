@@ -9,7 +9,7 @@ export interface ProjectResponse {
   status: string;
 }
 
-const BASE = "/api/projectsById";
+const BASE = "/api/projects";
 
 export async function projectsById(ids: string[]): Promise<ProjectResponse[]> {
   const params = new URLSearchParams();
@@ -24,4 +24,14 @@ export async function projectsById(ids: string[]): Promise<ProjectResponse[]> {
   if (!res.ok) throw await parseApiErrorResponse(res, BASE);
 
   return res.json() as Promise<ProjectResponse[]>;
+}
+
+export async function projectsByUserId(userId: string): Promise<string[]> {
+  const params = new URLSearchParams({ userId });
+  const url = `${BASE}?${params.toString()}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
+
+  return res.json() as Promise<string[]>;
 }

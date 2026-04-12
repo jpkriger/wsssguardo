@@ -38,4 +38,13 @@ public class ProjectService {
             .map(mapper::toResponse)
             .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<UUID> projectsByUserId(UUID userId) {
+        if (userId == null) {
+            return List.of();
+        }
+
+        return repository.findProjectIdsByUserId(userId);
+    }
 }

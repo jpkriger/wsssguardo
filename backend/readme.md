@@ -49,9 +49,12 @@ Referência implementada: `entityobject`.
 - `POST /api/entity-objects`
 - `GET /api/entity-objects/{id}`
 - `GET /api/entity-objects`
-- `GET /api/projectsById?ids=<uuid>&ids=<uuid>`
+- `GET /api/projects?ids=<uuid>&ids=<uuid>`
+- `GET /api/projects?userId=<uuid>`
 
-O endpoint `projectsById` aceita múltiplos IDs UUID como query param repetido e retorna uma lista de projetos com `id`, `name`, `customerId`, `startDate`, `endDate` e `status`, preservando a ordem solicitada.
+O endpoint de projetos aceita dois modos de consulta no mesmo controller:
+- `ids` repetido para retornar detalhes de projetos (`id`, `name`, `customerId`, `startDate`, `endDate`, `status`) preservando a ordem solicitada.
+- `userId` para retornar lista de IDs (UUID) dos projetos relacionados ao usuário.
 
 ## Qualidade
 
