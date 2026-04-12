@@ -1,24 +1,38 @@
 import { ReactElement, useMemo, useState } from "react";
 
-type ProjectTab = "Resumo" | "Ativo" | "Artefatos" | "Achados" | "Riscos";
+export const ProjectTabs = {
+  Resumo: "Resumo",
+  Ativo: "Ativo",
+  Artefatos: "Artefatos",
+  Achados: "Achados",
+  Riscos: "Riscos",
+} as const;
 
-const TABS: ProjectTab[] = ["Resumo", "Ativo", "Artefatos", "Achados", "Riscos"];
+type ProjectTab = typeof ProjectTabs[keyof typeof ProjectTabs];
+
+const TABS: ProjectTab[] = [
+  ProjectTabs.Resumo,
+  ProjectTabs.Ativo,
+  ProjectTabs.Artefatos,
+  ProjectTabs.Achados,
+  ProjectTabs.Riscos,
+];
 
 export default function Project(): ReactElement {
-  const [activeTab, setActiveTab] = useState<ProjectTab>("Resumo");
+  const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Resumo);
 
   const tabDescription = useMemo(() => {
-    if (activeTab === "Resumo") {
-      return "Visao geral do projeto e indicadores principais.";
+    if (activeTab === ProjectTabs.Resumo) {
+      return "Visão geral do projeto e indicadores principais.";
     }
-    return `Conteudo da aba ${activeTab.toLowerCase()} sera integrado nesta area.`;
+    return `Conteúdo da aba ${activeTab.toLowerCase()} será integrado nesta área.`;
   }, [activeTab]);
 
   return (
     <section className="mx-auto w-full max-w-6xl">
       <header className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">Projeto PRJ-001</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">Breve descricao do projeto aqui.</p>
+        <p className="text-sm text-muted-foreground sm:text-base">Breve descrição do projeto aqui.</p>
       </header>
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
