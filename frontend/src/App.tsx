@@ -2,6 +2,7 @@ import { ReactElement } from "react";
 import { ThemeProvider } from "./components/theme-provider";
 import { Outlet } from "react-router";
 import GlobalHeader from "./components/GlobalHeader/GlobalHeader";
+import GlobalFooter from "./components/GlobalFooter/GlobalFooter";
 
 export default function App(): ReactElement {
   return (
@@ -15,7 +16,9 @@ export default function App(): ReactElement {
           <Outlet />
         </main>
 
-        <footer className="border-t border-border py-6 transition-colors duration-300">{/* FOOTER GLOBAL VAI AQUI */}</footer>
+        <footer className="border-t border-border py-6 transition-colors duration-300">
+          <GlobalFooter />
+        </footer>
       </div>
     </ThemeProvider>
   );
