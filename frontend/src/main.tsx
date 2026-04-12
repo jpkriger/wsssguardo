@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router'
 import './index.css'
 import App from './App.tsx'
 import Home from './pages/Home.tsx'
+import ProjectsHome from "./pages/ProjectsHome";
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -11,6 +13,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<App />}>
           <Route index element={<Home />} />
+          <Route path="/projects" element={<ProjectsHome />} />
           {/* Adicionar novas rotas aqui */}
         </Route>
       </Routes>

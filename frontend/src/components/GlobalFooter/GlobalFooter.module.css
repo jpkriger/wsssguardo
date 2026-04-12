@@ -1,0 +1,9 @@
+.footerContent {
+    width: 100%;
+    padding: 24px 0 28px 0;
+    transition: color 0.3s ease;
+}
+
+.footerContent {
+    border-top: none !important;
+}
