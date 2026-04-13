@@ -39,9 +39,19 @@ public class ArtifactService {
         return mapper.toResponse(repository.saveAndFlush(artifact));
     }
 
+    @Transactional(readOnly = true)
+    public ArtifactResponseDTO getById(UUID projectId, UUID id) {
+        return mapper.toResponse(requireArtifactExists(projectId, id));
+    }
+
 
     private Project requireProjectExists(UUID projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+    }
+
+    private Artifact requireArtifactExists(UUID projectId, UUID id) {
+        return repository.findByIdAndProjectId(id, projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artifact", id));
     }
 }
