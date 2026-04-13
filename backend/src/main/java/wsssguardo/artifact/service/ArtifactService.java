@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.artifact.dto.requestdto.ArtifactRequestDTO;
+import wsssguardo.artifact.dto.requestdto.ArtifactUpdateRequestDTO;
 import wsssguardo.artifact.dto.responsedto.ArtifactResponseDTO;
 import wsssguardo.artifact.mapper.ArtifactMapper;
 import wsssguardo.artifact.repository.ArtifactRepository;
@@ -47,6 +48,34 @@ public class ArtifactService {
     @Transactional(readOnly = true)
     public ArtifactResponseDTO getById(UUID projectId, UUID id) {
         return mapper.toResponse(requireArtifactExists(projectId, id));
+    }
+
+    @Transactional
+    public ArtifactResponseDTO update(UUID projectId, UUID id, ArtifactUpdateRequestDTO request) {
+        Artifact artifact = requireArtifactExists(projectId, id);
+        if (request.name() != null) {
+            artifact.setName(request.name());
+        }
+
+        if (request.description() != null){
+            artifact.setDescription(request.description());
+        }
+        if (request.content() != null){
+            artifact.setContent(request.content());
+        }
+        if (request.category() != null){
+            artifact.setCategory(request.category());
+        }
+
+        if (request.driveLink() != null){
+            artifact.setDriveLink(request.driveLink());
+        }
+
+        if (request.type() != null) {
+            artifact.setType(request.type());
+        }
+
+        return mapper.toResponse(repository.saveAndFlush(artifact));
     }
 
 
