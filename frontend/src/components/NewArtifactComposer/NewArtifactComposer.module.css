@@ -1,12 +1,10 @@
 .modal {
   position: fixed;
   z-index: 100;
-  width: 480px;
+  width: 520px;
   min-width: 380px;
-  min-height: 400px;
-  max-width: 90vw;
+  max-width: 95vw;
   max-height: 90vh;
-  resize: both;
   overflow: auto;
 }
 
