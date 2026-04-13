@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.artifact.dto.requestdto.ArtifactRequestDTO;
+import wsssguardo.artifact.dto.requestdto.ArtifactUpdateRequestDTO;
 import wsssguardo.artifact.dto.responsedto.ArtifactResponseDTO;
 import wsssguardo.artifact.service.ArtifactService;
 import wsssguardo.shared.openapi.ApiCreate;
@@ -53,5 +55,12 @@ public class ArtifactController {
     @GetMapping("/get/{id}")
     public ResponseEntity<ArtifactResponseDTO> getById(@PathVariable UUID projectId, @PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(projectId, id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ArtifactResponseDTO> update(@PathVariable UUID projectId, @PathVariable UUID id,
+                                                      @Valid @RequestBody ArtifactUpdateRequestDTO request) {
+
+        return ResponseEntity.ok(service.update(projectId, id, request));
     }
 }
