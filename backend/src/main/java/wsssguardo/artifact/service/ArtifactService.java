@@ -78,6 +78,12 @@ public class ArtifactService {
         return mapper.toResponse(repository.saveAndFlush(artifact));
     }
 
+    @Transactional
+    public void delete(UUID projectId, UUID id) {
+        Artifact artifact = requireArtifactExists(projectId, id);
+        repository.delete(artifact);
+    }
+
 
     private Project requireProjectExists(UUID projectId) {
         return projectRepository.findById(projectId)
