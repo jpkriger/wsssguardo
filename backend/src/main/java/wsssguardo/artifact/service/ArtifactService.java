@@ -1,5 +1,6 @@
 package wsssguardo.artifact.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -22,6 +23,13 @@ public class ArtifactService {
     private final ArtifactRepository repository;
     private final ProjectRepository projectRepository;
     private final ArtifactMapper mapper;
+
+    @Transactional(readOnly = true)
+    public List<ArtifactResponseDTO> listByProject(UUID projectId) {
+        requireProjectExists(projectId);
+        return repository.findAllByProjectIdOrderByCreatedAtDesc(projectId)
+                .stream().map(mapper::toResponse).toList();
+    }
 
     @Transactional
     public ArtifactResponseDTO create(UUID projectId, ArtifactRequestDTO request) {
