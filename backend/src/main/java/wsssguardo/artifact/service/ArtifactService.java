@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import wsssguardo.artifact.Artifact;
+import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.artifact.dto.requestdto.ArtifactRequestDTO;
 import wsssguardo.artifact.dto.responsedto.ArtifactResponseDTO;
 import wsssguardo.artifact.mapper.ArtifactMapper;
@@ -25,10 +26,14 @@ public class ArtifactService {
     private final ArtifactMapper mapper;
 
     @Transactional(readOnly = true)
-    public List<ArtifactResponseDTO> listByProject(UUID projectId) {
+    public List<ArtifactResponseDTO> listByProject(UUID projectId, ArtifactType type) {
         requireProjectExists(projectId);
-        return repository.findAllByProjectIdOrderByCreatedAtDesc(projectId)
-                .stream().map(mapper::toResponse).toList();
+
+        List<Artifact> results = (type != null)
+                ? repository.findAllByProjectIdAndTypeOrderByCreatedAtDesc(projectId, type)
+                : repository.findAllByProjectIdOrderByCreatedAtDesc(projectId);
+
+        return results.stream().map(mapper::toResponse).toList();
     }
 
     @Transactional
