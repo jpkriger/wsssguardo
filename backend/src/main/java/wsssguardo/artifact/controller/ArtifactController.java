@@ -7,6 +7,7 @@ import java.util.UUID;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -62,5 +63,11 @@ public class ArtifactController {
                                                       @Valid @RequestBody ArtifactUpdateRequestDTO request) {
 
         return ResponseEntity.ok(service.update(projectId, id, request));
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID projectId, @PathVariable UUID id) {
+        service.delete(projectId, id);
+        return ResponseEntity.noContent().build();
     }
 }
