@@ -19,6 +19,7 @@ import wsssguardo.artifact.dto.requestdto.ArtifactRequestDTO;
 import wsssguardo.artifact.dto.responsedto.ArtifactResponseDTO;
 import wsssguardo.artifact.service.ArtifactService;
 import wsssguardo.shared.openapi.ApiCreate;
+import wsssguardo.shared.openapi.ApiGetById;
 import wsssguardo.shared.openapi.ApiListAll;
 
 @Tag(name = "Artifacts", description = "Artifact operations scoped to a project")
@@ -42,5 +43,11 @@ public class ArtifactController {
         ArtifactResponseDTO created = service.create(projectId, request);
         URI location = URI.create("/api/projects/" + projectId + "/artifacts/" + created.id());
         return ResponseEntity.created(location).body(created);
+    }
+
+    @ApiGetById
+    @GetMapping("/get/{id}")
+    public ResponseEntity<ArtifactResponseDTO> getById(@PathVariable UUID projectId, @PathVariable UUID id) {
+        return ResponseEntity.ok(service.getById(projectId, id));
     }
 }
