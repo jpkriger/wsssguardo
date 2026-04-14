@@ -2,14 +2,14 @@ import { useEffect, useState, type ReactElement } from "react";
 import styles from "./AssetModal.module.css";
 
 interface AssetModalAsset {
-  id: number;
+  id: string;
   name?: string;
   description?: string;
   reference?: string;
 }
 
 interface AssetModalSubmitData {
-  id?: number;
+  id?: string;
   name: string;
   description: string;
   reference: string;
@@ -95,6 +95,7 @@ export default function AssetModal({
 
         <div className={styles.modalBody}>
           <input
+            aria-label="Nome do ativo"
             className={styles.modalInput}
             type="text"
             placeholder="Nome do ativo"
@@ -104,6 +105,7 @@ export default function AssetModal({
           />
 
           <input
+            aria-label="Descrição do ativo"
             className={styles.modalInput}
             type="text"
             placeholder="Descrição do ativo"
@@ -113,6 +115,7 @@ export default function AssetModal({
           />
 
           <textarea
+            aria-label="Referência"
             className={styles.modalTextarea}
             placeholder="Referência"
             value={reference}
