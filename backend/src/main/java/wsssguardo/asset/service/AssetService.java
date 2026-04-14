@@ -20,13 +20,21 @@ public class AssetService {
     private final AssetMapper assetMapper;
 
     @Transactional
-    public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request) {
+    public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request, String username) {
         var asset = repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
 
-        asset = assetMapper.updateEntity(asset, request);
+        asset = assetMapper.updateEntity(asset, request, username);
 
         return assetMapper.toResponse(asset);
+    }
+
+    @Transactional
+    public void deleteAsset(UUID id, String username) {
+        var asset = repository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+
+        assetMapper.deleteEntity(asset, username);
     }
     
 }
