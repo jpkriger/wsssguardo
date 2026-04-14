@@ -1,8 +1,10 @@
 import { parseApiErrorResponse } from "./errors";
 
 export interface EntityObjectResponse {
-  id: number;
+  id: string;
   name: string;
+  description?: string;
+  reference?: string;
   createdAt: string;
 }
 
@@ -32,6 +34,20 @@ export async function listEntityObjects(): Promise<EntityObjectResponse[]> {
   return res.json() as Promise<EntityObjectResponse[]>;
 }
 
+export async function getEntityObjectById(
+  id: string,
+): Promise<EntityObjectResponse> {
+  const endpoint = `${BASE}/${id}`;
+
+  const res = await fetch(endpoint);
+
+  if (!res.ok) {
+    throw await parseApiErrorResponse(res, endpoint);
+  }
+
+  return res.json() as Promise<EntityObjectResponse>;
+}
+
 export async function createEntityObject(
   body: EntityObjectCreateRequest,
 ): Promise<EntityObjectResponse> {
@@ -49,7 +65,7 @@ export async function createEntityObject(
 }
 
 export async function updateEntityObject(
-  id: number,
+  id: string,
   body: EntityObjectUpdateRequest,
 ): Promise<EntityObjectResponse> {
   const endpoint = `${BASE}/${id}`;
@@ -59,20 +75,6 @@ export async function updateEntityObject(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (!res.ok) {
-    throw await parseApiErrorResponse(res, endpoint);
-  }
-
-  return res.json() as Promise<EntityObjectResponse>;
-}
-
-export async function getEntityObjectById(
-  id: number,
-): Promise<EntityObjectResponse> {
-  const endpoint = `${BASE}/${id}`;
-
-  const res = await fetch(endpoint);
 
   if (!res.ok) {
     throw await parseApiErrorResponse(res, endpoint);
