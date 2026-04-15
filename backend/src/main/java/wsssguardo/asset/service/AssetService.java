@@ -1,14 +1,17 @@
 package wsssguardo.asset.service;
 
-import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.asset.Asset;
+import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.mapper.AssetMapper;
-import wsssguardo.asset.dto.AssetResponseDTO;
+import java.util.UUID;
+import jakarta.transaction.Transactional;
+import wsssguardo.asset.dto.AssetUpdateRequestDTO;
 import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
@@ -16,8 +19,13 @@ import wsssguardo.shared.exception.ResourceNotFoundException;
 @RequiredArgsConstructor
 public class AssetService {
 
-    private final AssetRepository repository;
     private final AssetMapper assetMapper;
+    private final AssetRepository repository;
+
+    public AssetPageResponseDTO findAllByProject(UUID projectId, Pageable pageable) {
+        Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
+        return assetMapper.toPageDTO(page);
+    }
 
     @Transactional
     public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request, String username) {

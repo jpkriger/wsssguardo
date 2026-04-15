@@ -1,23 +1,37 @@
 package wsssguardo.asset.mapper;
 
-import java.time.LocalDateTime;
-
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
-
 import wsssguardo.asset.Asset;
-import wsssguardo.asset.dto.AssetResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import java.time.LocalDateTime;
 
 @Component
 public class AssetMapper {
 
-    public AssetResponseDTO toResponse(Asset entity) {
+    public AssetResponseDTO toResponse(Asset asset) {
         return new AssetResponseDTO(
-                entity.getId().toString(),
-                entity.getName(),
-                entity.getDescription(),
-                entity.getContent(),
-                entity.getProject().getName());
+                asset.getId(),
+                asset.getName(),
+                asset.getDescription(),
+                asset.getContent(),
+                asset.getProject().getId(),
+                asset.getCreatedBy(),
+                asset.getCreatedAt(),
+                asset.getUpdatedAt());
+    }
+
+    public AssetPageResponseDTO toPageDTO(Page<Asset> page) {
+        return new AssetPageResponseDTO(
+                page.getContent().stream().map(this::toResponse).toList(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isFirst(),
+                page.isLast());
     }
 
     /**
