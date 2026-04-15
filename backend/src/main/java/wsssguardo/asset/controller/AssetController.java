@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.AssetResponseDTO;
@@ -19,12 +21,12 @@ import wsssguardo.asset.service.AssetService;
 @RequiredArgsConstructor
 @RequestMapping("/api/assets")
 public class AssetController {
-    
+
     private final AssetService service;
 
-
     @PatchMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> updateAsset(@PathVariable UUID id, @RequestBody AssetUpdateRequestDTO request) {
+    public ResponseEntity<AssetResponseDTO> updateAsset(@PathVariable UUID id,
+            @Valid @RequestBody AssetUpdateRequestDTO request) {
         var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
         return ResponseEntity.ok(service.updateAsset(id, request, username));
     }

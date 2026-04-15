@@ -13,31 +13,30 @@ public class AssetMapper {
 
     public AssetResponseDTO toResponse(Asset entity) {
         return new AssetResponseDTO(
-            entity.getName(),
-            entity.getDescription(),
-            entity.getContent(),
-            entity.getProject().getName()
-        );
+                entity.getId().toString(),
+                entity.getName(),
+                entity.getDescription(),
+                entity.getContent(),
+                entity.getProject().getName());
     }
 
+    /**
+     * Aplica os campos presentes no request ao asset (PATCH semântico).
+     * Cada campo é delegado a um método próprio para permitir reuso e teste
+     * isolado.
+     * Atualiza auditoria apenas se ao menos um campo foi alterado.
+     */
     public Asset updateEntity(Asset asset, AssetUpdateRequestDTO request, String username) {
-        var changed = false;
-        if (request.name() != null) {
-            asset.setName(request.name());
-            changed = true;
-        }
-        if (request.description() != null) {
-            asset.setDescription(request.description());
-            changed = true;
-        }
-        if (request.content() != null) {
-            asset.setContent(request.content());
-            changed = true;
-        }
+        boolean changed = false;
+
+        changed |= applyName(asset, request.name());
+        changed |= applyDescription(asset, request.description());
+        changed |= applyContent(asset, request.content());
+
         if (changed) {
-            asset.setUpdatedAt(LocalDateTime.now());
-            asset.setLastModifiedBy(username);
+            applyAudit(asset, username);
         }
+
         return asset;
     }
 
@@ -45,5 +44,35 @@ public class AssetMapper {
         asset.setDeletedAt(LocalDateTime.now());
         asset.setDeletedBy(deletedBy);
     }
-    
+
+    // --- métodos de campo: responsabilidade única, retornam se houve mudança ---
+
+    boolean applyName(Asset asset, String name) {
+        if (name == null) {
+            return false;
+        }
+        asset.setName(name);
+        return true;
+    }
+
+    boolean applyDescription(Asset asset, String description) {
+        if (description == null) {
+            return false;
+        }
+        asset.setDescription(description);
+        return true;
+    }
+
+    boolean applyContent(Asset asset, String content) {
+        if (content == null) {
+            return false;
+        }
+        asset.setContent(content);
+        return true;
+    }
+
+    void applyAudit(Asset asset, String username) {
+        asset.setUpdatedAt(LocalDateTime.now());
+        asset.setLastModifiedBy(username);
+    }
 }

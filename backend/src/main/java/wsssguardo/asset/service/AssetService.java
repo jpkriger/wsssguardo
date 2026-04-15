@@ -22,7 +22,7 @@ public class AssetService {
     @Transactional
     public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request, String username) {
         var asset = repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
 
         asset = assetMapper.updateEntity(asset, request, username);
 
@@ -32,9 +32,9 @@ public class AssetService {
     @Transactional
     public void deleteAsset(UUID id, String username) {
         var asset = repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
 
         assetMapper.deleteEntity(asset, username);
     }
-    
+
 }
