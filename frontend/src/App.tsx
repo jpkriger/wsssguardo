@@ -15,7 +15,6 @@ export default function App(): ReactElement {
         <main className="mx-auto max-w-7xl w-full px-6 lg:px-8 py-8 flex-1">
           <Outlet />
         </main>
-
         <footer className="border-t border-border py-6 transition-colors duration-300">
           <GlobalFooter />
         </footer>

@@ -7,19 +7,42 @@ import org.springframework.stereotype.Service;
 
 import wsssguardo.asset.Asset;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.mapper.AssetMapper;
-import wsssguardo.asset.repository.AssetRepository;
-
 import java.util.UUID;
+import jakarta.transaction.Transactional;
+import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.asset.repository.AssetRepository;
+import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
 public class AssetService {
 
+    private final AssetMapper assetMapper;
     private final AssetRepository repository;
 
     public AssetPageResponseDTO findAllByProject(UUID projectId, Pageable pageable) {
-    Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
-    return AssetMapper.toPageDTO(page);
-}
+        Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
+        return assetMapper.toPageDTO(page);
+    }
+
+    @Transactional
+    public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request, String username) {
+        var asset = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+
+        asset = assetMapper.updateEntity(asset, request, username);
+
+        return assetMapper.toResponse(asset);
+    }
+
+    @Transactional
+    public void deleteAsset(UUID id, String username) {
+        var asset = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+
+        assetMapper.deleteEntity(asset, username);
+    }
+
 }
