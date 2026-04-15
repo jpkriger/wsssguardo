@@ -30,8 +30,10 @@ import java.util.Optional;
 import org.mockito.InjectMocks;
 
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
+import wsssguardo.asset.dto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
 import wsssguardo.asset.mapper.AssetMapper;
+import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +41,9 @@ class AssetServiceTest {
 
     @Mock
     private AssetRepository repository;
+
+    @Mock
+    private ProjectRepository projectRepository;
 
     @Spy
     private AssetMapper assetMapper;
@@ -119,6 +124,47 @@ class AssetServiceTest {
         assertEquals(3, response.totalPages());
         assertTrue(!response.first());
         assertTrue(!response.last());
+    }
+
+    @Test
+    void createAsset_FoundProject_ReturnsResponse() {
+        UUID projectId = UUID.randomUUID();
+        String username = "testUser";
+        AssetCreateRequestDTO request = new AssetCreateRequestDTO(projectId, "Asset name", "Description", "Content");
+        Project project = new Project();
+        project.setId(projectId);
+        Asset asset = new Asset();
+        Asset savedAsset = new Asset();
+        AssetResponseDTO expectedResponse = new AssetResponseDTO(UUID.randomUUID(), "Asset name", "Description",
+                "Content",
+                projectId, null, null, null);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        doReturn(asset).when(assetMapper).toEntity(request, project, username);
+        when(repository.save(asset)).thenReturn(savedAsset);
+        doReturn(expectedResponse).when(assetMapper).toResponse(savedAsset);
+
+        AssetResponseDTO actualResponse = service.createAsset(request, username);
+
+        assertEquals(expectedResponse, actualResponse);
+        verify(projectRepository).findById(projectId);
+        verify(assetMapper).toEntity(request, project, username);
+        verify(repository).save(asset);
+        verify(assetMapper).toResponse(savedAsset);
+    }
+
+    @Test
+    void createAsset_ProjectNotFound_ThrowsException() {
+        UUID projectId = UUID.randomUUID();
+        String username = "testUser";
+        AssetCreateRequestDTO request = new AssetCreateRequestDTO(projectId, "Asset name", "Description", "Content");
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.createAsset(request, username));
+        verify(projectRepository).findById(projectId);
+        verifyNoInteractions(repository);
+        verifyNoInteractions(assetMapper);
     }
 
     @Test

@@ -11,8 +11,10 @@ import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.mapper.AssetMapper;
 import java.util.UUID;
 import jakarta.transaction.Transactional;
+import wsssguardo.asset.dto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
 import wsssguardo.asset.repository.AssetRepository;
+import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -21,10 +23,22 @@ public class AssetService {
 
     private final AssetMapper assetMapper;
     private final AssetRepository repository;
+    private final ProjectRepository projectRepository;
 
     public AssetPageResponseDTO findAllByProject(UUID projectId, Pageable pageable) {
         Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
         return assetMapper.toPageDTO(page);
+    }
+
+    @Transactional
+    public AssetResponseDTO createAsset(AssetCreateRequestDTO request, String username) {
+        var project = projectRepository.findById(request.projectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
+
+        Asset asset = assetMapper.toEntity(request, project, username);
+        asset = repository.save(asset);
+
+        return assetMapper.toResponse(asset);
     }
 
     @Transactional

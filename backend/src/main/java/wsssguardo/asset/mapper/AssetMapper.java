@@ -5,11 +5,24 @@ import org.springframework.stereotype.Component;
 import wsssguardo.asset.Asset;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
+import wsssguardo.asset.dto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.project.Project;
 import java.time.LocalDateTime;
 
 @Component
 public class AssetMapper {
+
+    public Asset toEntity(AssetCreateRequestDTO request, Project project, String username) {
+        Asset asset = Asset.builder()
+                .name(request.name())
+                .description(request.description())
+                .content(request.content())
+                .project(project)
+                .build();
+        asset.setCreatedBy(username);
+        return asset;
+    }
 
     public AssetResponseDTO toResponse(Asset asset) {
         return new AssetResponseDTO(

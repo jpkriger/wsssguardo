@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
@@ -14,8 +15,10 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.UUID;
 
+import wsssguardo.asset.dto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.service.AssetService;
@@ -51,6 +54,15 @@ public class AssetController {
             @Valid @RequestBody AssetUpdateRequestDTO request) {
         var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
         return ResponseEntity.ok(service.updateAsset(id, request, username));
+    }
+
+    @PostMapping
+    public ResponseEntity<AssetResponseDTO> createAsset(
+            @Valid @RequestBody AssetCreateRequestDTO request) {
+        var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
+        AssetResponseDTO response = service.createAsset(request, username);
+        URI location = URI.create("/api/assets/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @DeleteMapping("/{id}")
