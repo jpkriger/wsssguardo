@@ -2,13 +2,16 @@ package wsssguardo.asset.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,24 +20,19 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import wsssguardo.asset.Asset;
-import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
-import wsssguardo.asset.repository.AssetRepository;
-import wsssguardo.project.Project;
-
-import java.util.List;
-import java.util.UUID;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Optional;
-import org.mockito.InjectMocks;
-
-import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.mapper.AssetMapper;
+import wsssguardo.asset.repository.AssetRepository;
+import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @ExtendWith(MockitoExtension.class)
 class AssetServiceTest {
@@ -67,6 +65,7 @@ class AssetServiceTest {
                 .build();
         asset.setId(UUID.randomUUID());
 
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         Page<Asset> repositoryPage = new PageImpl<>(List.of(asset), pageable, 1);
         when(repository.findAllByProjectId(projectId, pageable)).thenReturn(repositoryPage);
 
@@ -82,6 +81,7 @@ class AssetServiceTest {
         assertTrue(response.first());
         assertTrue(response.last());
 
+        verify(projectRepository).findById(projectId);
         verify(repository).findAllByProjectId(projectId, pageable);
     }
 
@@ -90,6 +90,10 @@ class AssetServiceTest {
         UUID projectId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(0, 10);
 
+        Project project = new Project();
+        project.setId(projectId);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         Page<Asset> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(repository.findAllByProjectId(projectId, pageable)).thenReturn(emptyPage);
 
@@ -100,6 +104,9 @@ class AssetServiceTest {
         assertEquals(0, response.totalPages());
         assertTrue(response.first());
         assertTrue(response.last());
+
+        verify(projectRepository).findById(projectId);
+        verify(repository).findAllByProjectId(projectId, pageable);
     }
 
     @Test
@@ -114,6 +121,7 @@ class AssetServiceTest {
                 Asset.builder().name("Asset C").project(project).build(),
                 Asset.builder().name("Asset D").project(project).build());
 
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         Page<Asset> middlePage = new PageImpl<>(assets, pageable, 6);
         when(repository.findAllByProjectId(projectId, pageable)).thenReturn(middlePage);
 
@@ -122,8 +130,24 @@ class AssetServiceTest {
         assertEquals(1, response.page());
         assertEquals(6, response.totalElements());
         assertEquals(3, response.totalPages());
-        assertTrue(!response.first());
-        assertTrue(!response.last());
+        assertFalse(response.first());
+        assertFalse(response.last());
+
+        verify(projectRepository).findById(projectId);
+        verify(repository).findAllByProjectId(projectId, pageable);
+    }
+
+    @Test
+    void findAllByProjectShouldThrowWhenProjectNotFound() {
+        UUID projectId = UUID.randomUUID();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.findAllByProject(projectId, pageable));
+
+        verify(projectRepository).findById(projectId);
+        verifyNoInteractions(repository);
     }
 
     @Test
@@ -136,8 +160,7 @@ class AssetServiceTest {
         Asset asset = new Asset();
         Asset savedAsset = new Asset();
         AssetResponseDTO expectedResponse = new AssetResponseDTO(UUID.randomUUID(), "Asset name", "Description",
-                "Content",
-                projectId, null, null, null);
+                "Content", projectId, null, null, null);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         doReturn(asset).when(assetMapper).toEntity(request, project, username);

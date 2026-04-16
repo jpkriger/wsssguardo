@@ -26,6 +26,8 @@ public class AssetService {
     private final ProjectRepository projectRepository;
 
     public AssetPageResponseDTO findAllByProject(UUID projectId, Pageable pageable) {
+        projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
         return assetMapper.toPageDTO(page);
     }
