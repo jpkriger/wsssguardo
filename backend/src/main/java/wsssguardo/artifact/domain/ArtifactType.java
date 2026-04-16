@@ -4,5 +4,7 @@ public enum ArtifactType {
     NOTE,
     DOCUMENT,
     IMAGE,
-    SHEET
+    SHEET,
+    FILE,
+    LINK
 }
