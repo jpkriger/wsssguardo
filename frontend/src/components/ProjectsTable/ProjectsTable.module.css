@@ -1,0 +1,31 @@
+.progress-track {
+    background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+    border-radius: 999px;
+    height: 6px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background-color: #A17B4D;
+    transition: width 0.4s ease;
+}
+
+.row {
+    transition: background-color 0.15s ease;
+}
+
+.row:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.sort-icon {
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+}
+
+.sort-icon:hover {
+    opacity: 1;
+}

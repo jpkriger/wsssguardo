@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
 import wsssguardo.project.Project;
 import wsssguardo.shared.domain.BaseEntity;
 
@@ -21,6 +22,7 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
+@SQLDelete(sql = "UPDATE assets SET deleted_at = NOW() WHERE id = ?")
 public class Asset extends BaseEntity {
 
     @Column(nullable = false)
@@ -28,7 +30,7 @@ public class Asset extends BaseEntity {
 
     private String description;
     private String content;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
