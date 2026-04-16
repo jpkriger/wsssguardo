@@ -1,4 +1,6 @@
-import { ReactElement, useMemo, useState } from "react";
+import { ReactElement, useState } from "react";
+import { useParams } from "react-router";
+import ArtifactList from "../components/ArtifactList/ArtifactList";
 
 export const ProjectTabs = {
   Resumo: "Resumo",
@@ -20,13 +22,7 @@ const TABS: ProjectTab[] = [
 
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Resumo);
-
-  const tabDescription = useMemo(() => {
-    if (activeTab === ProjectTabs.Resumo) {
-      return "Visão geral do projeto e indicadores principais.";
-    }
-    return `Conteúdo da aba ${activeTab.toLowerCase()} será integrado nesta área.`;
-  }, [activeTab]);
+  const { id: projectId } = useParams<{ id: string }>();
 
   return (
     <section className="mx-auto w-full max-w-6xl">
@@ -59,7 +55,9 @@ export default function Project(): ReactElement {
       </nav>
 
       <div className="mt-6 min-h-[420px]">
-        <p className="sr-only">{tabDescription}</p>
+        {activeTab === ProjectTabs.Artefatos && (
+          <ArtifactList projectId={projectId} />
+        )}
       </div>
     </section>
   );

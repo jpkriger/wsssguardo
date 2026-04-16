@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<App />}>
           <Route index element={<Home />} />
-          <Route path="project" element={<Project />} />
+          <Route path="project/:id" element={<Project />} />
           <Route path="/projects" element={<ProjectsHome />} />
           {/* Adicionar novas rotas aqui */}
         </Route>
