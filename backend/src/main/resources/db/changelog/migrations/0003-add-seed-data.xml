@@ -1,0 +1,87 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="1775379395671-seed-wss-sguardo" author="Francisco" context="seed">
+        <sql>
+            -- 1. Users (1 Manager, 2 Consultores)
+            INSERT INTO users (id, created_at, created_by, full_name, username, role) VALUES
+            ('11111111-1111-1111-1111-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Manager WSS', 'manager.wss', 'MANAGER'),
+            ('11111111-1111-1111-1111-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Avaliador Um', 'avaliador.um', 'CONSULTANT'),
+            ('11111111-1111-1111-1111-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Avaliador Dois', 'avaliador.dois', 'CONSULTANT');
+
+            -- 2. Customers (3 Empresas)
+            INSERT INTO customers (id, created_at, created_by, name) VALUES
+            ('22222222-2222-2222-2222-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Cliente Alpha (Fintech)'),
+            ('22222222-2222-2222-2222-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Cliente Beta (Varejo)'),
+            ('22222222-2222-2222-2222-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Cliente Gamma (Saúde)');
+
+            -- 3. Projects (1 Avaliação de Segurança para cada Customer)
+            INSERT INTO projects (id, created_at, created_by, name, customer_id, start_date, end_date, status) VALUES
+            ('33333333-3333-3333-3333-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Avaliação de Maturidade - Alpha', '22222222-2222-2222-2222-000000000001', '2026-03-01', NULL, 'IN_PROGRESS'),
+            ('33333333-3333-3333-3333-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Análise de Gaps - Beta', '22222222-2222-2222-2222-000000000002', '2026-04-10', NULL, 'ON_HOLD'),
+            ('33333333-3333-3333-3333-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Assessment de Segurança - Gamma', '22222222-2222-2222-2222-000000000003', '2026-01-15', '2026-03-20', 'COMPLETED');
+
+            -- 4. Project Users (Proj1 = 2 Consultores, Proj2 = 1 Consultor, Proj3 = O outro Consultor)
+            INSERT INTO project_users (id, created_at, created_by, user_id, project_id, access_level) VALUES
+            ('44444444-4444-4444-4444-000000000001', CURRENT_TIMESTAMP, 'system_seed', '11111111-1111-1111-1111-000000000002', '33333333-3333-3333-3333-000000000001', 'EDITOR'),
+            ('44444444-4444-4444-4444-000000000002', CURRENT_TIMESTAMP, 'system_seed', '11111111-1111-1111-1111-000000000003', '33333333-3333-3333-3333-000000000001', 'EDITOR'),
+            ('44444444-4444-4444-4444-000000000003', CURRENT_TIMESTAMP, 'system_seed', '11111111-1111-1111-1111-000000000002', '33333333-3333-3333-3333-000000000002', 'EDITOR'),
+            ('44444444-4444-4444-4444-000000000004', CURRENT_TIMESTAMP, 'system_seed', '11111111-1111-1111-1111-000000000003', '33333333-3333-3333-3333-000000000003', 'VIEWER');
+
+            -- 5. Assets (Ativos Tecnológicos: 5 por projeto)
+            INSERT INTO assets (id, created_at, created_by, name, description, content, project_id) VALUES
+            -- Projeto 1 (Alpha)
+            ('55555555-5555-5555-5555-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'API Backend Node.js', 'Aplicação principal de transações', 'AWS ECS Cluster', '33333333-3333-3333-3333-000000000001'),
+            ('55555555-5555-5555-5555-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Banco de Dados RDS', 'PostgreSQL com dados de clientes', 'AWS RDS', '33333333-3333-3333-3333-000000000001'),
+            ('55555555-5555-5555-5555-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'AWS WAF', 'Web Application Firewall', 'Regras de borda AWS', '33333333-3333-3333-3333-000000000001'),
+            ('55555555-5555-5555-5555-000000000004', CURRENT_TIMESTAMP, 'system_seed', 'Repositório GitHub', 'Código fonte da API', 'github.com/alpha/core-api', '33333333-3333-3333-3333-000000000001'),
+            ('55555555-5555-5555-5555-000000000005', CURRENT_TIMESTAMP, 'system_seed', 'S3 Bucket (Documentos)', 'Armazenamento de KYC', 'arn:aws:s3:::alpha-kyc', '33333333-3333-3333-3333-000000000001'),
+            
+            -- Projeto 2 (Beta)
+            ('55555555-5555-5555-5555-000000000006', CURRENT_TIMESTAMP, 'system_seed', 'Servidor de Arquivos', 'Windows Server com arquivos', 'On-premise VM', '33333333-3333-3333-3333-000000000002'),
+            ('55555555-5555-5555-5555-000000000007', CURRENT_TIMESTAMP, 'system_seed', 'ERP Corporativo', 'Sistema SAP ERP', 'Servidor Interno 10.0.0.5', '33333333-3333-3333-3333-000000000002'),
+            ('55555555-5555-5555-5555-000000000008', CURRENT_TIMESTAMP, 'system_seed', 'Firewall FortiGate', 'Gateway principal', 'FortiOS v7.0', '33333333-3333-3333-3333-000000000002'),
+            ('55555555-5555-5555-5555-000000000009', CURRENT_TIMESTAMP, 'system_seed', 'Active Directory', 'Controlador de Domínio', 'Windows Server 2019', '33333333-3333-3333-3333-000000000002'),
+            ('55555555-5555-5555-5555-000000000010', CURRENT_TIMESTAMP, 'system_seed', 'E-commerce Frontend', 'Site público', 'Azure App Service', '33333333-3333-3333-3333-000000000002'),
+
+            -- Projeto 3 (Gamma)
+            ('55555555-5555-5555-5555-000000000011', CURRENT_TIMESTAMP, 'system_seed', 'Gateway VPN', 'OpenVPN remoto', 'Servidor Linux', '33333333-3333-3333-3333-000000000003'),
+            ('55555555-5555-5555-5555-000000000012', CURRENT_TIMESTAMP, 'system_seed', 'Prontuário Eletrônico', 'Sistema de pacientes', 'Tomcat Interno', '33333333-3333-3333-3333-000000000003'),
+            ('55555555-5555-5555-5555-000000000013', CURRENT_TIMESTAMP, 'system_seed', 'Banco SQL Server', 'Armazena prontuários', 'SQL Server 2016', '33333333-3333-3333-3333-000000000003'),
+            ('55555555-5555-5555-5555-000000000014', CURRENT_TIMESTAMP, 'system_seed', 'Servidor Exchange', 'E-mail corporativo', 'On-premise Exchange', '33333333-3333-3333-3333-000000000003'),
+            ('55555555-5555-5555-5555-000000000015', CURRENT_TIMESTAMP, 'system_seed', 'Estações Administrativas', 'Computadores adm', 'Windows 10/11', '33333333-3333-3333-3333-000000000003');
+
+            -- 6. Artifacts (Artefatos: 7 por projeto = 3 NOTE, 2 FILE, 2 LINK)
+            INSERT INTO artifacts (id, created_at, created_by, name, description, content, llm_summary, type, project_id) VALUES
+            -- Projeto 1 (Alpha)
+            ('66666666-6666-6666-6666-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Nota Entrevista CISO', 'Conversa IAM', 'Discutimos roles antigas.', 'Roles desatualizadas.', 'NOTE', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Nota GitHub', 'Branch protection', 'Push direto na main ativado.', 'Push na main.', 'NOTE', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Nota WAF', 'Regras base', 'Regras em modo learning.', 'WAF Learning mode.', 'NOTE', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000004', CURRENT_TIMESTAMP, 'system_seed', 'docker-compose.yml', 'Configuração', 's3://bucket/docker-compose.yml', 'Arquivo config.', 'FILE', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000005', CURRENT_TIMESTAMP, 'system_seed', 'Política de Senhas', 'Doc PDF', 's3://bucket/politica_senhas.pdf', 'Senha sem MFA.', 'FILE', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000016', CURRENT_TIMESTAMP, 'system_seed', 'Doc Topologia AWS', 'Diagrama Lucidchart', 'https://lucidchart.com/doc1', 'Topologia AWS.', 'LINK', '33333333-3333-3333-3333-000000000001'),
+            ('66666666-6666-6666-6666-000000000017', CURRENT_TIMESTAMP, 'system_seed', 'Relatório Pentest', 'Google Drive', 'https://drive.google.com/file1', 'Pentest 2024.', 'LINK', '33333333-3333-3333-3333-000000000001'),
+            
+            -- Projeto 2 (Beta)
+            ('66666666-6666-6666-6666-000000000006', CURRENT_TIMESTAMP, 'system_seed', 'Nota Reunião Infra', 'Gestão de Patches', 'Demoram 60 dias.', 'Atraso em patches.', 'NOTE', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000007', CURRENT_TIMESTAMP, 'system_seed', 'Nota E-commerce', 'Testes Web', 'Falta cabeçalho HSTS.', 'Falta HSTS.', 'NOTE', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000008', CURRENT_TIMESTAMP, 'system_seed', 'Nota AD', 'Contas Admin', '15 Domain Admins.', 'Excesso Domain Admins.', 'NOTE', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000009', CURRENT_TIMESTAMP, 'system_seed', 'Export Fortigate', 'Regras CSV', 's3://bucket/fortigate.csv', 'Regras firewall.', 'FILE', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000010', CURRENT_TIMESTAMP, 'system_seed', 'Print Tela Backup', 'Evidência PNG', 's3://bucket/backup.png', 'Falha no backup.', 'FILE', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000018', CURRENT_TIMESTAMP, 'system_seed', 'Matriz de Acessos', 'Planilha Teams', 'https://teams.microsoft.com/file1', 'Planilha matriz.', 'LINK', '33333333-3333-3333-3333-000000000002'),
+            ('66666666-6666-6666-6666-000000000019', CURRENT_TIMESTAMP, 'system_seed', 'Guia Hardening', 'Wiki Interna', 'https://confluence.beta.com/hardening', 'Guia hardening.', 'LINK', '33333333-3333-3333-3333-000000000002'),
+
+            -- Projeto 3 (Gamma)
+            ('66666666-6666-6666-6666-000000000011', CURRENT_TIMESTAMP, 'system_seed', 'Nota Onboarding', 'RH', 'Falta aprovação do gestor.', 'Onboarding sem aprovação.', 'NOTE', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000012', CURRENT_TIMESTAMP, 'system_seed', 'Nota Prontuário', 'Permissões', 'Enfermeiros exportam BD.', 'Excesso permissão app.', 'NOTE', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000013', CURRENT_TIMESTAMP, 'system_seed', 'Nota Redes', 'VPN', 'Certificados compartilhados.', 'Certificados genéricos VPN.', 'NOTE', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000014', CURRENT_TIMESTAMP, 'system_seed', 'Logs VPN', 'Arquivo TXT', 's3://bucket/vpn_logs.txt', 'Logs de acesso.', 'FILE', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000015', CURRENT_TIMESTAMP, 'system_seed', 'Norma ISO 27001', 'PDF Interno', 's3://bucket/iso_27001.pdf', 'Política base.', 'FILE', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000020', CURRENT_TIMESTAMP, 'system_seed', 'Plano Continuidade', 'Sharepoint', 'https://sharepoint.com/doc1', 'Plano desatualizado.', 'LINK', '33333333-3333-3333-3333-000000000003'),
+            ('66666666-6666-6666-6666-000000000021', CURRENT_TIMESTAMP, 'system_seed', 'Contratos NDAs', 'Drive Jurídico', 'https://drive.google.com/folder1', 'NDAs terceiros.', 'LINK', '33333333-3333-3333-3333-000000000003');
+        </sql>
+    </changeSet>
+</databaseChangeLog>
