@@ -1,6 +1,7 @@
+import type { ReactElement } from "react";
 import { ThemeToggle } from "../theme-toggle";
 
-export default function GlobalHeader() {
+export default function GlobalHeader(): ReactElement {
     return (
         <div className="w-full h-22 px-50 border-b flex items-center justify-between">
             <div className="w-186 py-3 flex justify-start gap-5">
