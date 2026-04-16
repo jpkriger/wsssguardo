@@ -44,18 +44,15 @@ const MOCK_ASSETS: Asset[] = Array.from({ length: 30 }, (_, i) => ({
 
 const PAGE_SIZE = 5;
 
-// TODO: substituir por chamadas reais à API
-async function fetchAssets(): Promise<Asset[]> {
-  return MOCK_ASSETS;
-}
-
 async function deleteAsset(id: string): Promise<void> {
   // await fetch(`/api/assets/${id}`, { method: "DELETE" });
+  await Promise.resolve();
   console.log("deleteAsset", id);
 }
 
 async function updateAsset(asset: Asset): Promise<void> {
   //  await fetch(`/api/assets/${asset.id}`, { method: "PUT", body: JSON.stringify(asset) });
+  await Promise.resolve();
   console.log("updateAsset", asset);
 }
 
@@ -66,12 +63,12 @@ export default function AssetTable(): ReactElement {
   const totalPages = Math.ceil(assets.length / PAGE_SIZE);
   const pageAssets = assets.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string): Promise<void> {
     await deleteAsset(id);
-    setAssets((prev) => prev.filter((a) => a.id !== id));
+    setAssets((prev: Asset[]) => prev.filter((a: Asset) => a.id !== id));
   }
 
-  async function handleEdit(asset: Asset) {
+  async function handleEdit(asset: Asset): Promise<void> {
     await updateAsset(asset);
     // TODO: abrir modal de edição
   }
@@ -122,7 +119,9 @@ export default function AssetTable(): ReactElement {
                 <TableCell className="text-center">
                   <button
                     className="icon-button inline-flex items-center justify-center w-full"
-                    onClick={() => handleEdit(asset)}
+                    onClick={() => {
+                      void handleEdit(asset);
+                    }}
                   >
                     <PencilIcon />
                   </button>
@@ -130,7 +129,9 @@ export default function AssetTable(): ReactElement {
                 <TableCell className="text-center">
                   <button
                     className="icon-button inline-flex items-center justify-center w-full"
-                    onClick={() => handleDelete(asset.id)}
+                    onClick={() => {
+                      void handleDelete(asset.id);
+                    }}
                   >
                     <TrashIcon className="text-red-500" />
                   </button>
