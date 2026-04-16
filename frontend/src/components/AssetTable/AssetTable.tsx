@@ -84,15 +84,23 @@ export default function AssetTable(): ReactElement {
   }, [loadAssets]);
 
   async function handleDelete(id: string): Promise<void> {
-    try {
-      await deleteAsset(id);
+  try {
+    await deleteAsset(id);
+    
+    const isLastItemOnPage = assets.length === 1;
+    const isNotFirstPage = page > 0;
+    
+    if (isLastItemOnPage && isNotFirstPage) {
+      await loadAssets(page - 1);
+    } else {
       await loadAssets(page);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro ao excluir ativo";
-      setError(message);
     }
+    
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro ao excluir ativo";
+    setError(message);
   }
+}
 
   function handleEdit(asset: AssetResponse): void {
     setSelectedAsset({
