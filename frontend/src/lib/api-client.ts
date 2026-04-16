@@ -8,10 +8,10 @@ const apiClient = ky.create({
   hooks: {
     beforeError: [
       async (error) => {
-        const { response } = error;
+        const response = error.response as Response;
         if (response?.body) {
           try {
-            const body = await response.clone().json<{ message?: string }>();
+            const body = (await response.clone().json()) as { message?: string };
             // Attach message so callers can read error.message
             (error as Error).message = body.message ?? response.statusText;
           } catch {
