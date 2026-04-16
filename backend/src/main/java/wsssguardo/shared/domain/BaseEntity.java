@@ -3,6 +3,7 @@ package wsssguardo.shared.domain;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -27,6 +28,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLRestriction("deleted_at IS NULL")
 public abstract class BaseEntity {
 
     @Id
@@ -55,5 +57,5 @@ public abstract class BaseEntity {
 
     @Column(name = "deleted_by")
     private String deletedBy;
-    
+
 }
