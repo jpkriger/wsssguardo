@@ -40,6 +40,7 @@ import AssetModal, {
   type AssetModalSubmitData,
   type AssetModalAsset,
 } from "../AssetModal/AssetModal";
+import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 
 const PAGE_SIZE = 5;
 
@@ -55,15 +56,25 @@ export default function AssetTable(): ReactElement {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [selectedAsset, setSelectedAsset] = useState<AssetModalAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<AssetModalAsset | null>(
+    null,
+  );
   const [modalLoading, setModalLoading] = useState(false);
+
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<AssetResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadAssets = useCallback(
     async (targetPage: number) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchAssetsByProject(projectId, targetPage, PAGE_SIZE);
+        const data = await fetchAssetsByProject(
+          projectId,
+          targetPage,
+          PAGE_SIZE,
+        );
         setAssets(data.content);
         setPage(data.page);
         setTotalPages(data.totalPages);
@@ -84,23 +95,27 @@ export default function AssetTable(): ReactElement {
   }, [loadAssets]);
 
   async function handleDelete(id: string): Promise<void> {
-  try {
-    await deleteAsset(id);
-    
-    const isLastItemOnPage = assets.length === 1;
-    const isNotFirstPage = page > 0;
-    
-    if (isLastItemOnPage && isNotFirstPage) {
-      await loadAssets(page - 1);
-    } else {
-      await loadAssets(page);
+    setDeleting(true);
+    try {
+      await deleteAsset(id);
+
+      // Lógica otimizada para evitar requisições desnecessárias
+      const isLastItemOnPage = assets.length === 1;
+      const isNotFirstPage = page > 0;
+
+      if (isLastItemOnPage && isNotFirstPage) {
+        await loadAssets(page - 1);
+      } else {
+        await loadAssets(page);
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao excluir ativo";
+      setError(message);
+    } finally {
+      setDeleting(false);
     }
-    
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Erro ao excluir ativo";
-    setError(message);
   }
-}
 
   function handleEdit(asset: AssetResponse): void {
     setSelectedAsset({
@@ -178,7 +193,10 @@ export default function AssetTable(): ReactElement {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <LoaderCircleIcon className="animate-spin text-muted-foreground" size={32} />
+            <LoaderCircleIcon
+              className="animate-spin text-muted-foreground"
+              size={32}
+            />
           </div>
         ) : assets.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
@@ -235,7 +253,8 @@ export default function AssetTable(): ReactElement {
                     <button
                       className="icon-button inline-flex items-center justify-center w-full"
                       onClick={() => {
-                        void handleDelete(asset.id);
+                        setAssetToDelete(asset);
+                        setConfirmDeleteOpen(true);
                       }}
                     >
                       <TrashIcon className="text-red-500" />
@@ -283,7 +302,9 @@ export default function AssetTable(): ReactElement {
 
               return pages.map((p, i) =>
                 p === "..." ? (
-                  <span key={`dots-${i}`} className="page-dots">…</span>
+                  <span key={`dots-${i}`} className="page-dots">
+                    …
+                  </span>
                 ) : (
                   <button
                     key={p}
@@ -316,6 +337,26 @@ export default function AssetTable(): ReactElement {
         onSubmit={(data) => {
           void handleSubmit(data);
         }}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Confirmar exclusão"
+        message={`Tem certeza que deseja excluir o ativo "${assetToDelete?.name ?? ""}"?`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={async () => {
+          if (assetToDelete) {
+            await handleDelete(assetToDelete.id); // Aguarda a requisição terminar
+          }
+          setConfirmDeleteOpen(false); // Fecha o modal
+          setAssetToDelete(null); // Limpa o estado
+        }}
+        onCancel={() => {
+          setConfirmDeleteOpen(false);
+          setAssetToDelete(null);
+        }}
+        loading={deleting}
       />
     </Card>
   );
