@@ -25,14 +25,21 @@ import {
   ChevronLeftIcon,
   PencilIcon,
   LoaderCircleIcon,
+  PlusIcon,
 } from "lucide-react";
 
 import { useProject } from "@/contexts/ProjectContext";
 import {
   fetchAssetsByProject,
   deleteAsset,
+  createAsset,
+  updateAsset,
   type AssetResponse,
 } from "@/api/asset";
+import AssetModal, {
+  type AssetModalSubmitData,
+  type AssetModalAsset,
+} from "../AssetModal/AssetModal";
 
 const PAGE_SIZE = 5;
 
@@ -45,6 +52,11 @@ export default function AssetTable(): ReactElement {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [selectedAsset, setSelectedAsset] = useState<AssetModalAsset | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const loadAssets = useCallback(
     async (targetPage: number) => {
@@ -82,8 +94,50 @@ export default function AssetTable(): ReactElement {
     }
   }
 
-  function handleEdit(_asset: AssetResponse): void {
-    // TODO: abrir modal de edição
+  function handleEdit(asset: AssetResponse): void {
+    setSelectedAsset({
+      id: asset.id,
+      name: asset.name,
+      description: asset.description,
+      content: asset.content,
+    });
+    setModalMode("edit");
+    setModalOpen(true);
+  }
+
+  function handleCreate(): void {
+    setSelectedAsset(null);
+    setModalMode("create");
+    setModalOpen(true);
+  }
+
+  async function handleSubmit(data: AssetModalSubmitData): Promise<void> {
+    setModalLoading(true);
+    setError(null);
+    try {
+      if (modalMode === "create") {
+        await createAsset({
+          projectId,
+          name: data.name,
+          description: data.description,
+          content: data.content,
+        });
+      } else if (modalMode === "edit" && data.id) {
+        await updateAsset(data.id, {
+          name: data.name,
+          description: data.description,
+          content: data.content,
+        });
+      }
+      setModalOpen(false);
+      await loadAssets(page);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao salvar ativo";
+      setError(message);
+    } finally {
+      setModalLoading(false);
+    }
   }
 
   const displayPage = page + 1;
@@ -93,11 +147,19 @@ export default function AssetTable(): ReactElement {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Ativos</CardTitle>
-        <CardDescription>
-          Ativos registrados e vinculados ao escopo da avaliação
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+        <div className="space-y-1">
+          <CardTitle>Ativos</CardTitle>
+          <CardDescription>
+            Ativos registrados e vinculados ao escopo da avaliação
+          </CardDescription>
+        </div>
+        <button
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+          onClick={handleCreate}
+        >
+          <PlusIcon size={16} /> Novo Ativo
+        </button>
       </CardHeader>
       <CardContent>
         {error && (
@@ -236,6 +298,17 @@ export default function AssetTable(): ReactElement {
           </div>
         </CardFooter>
       )}
+
+      <AssetModal
+        open={modalOpen}
+        loading={modalLoading}
+        mode={modalMode}
+        asset={selectedAsset}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(data) => {
+          void handleSubmit(data);
+        }}
+      />
     </Card>
   );
 }

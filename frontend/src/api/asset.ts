@@ -47,3 +47,41 @@ export async function deleteAsset(id: string): Promise<void> {
 
     if (!res.ok) throw await parseApiErrorResponse(res, url);
 }
+
+export interface AssetCreateRequest {
+    projectId: string;
+    name: string;
+    description: string;
+    content: string;
+}
+
+export interface AssetUpdateRequest {
+    name?: string;
+    description?: string;
+    content?: string;
+}
+
+export async function createAsset(data: AssetCreateRequest): Promise<AssetResponse> {
+    const res = await fetch(BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
+
+    return res.json() as Promise<AssetResponse>;
+}
+
+export async function updateAsset(id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
+    const url = `${BASE}/${id}`;
+    const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw await parseApiErrorResponse(res, url);
+
+    return res.json() as Promise<AssetResponse>;
+}
