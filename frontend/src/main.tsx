@@ -6,7 +6,7 @@ import App from './App.tsx'
 import Home from './pages/Home.tsx'
 import Project from './pages/Project.tsx'
 import ProjectsHome from "./pages/ProjectsHome";
-import { ProjectProvider } from "./contexts/ProjectContext";
+import { ProjectProvider } from "./contexts/ProjectProvider";
 
 
 createRoot(document.getElementById('root')!).render(

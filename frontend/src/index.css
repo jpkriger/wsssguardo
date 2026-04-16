@@ -4,6 +4,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant hover (&:is(:hover, [data-hover]));
+@custom-variant active (&:is(:active, [data-active]));
 
 /* ============================================
    WSS SGUARDO — Design Tokens
