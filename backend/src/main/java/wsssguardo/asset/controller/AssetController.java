@@ -14,34 +14,27 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
 
-import wsssguardo.asset.dto.AssetCreateRequestDTO;
-import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.service.AssetService;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/assets")
+@Tag(name = "Assets", description = "Assets operations")
 public class AssetController {
 
     private final AssetService service;
 
-    /**
-     * Parâmetros de paginação (todos opcionais):
-     * - page : número da página, começa em 0 (padrão: 0)
-     * - size : quantidade de itens por página (padrão: 20)
-     * - sort : campo e direção de ordenação (padrão: sem ordenação)
-     *
-     * Exemplos:
-     * /api/assets/project/uuid-aqui
-     * /api/assets/project/uuid-aqui?page=0&size=10
-     * /api/assets/project/uuid-aqui?page=1&size=10&sort=name,asc
-     * /api/assets/project/uuid-aqui?page=0&size=20&sort=createdAt,desc
-     */
+    @Operation(summary = "Listar ativos por projeto")
     @GetMapping("/project/{projectId}")
     public ResponseEntity<AssetPageResponseDTO> findAllByProject(
             @PathVariable UUID projectId,
@@ -49,6 +42,7 @@ public class AssetController {
         return ResponseEntity.ok(service.findAllByProject(projectId, pageable));
     }
 
+    @Operation(summary = "Atualizar ativo")
     @PatchMapping("/{id}")
     public ResponseEntity<AssetResponseDTO> updateAsset(@PathVariable UUID id,
             @Valid @RequestBody AssetUpdateRequestDTO request) {
@@ -56,6 +50,7 @@ public class AssetController {
         return ResponseEntity.ok(service.updateAsset(id, request, username));
     }
 
+    @Operation(summary = "Criar novo ativo")
     @PostMapping
     public ResponseEntity<AssetResponseDTO> createAsset(
             @Valid @RequestBody AssetCreateRequestDTO request) {
@@ -65,6 +60,7 @@ public class AssetController {
         return ResponseEntity.created(location).body(response);
     }
 
+    @Operation(summary = "Excluir ativo")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAsset(@PathVariable UUID id) {
         var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)

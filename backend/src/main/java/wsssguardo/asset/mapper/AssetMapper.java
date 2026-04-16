@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 import wsssguardo.asset.Asset;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
-import wsssguardo.asset.dto.AssetCreateRequestDTO;
-import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.project.Project;
 import java.time.LocalDateTime;
 

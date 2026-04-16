@@ -30,8 +30,8 @@ import java.util.Optional;
 import org.mockito.InjectMocks;
 
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
-import wsssguardo.asset.dto.AssetCreateRequestDTO;
-import wsssguardo.asset.dto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.mapper.AssetMapper;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;

@@ -1,4 +1,4 @@
-package wsssguardo.asset.dto;
+package wsssguardo.asset.dto.requestdto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
