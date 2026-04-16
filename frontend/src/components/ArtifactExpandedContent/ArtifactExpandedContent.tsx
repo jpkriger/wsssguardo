@@ -11,10 +11,10 @@ import { cn } from "../../lib/utils";
 interface ArtifactExpandedContentProps {
   artifact: ArtifactResponse;
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
   onDownload: (id: string) => void;
   onClose?: () => void;
-  onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void;
+  onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void | Promise<void>;
 }
 
 const TIPO_LABELS: Record<ArtifactContentType, string> = {
@@ -76,7 +76,7 @@ function FindingRow({
   );
 }
 
-const FIELD_BORDER = { border: "1px solid #26282A" } as const;
+const FIELD_BORDER = "rounded-md px-3 py-2.5 border border-border";
 
 export default function ArtifactExpandedContent({
   artifact,
@@ -131,7 +131,7 @@ export default function ArtifactExpandedContent({
   const textareaClass =
     "bg-transparent outline-none text-sm text-foreground w-full mt-0.5 resize-none font-sans";
   const selectClass =
-    "bg-transparent outline-none text-sm text-foreground mt-0.5 font-sans cursor-pointer";
+    "bg-card outline-none text-sm text-foreground mt-0.5 font-sans cursor-pointer border-none";
 
   return (
     <div className="flex gap-6">
@@ -171,7 +171,7 @@ export default function ArtifactExpandedContent({
         </div>
 
         <div className="flex gap-2">
-          <div className="flex-1 rounded-md px-3 py-2.5" style={FIELD_BORDER}>
+          <div className={cn(FIELD_BORDER, "flex-1")}>
             <span className="text-sm text-muted-foreground">Nome: </span>
             {isEditing ? (
               <input
@@ -183,7 +183,7 @@ export default function ArtifactExpandedContent({
               <span className="text-sm text-foreground">{artifact.name}</span>
             )}
           </div>
-          <div className="flex-none rounded-md px-3 py-2.5" style={FIELD_BORDER}>
+          <div className={cn(FIELD_BORDER, "flex-none")}>
             <span className="text-sm text-muted-foreground">Tipo: </span>
             {isEditing && !isNote ? (
               <select
@@ -205,7 +205,7 @@ export default function ArtifactExpandedContent({
           </div>
         </div>
 
-        <div className="rounded-md px-3 py-2.5" style={FIELD_BORDER}>
+        <div className={FIELD_BORDER}>
           <span className="text-sm text-muted-foreground">Categoria: </span>
           {isEditing ? (
             <input
@@ -218,7 +218,7 @@ export default function ArtifactExpandedContent({
           )}
         </div>
 
-        <div className="rounded-md px-3 py-2.5" style={FIELD_BORDER}>
+        <div className={FIELD_BORDER}>
           {isEditing ? (
             <>
               <span className="text-sm text-muted-foreground">Descrição: </span>
@@ -253,7 +253,7 @@ export default function ArtifactExpandedContent({
         </div>
 
         {isEditing && isNote ? (
-          <div className="rounded-md overflow-hidden" style={FIELD_BORDER}>
+          <div className={cn(FIELD_BORDER, "overflow-hidden !p-0")}>
             <div className="px-3 pt-2.5 pb-1">
               <span className="text-sm text-muted-foreground">Conteúdo</span>
             </div>
@@ -264,7 +264,7 @@ export default function ArtifactExpandedContent({
             />
           </div>
         ) : (
-          <div className="rounded-md px-3 py-2.5" style={FIELD_BORDER}>
+          <div className={FIELD_BORDER}>
             <span className="text-sm text-muted-foreground">Conteúdo: </span>
             {isEditing ? (
               <input

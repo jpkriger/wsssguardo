@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   listArtifacts,
+  deleteArtifact,
+  updateArtifact,
+  createArtifact,
   type ArtifactResponse,
+  type ArtifactUpdateRequest,
+  type ArtifactCreateRequest,
 } from "../../api/artifact";
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
+import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
 import { cn } from "../../lib/utils";
 
 const PAGE_SIZE = 5;
@@ -44,6 +50,7 @@ export default function ArtifactList({
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   useEffect(() => {
     if (isControlled) return;
@@ -69,8 +76,48 @@ export default function ArtifactList({
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function handleDelete(id: string): void { onDelete?.(id); }
+  async function handleDelete(id: string): Promise<void> {
+    if (onDelete) {
+      onDelete(id);
+      return;
+    }
+    if (!projectId) return;
+    try {
+      await deleteArtifact(projectId, id);
+      setFetchedArtifacts((prev) => prev.filter((a) => a.id !== id));
+      if (expandedId === id) setExpandedId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+    }
+  }
+
+  async function handleUpdate(id: string, updates: Partial<ArtifactResponse>): Promise<void> {
+    if (onUpdate) {
+      onUpdate(id, updates);
+      return;
+    }
+    if (!projectId) return;
+    try {
+      const updated = await updateArtifact(projectId, id, updates as ArtifactUpdateRequest);
+      setFetchedArtifacts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao atualizar artefato");
+    }
+  }
+
   function handleDownload(id: string): void { onDownload?.(id); }
+
+  async function handleCreate(
+    data: Omit<ArtifactResponse, "id" | "createdAt" | "lastEditedAt" | "lastEditedBy" | "author" | "findings">
+  ): Promise<void> {
+    if (!projectId) return;
+    try {
+      const created = await createArtifact(projectId, data as ArtifactCreateRequest);
+      setFetchedArtifacts((prev) => [...prev, created]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao criar artefato");
+    }
+  }
 
   const totalPages = Math.ceil(artifacts.length / PAGE_SIZE);
 
@@ -83,16 +130,34 @@ export default function ArtifactList({
   const pageEnd = Math.min(currentPage * PAGE_SIZE, artifacts.length);
 
   return (
-    <div className="rounded-[20px] overflow-hidden" style={{ background: "#121416" }}>
+    <div className="rounded-[20px] overflow-hidden bg-card">
       {/* Title */}
-      <div className="px-8 pt-6 pb-3">
-        <h2 className="text-2xl font-normal text-foreground leading-tight">
-          Artefatos coletados
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Documentos e notas que sustentam os achados da análise
-        </p>
+      <div className="px-8 pt-6 pb-3 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-normal text-foreground leading-tight">
+            Artefatos coletados
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Documentos e notas que sustentam os achados da análise
+          </p>
+        </div>
+        {!isControlled && projectId && (
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer flex-shrink-0"
+            onClick={() => setComposerOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Adicionar
+          </button>
+        )}
       </div>
+
+      <NewArtifactComposer
+        open={composerOpen}
+        onOpenChange={setComposerOpen}
+        onSaveArtifact={(data) => { void handleCreate(data); }}
+      />
 
       {/* Error / Loading / Empty states */}
       {error && (
@@ -137,7 +202,7 @@ export default function ArtifactList({
                   onEdit={() => {}}
                   onDelete={handleDelete}
                   onDownload={handleDownload}
-                  onUpdate={onUpdate}
+                  onUpdate={handleUpdate}
                 />
               ))}
             </tbody>
@@ -183,11 +248,10 @@ export default function ArtifactList({
                   className={cn(
                     "flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-colors cursor-pointer",
                     page === currentPage
-                      ? "border border-foreground/40 text-foreground cursor-default"
+                      ? "border border-border text-foreground cursor-default"
                       : "text-muted-foreground hover:text-foreground"
                   )}
-                  style={page === currentPage ? { border: "1px solid #E5E5E5" } : {}}
-                  onClick={() => setCurrentPage(page as number)}
+                  onClick={() => setCurrentPage(page)}
                 >
                   {page}
                 </button>

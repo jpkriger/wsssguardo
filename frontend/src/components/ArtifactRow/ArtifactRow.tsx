@@ -26,10 +26,10 @@ interface ArtifactRowProps {
   isExpanded: boolean;
   onToggleExpand: (id: string) => void;
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
   onDownload: (id: string) => void;
   findingsCount?: number;
-  onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void;
+  onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void | Promise<void>;
 }
 
 export default function ArtifactRow({
