@@ -64,7 +64,7 @@ export default function NewArtifactComposer({
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
-    function onKeyDown(e: KeyboardEvent) {
+    function onKeyDown(e: KeyboardEvent): void {
       if (e.key === "Escape") reset();
     }
     document.addEventListener("keydown", onKeyDown);

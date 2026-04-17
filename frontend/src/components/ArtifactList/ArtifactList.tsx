@@ -11,7 +11,9 @@ import {
 } from "../../api/artifact";
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
+import NewNoteComposer from "../NewNoteComposer/NewNoteComposer";
 import { cn } from "../../lib/utils";
+import { type NoteCreateRequest } from "../../api/note";
 
 const PAGE_SIZE = 5;
 
@@ -51,6 +53,7 @@ export default function ArtifactList({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [noteComposerOpen, setNoteComposerOpen] = useState(false);
 
   useEffect(() => {
     if (isControlled) return;
@@ -119,6 +122,16 @@ export default function ArtifactList({
     }
   }
 
+  async function handleCreateNote(note: NoteCreateRequest): Promise<void> {
+    if (!projectId) return;
+    const created = await createArtifact(projectId, {
+      name: note.title,
+      content: note.content,
+      contentType: "note",
+    });
+    setFetchedArtifacts((prev) => [...prev, created]);
+  }
+
   const totalPages = Math.ceil(artifacts.length / PAGE_SIZE);
 
   const paged = useMemo(() => {
@@ -142,14 +155,24 @@ export default function ArtifactList({
           </p>
         </div>
         {!isControlled && projectId && (
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer flex-shrink-0"
-            onClick={() => setComposerOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Adicionar
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border border-border cursor-pointer"
+              onClick={() => setNoteComposerOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Nova Nota
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer"
+              onClick={() => setComposerOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar
+            </button>
+          </div>
         )}
       </div>
 
@@ -157,6 +180,12 @@ export default function ArtifactList({
         open={composerOpen}
         onOpenChange={setComposerOpen}
         onSaveArtifact={(data) => { void handleCreate(data); }}
+      />
+      <NewNoteComposer
+        open={noteComposerOpen}
+        onOpenChange={setNoteComposerOpen}
+        onSaveNote={handleCreateNote}
+        onSave={() => setNoteComposerOpen(false)}
       />
 
       {/* Error / Loading / Empty states */}

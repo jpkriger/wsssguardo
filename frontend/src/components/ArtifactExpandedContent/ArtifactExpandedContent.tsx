@@ -106,7 +106,7 @@ export default function ArtifactExpandedContent({
       : artifact.description.slice(0, SHORT_LIMIT) + "…";
 
   function handleSave(): void {
-    onUpdate?.(artifact.id, {
+    void onUpdate?.(artifact.id, {
       name: editName,
       category: editCategory,
       description: editDesc,
@@ -323,7 +323,7 @@ export default function ArtifactExpandedContent({
             <button
               type="button"
               className="px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-medium rounded-md hover:opacity-90 outline-none cursor-pointer border-none transition-opacity"
-              onClick={() => onDelete(artifact.id)}
+              onClick={() => { void onDelete(artifact.id); }}
             >
               Excluir
             </button>

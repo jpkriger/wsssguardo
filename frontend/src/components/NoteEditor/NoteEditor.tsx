@@ -52,7 +52,7 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
   }, []);
 
   useEffect(() => {
-    function handleSelectionChange() {
+    function handleSelectionChange(): void {
       const sel = window.getSelection();
       if (!sel || !editorRef.current) return;
       if (sel.rangeCount > 0) {

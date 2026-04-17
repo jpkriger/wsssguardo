@@ -37,14 +37,14 @@ export default function NewNoteComposer({ onSave, open: controlledOpen, onOpenCh
   const dragOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    function onMouseMove(e: MouseEvent) {
+    function onMouseMove(e: MouseEvent): void {
       if (!isDragging.current) return;
       setPosition({
         x: e.clientX - dragOffset.current.x,
         y: e.clientY - dragOffset.current.y,
       });
     }
-    function onMouseUp() {
+    function onMouseUp(): void {
       isDragging.current = false;
     }
     window.addEventListener("mousemove", onMouseMove);

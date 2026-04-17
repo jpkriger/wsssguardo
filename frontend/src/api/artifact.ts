@@ -65,6 +65,24 @@ export interface ArtifactFilterState {
   author: string;
 }
 
+interface BackendArtifactCreatePayload {
+  name: string;
+  description?: string;
+  content?: string;
+  category?: string;
+  driveLink?: string;
+  type: string;
+}
+
+interface BackendArtifactUpdatePayload {
+  name?: string;
+  description?: string;
+  content?: string;
+  category?: string;
+  driveLink?: string;
+  type?: string;
+}
+
 interface BackendArtifactResponse {
   id: string;
   name: string;
@@ -109,7 +127,7 @@ function toFrontend(dto: BackendArtifactResponse): ArtifactResponse {
   };
 }
 
-function toBackendCreate(req: ArtifactCreateRequest) {
+function toBackendCreate(req: ArtifactCreateRequest): BackendArtifactCreatePayload {
   return {
     name: req.name,
     description: req.description,
@@ -120,7 +138,7 @@ function toBackendCreate(req: ArtifactCreateRequest) {
   };
 }
 
-function toBackendUpdate(req: ArtifactUpdateRequest) {
+function toBackendUpdate(req: ArtifactUpdateRequest): BackendArtifactUpdatePayload {
   return {
     name: req.name,
     description: req.description,
@@ -133,7 +151,7 @@ function toBackendUpdate(req: ArtifactUpdateRequest) {
   };
 }
 
-const base = (projectId: string) => `projects/${projectId}/artifacts`;
+const base = (projectId: string): string => `projects/${projectId}/artifacts`;
 
 export function listArtifacts(projectId: string): Promise<ArtifactResponse[]> {
   return apiClient
