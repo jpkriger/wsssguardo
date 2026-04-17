@@ -15,7 +15,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -47,7 +47,7 @@ export default function ConfirmDialog({
           </Button>
           <Button
             variant="destructive"
-            onClick={onConfirm}
+            onClick={() => { void onConfirm(); }}
             disabled={loading}
           >
             {loading ? "Excluindo..." : confirmText}

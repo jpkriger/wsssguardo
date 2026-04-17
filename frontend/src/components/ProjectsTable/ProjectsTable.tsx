@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -173,6 +174,7 @@ interface ProjectsTableProps {
 }
 
 export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): React.JSX.Element {
+    const navigate = useNavigate();
     const [search, setSearch] = useState("");
     const [consultant, setConsultant] = useState("Todos consultores");
     const [page, setPage] = useState(1);
@@ -278,7 +280,12 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
                                     <RiskBadges risks={project.risks} />
                                 </TableCell>
                                 <TableCell className="px-5 py-4 text-right">
-                                    <Button variant="ghost" size="sm" className="!text-[16px] gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="!text-[16px] gap-1"
+                                        onClick={() => void navigate(`/project/${project.id}`)}
+                                    >
                                         Acessar <ChevronRight className="h-[18px] w-[18px]" />
                                     </Button>
                                 </TableCell>

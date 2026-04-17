@@ -1,6 +1,5 @@
 import { type ReactElement } from "react";
 import { ArtifactContentTypes, type ArtifactContentType, type ArtifactFilterState } from "../../api/artifact";
-import styles from "./ArtifactFilters.module.css";
 
 const CONTENT_TYPE_OPTIONS: { value: ArtifactContentType; label: string }[] = [
   { value: ArtifactContentTypes.Document, label: "Documento" },
@@ -24,16 +23,16 @@ export default function ArtifactFilters({
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className="flex gap-3 flex-wrap">
       <input
-        className={styles.searchInput}
+        className="flex-1 min-w-48 px-3 py-2 bg-background border border-input rounded-lg text-foreground text-sm outline-none transition-colors focus:border-ring placeholder:text-muted-foreground"
         type="search"
         placeholder="Buscar por nome…"
         value={filters.search}
         onChange={(e) => set({ search: e.target.value })}
       />
       <select
-        className={styles.select}
+        className="px-3 py-2 bg-background border border-input rounded-lg text-foreground text-sm outline-none cursor-pointer transition-colors focus:border-ring min-w-40"
         value={filters.contentType}
         onChange={(e) =>
           set({ contentType: e.target.value as ArtifactContentType | "" })
@@ -47,7 +46,7 @@ export default function ArtifactFilters({
         ))}
       </select>
       <select
-        className={styles.select}
+        className="px-3 py-2 bg-background border border-input rounded-lg text-foreground text-sm outline-none cursor-pointer transition-colors focus:border-ring min-w-40"
         value={filters.author}
         onChange={(e) => set({ author: e.target.value })}
       >

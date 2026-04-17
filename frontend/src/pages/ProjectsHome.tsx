@@ -15,40 +15,22 @@ const MOCK_CRITICAL_WINDOWS: CriticalWindowItem[] = [
 
 const MOCK_PROJECTS: Project[] = [
     {
-        id: "1", name: "Projeto Alfa", code: "PRJ-001",
+        id: "33333333-3333-3333-3333-000000000001", name: "Avaliação de Maturidade - Alpha", code: "PRJ-001",
         daysRemaining: 15, totalDays: 30,
-        consultant: { name: "Daniel Moura" },
+        consultant: { name: "Avaliador Um" },
         risks: [{ level: "alto", count: 5 }, { level: "medio", count: 3 }, { level: "baixo", count: 1 }],
     },
     {
-        id: "2", name: "Projeto Beta", code: "PRJ-002",
+        id: "33333333-3333-3333-3333-000000000002", name: "Análise de Gaps - Beta", code: "PRJ-002",
         daysRemaining: 8, totalDays: 45,
-        consultant: { name: "Ana Costa" },
+        consultant: { name: "Avaliador Um" },
         risks: [{ level: "alto", count: 2 }, { level: "medio", count: 5 }],
     },
     {
-        id: "3", name: "Projeto Gama", code: "PRJ-003",
+        id: "33333333-3333-3333-3333-000000000003", name: "Assessment de Segurança - Gamma", code: "PRJ-003",
         daysRemaining: 20, totalDays: 60,
-        consultant: { name: "Daniel Moura" },
+        consultant: { name: "Avaliador Dois" },
         risks: [{ level: "medio", count: 4 }, { level: "baixo", count: 3 }],
-    },
-    {
-        id: "4", name: "Projeto Delta", code: "PRJ-004",
-        daysRemaining: 3, totalDays: 30,
-        consultant: { name: "Ana Costa" },
-        risks: [{ level: "alto", count: 7 }, { level: "medio", count: 2 }, { level: "baixo", count: 1 }],
-    },
-    {
-        id: "5", name: "Projeto Épsilon", code: "PRJ-005",
-        daysRemaining: 12, totalDays: 30,
-        consultant: { name: "Daniel Moura" },
-        risks: [{ level: "alto", count: 1 }, { level: "baixo", count: 6 }],
-    },
-    {
-        id: "6", name: "Projeto Zeta", code: "PRJ-006",
-        daysRemaining: 25, totalDays: 90,
-        consultant: { name: "Ana Costa" },
-        risks: [{ level: "medio", count: 3 }, { level: "baixo", count: 2 }],
     },
 ];
 
