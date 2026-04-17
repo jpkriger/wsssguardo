@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, ReactElement } from "react";
 import ProjectHomeInfoCardFrame from "@/components/ProjectHomeInfoCard/ProjectHomeInfoCardFrame";
 
 interface ProjectHomeInfoCardNotificationProps {
@@ -8,7 +8,7 @@ interface ProjectHomeInfoCardNotificationProps {
   accent?: "red" | "yellow" | "green";
 }
 
-export default function ProjectHomeInfoCardNotification({ icon, title, description, accent = "red" }: ProjectHomeInfoCardNotificationProps) {
+export default function ProjectHomeInfoCardNotification({ icon, title, description, accent = "red" }: ProjectHomeInfoCardNotificationProps): ReactElement {
   return (
     <ProjectHomeInfoCardFrame accent={accent}>
       <div className="flex flex-col justify-between gap-4 h-full">

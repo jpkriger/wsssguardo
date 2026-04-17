@@ -1,3 +1,4 @@
+import AssetTable from "@/components/AssetTable/AssetTable";
 import { ReactElement } from "react";
 
 export default function Home(): ReactElement {
@@ -5,7 +6,8 @@ export default function Home(): ReactElement {
     <div>
       {/* PAGINA PLACEHOLDER PARA TESTAR COMPONENTES, MODIFIQUE DENTRO DESTA DIV A VONTADE */}
       <h1>Home</h1>
-      <p className="text-muted-foreground">Página inicial do WSS Sguardo.</p>
+      <p className="text-muted-foreground mb-7">Página inicial do WSS Sguardo.</p>
+      <AssetTable />
     </div>
-  )
+  );
 }
