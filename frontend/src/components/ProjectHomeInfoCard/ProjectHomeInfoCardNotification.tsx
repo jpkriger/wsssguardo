@@ -16,7 +16,7 @@ export default function ProjectHomeInfoCardNotification({ icon, title, descripti
           {icon}
           <h3 className="text-sm! text-muted-foreground!">{title}</h3>
         </div>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
     </ProjectHomeInfoCardFrame>
   );
