@@ -18,6 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
 import wsssguardo.customer.Customer;
@@ -32,6 +33,7 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
+@SQLDelete(sql = "UPDATE projects SET deleted_at = NOW() WHERE id = ?")
 public class Project extends BaseEntity {
 
     @Column(nullable = false)

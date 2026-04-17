@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Link } from "react-router";
 
 interface ProjectHomeClickableCardProps {
@@ -14,7 +15,7 @@ import { FolderOpen } from "lucide-react";
 <ProjectHomeCard icon={<FolderOpen />} title="Ativos registrados" data="2" link="urldapagina"/>
 */
 
-export default function ProjectHomeClickableCard({ icon, title, data, link }: ProjectHomeClickableCardProps) {
+export default function ProjectHomeClickableCard({ icon, title, data, link }: ProjectHomeClickableCardProps): ReactElement {
   return (
     <Link
       className="flex justify-between h-30 border rounded-2xl px-4 py-2.5 bg-white/50 dark:bg-foreground/5 w-full cursor-pointer transition-colors duration-300"

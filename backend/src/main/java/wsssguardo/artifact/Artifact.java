@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.project.Project;
 import wsssguardo.shared.domain.BaseEntity;
@@ -20,6 +21,7 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
+@SQLDelete(sql = "UPDATE artifacts SET deleted_at = NOW() WHERE id = ?")
 public class Artifact extends BaseEntity {
 
     @Column(nullable = false)

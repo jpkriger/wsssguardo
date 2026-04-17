@@ -14,6 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
 import wsssguardo.project.Project;
 import wsssguardo.shared.domain.BaseEntity;
 import wsssguardo.user.User;
@@ -24,12 +25,10 @@ import wsssguardo.user.User;
 @Builder
 @Getter
 @Setter
-@Table(
-    name = "project_users",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "project_id"})
-    }
-)
+@Table(name = "project_users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "user_id", "project_id" })
+})
+@SQLDelete(sql = "UPDATE project_users SET deleted_at = NOW() WHERE id = ?")
 public class ProjectUser extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,5 +42,5 @@ public class ProjectUser extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "access_level", nullable = false)
     private UserProjectLevel accessLevel;
-    
+
 }

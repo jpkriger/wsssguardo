@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, ReactElement } from "react";
 
 interface ProjectHomeInfoCardFrameProps {
   accent: "red" | "yellow" | "green" | "blue";
@@ -12,7 +12,7 @@ const accentClasses: Record<ProjectHomeInfoCardFrameProps["accent"], string> = {
   blue: "bg-sky-500/80",
 };
 
-export default function ProjectHomeInfoCardFrame({ accent, children }: ProjectHomeInfoCardFrameProps) {
+export default function ProjectHomeInfoCardFrame({ accent, children }: ProjectHomeInfoCardFrameProps): ReactElement {
   return (
     <div className={`rounded-2xl h-28 w-full ${accentClasses[accent]} transition-colors duration-300`}>
       <div className="w-full h-full bg-background rounded-2xl overflow-hidden translate-x-2 border-l-0 border transition-colors duration-300">
