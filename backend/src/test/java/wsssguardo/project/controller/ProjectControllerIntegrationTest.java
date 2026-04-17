@@ -74,10 +74,16 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
-    void projectsByIdShouldReturnEmptyListWhenIdsAreMissing() throws Exception {
+    void listAllProjectsShouldReturnPersistedItemsWhenNoFiltersAreProvided() throws Exception {
+        Customer customer = createCustomer("Acme Corp");
+        Project older = createProject("Legacy", customer, LocalDateTime.of(2026, 3, 20, 8, 0));
+        Project newer = createProject("Modern", customer, LocalDateTime.of(2026, 3, 21, 8, 0));
+
         mockMvc.perform(get("/api/projects"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(0)));
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].id", is(newer.getId().toString())))
+            .andExpect(jsonPath("$[1].id", is(older.getId().toString())));
     }
 
     @Test

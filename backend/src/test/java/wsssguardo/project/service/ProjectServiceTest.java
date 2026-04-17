@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import wsssguardo.customer.Customer;
 import wsssguardo.project.Project;
@@ -35,6 +36,25 @@ class ProjectServiceTest {
     @BeforeEach
     void setUp() {
         service = new ProjectService(repository, new ProjectMapper());
+    }
+
+    @Test
+    void listAllProjectsShouldReturnMappedProjects() {
+        UUID firstId = UUID.randomUUID();
+        UUID secondId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+
+        Project first = project(firstId, "Legacy", customerId, ProjectStatus.COMPLETED);
+        Project second = project(secondId, "Modern", customerId, ProjectStatus.IN_PROGRESS);
+
+        when(repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))).thenReturn(List.of(second, first));
+
+        List<ProjectResponse> responses = service.listAllProjects();
+
+        assertEquals(2, responses.size());
+        assertEquals(secondId, responses.get(0).id());
+        assertEquals("Modern", responses.get(0).name());
+        assertEquals(firstId, responses.get(1).id());
     }
 
     @Test

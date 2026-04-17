@@ -2,6 +2,13 @@ import { useState, useEffect, useRef, type ReactElement } from "react";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { ArtifactContentType, ArtifactResponse } from "../../api/artifact";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const TIPO_OPTIONS: { value: ArtifactContentType; label: string }[] = [
   { value: "document", label: "Documento" },
@@ -28,8 +35,13 @@ interface NewArtifactComposerProps {
   onSaveArtifact?: (
     artifact: Omit<
       ArtifactResponse,
-      "id" | "createdAt" | "lastEditedAt" | "lastEditedBy" | "author" | "findings"
-    >
+      | "id"
+      | "createdAt"
+      | "lastEditedAt"
+      | "lastEditedBy"
+      | "author"
+      | "findings"
+    >,
   ) => void;
 }
 
@@ -45,7 +57,8 @@ export default function NewArtifactComposer({
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [contentType, setContentType] = useState<ArtifactContentType>("document");
+  const [contentType, setContentType] =
+    useState<ArtifactContentType>("document");
   const [driveLink, setDriveLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -69,14 +82,16 @@ export default function NewArtifactComposer({
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Prevent body scroll while open
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   function reset(): void {
@@ -95,7 +110,7 @@ export default function NewArtifactComposer({
     setDriveLink(value);
     if (value && !isGoogleDriveLink(value)) {
       setLinkError(
-        "O link deve ser um URL do Google Drive (drive.google.com ou docs.google.com)."
+        "O link deve ser um URL do Google Drive (drive.google.com ou docs.google.com).",
       );
     } else {
       setLinkError(null);
@@ -127,7 +142,12 @@ export default function NewArtifactComposer({
 
     const artifact: Omit<
       ArtifactResponse,
-      "id" | "createdAt" | "lastEditedAt" | "lastEditedBy" | "author" | "findings"
+      | "id"
+      | "createdAt"
+      | "lastEditedAt"
+      | "lastEditedBy"
+      | "author"
+      | "findings"
     > = {
       name: name.trim(),
       contentType,
@@ -141,14 +161,16 @@ export default function NewArtifactComposer({
     reset();
   }
 
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>): void {
-    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+  function handleBackdropMouseDown(e: React.MouseEvent<HTMLDivElement>): void {
+    if (e.target === e.currentTarget) {
       reset();
     }
   }
 
   const inputClass =
     "w-full px-3 py-2.5 bg-transparent border border-border rounded-md text-sm text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground font-sans";
+  const selectTriggerClass =
+    "w-full h-10 px-3 py-0 bg-transparent border border-border rounded-md text-sm text-foreground font-sans cursor-pointer";
   const labelClass = "block text-xs text-muted-foreground mb-1.5 font-medium";
 
   if (!isOpen) return <></>;
@@ -157,8 +179,11 @@ export default function NewArtifactComposer({
     /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
-      onClick={handleBackdropClick}
+      style={{
+        backgroundColor: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(4px)",
+      }}
+      onMouseDown={handleBackdropMouseDown}
     >
       {/* Dialog panel */}
       <div
@@ -167,7 +192,9 @@ export default function NewArtifactComposer({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border rounded-t-xl flex-shrink-0">
-          <span className="text-base font-semibold text-foreground">Adicionar artefato</span>
+          <span className="text-base font-semibold text-foreground">
+            Adicionar artefato
+          </span>
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-sm hover:bg-accent cursor-pointer border-none bg-transparent outline-none"
@@ -188,7 +215,10 @@ export default function NewArtifactComposer({
               type="text"
               placeholder="Nome do artefato"
               value={name}
-              onChange={(e) => { setName(e.target.value); setFormError(null); }}
+              onChange={(e) => {
+                setName(e.target.value);
+                setFormError(null);
+              }}
               disabled={saving}
               autoFocus
             />
@@ -197,18 +227,24 @@ export default function NewArtifactComposer({
           {/* Tipo */}
           <div>
             <label className={labelClass}>Tipo *</label>
-            <select
-              className={cn(inputClass, "cursor-pointer")}
+            <Select
               value={contentType}
-              onChange={(e) => handleContentTypeChange(e.target.value as ArtifactContentType)}
+              onValueChange={(value) =>
+                handleContentTypeChange(value as ArtifactContentType)
+              }
               disabled={saving}
             >
-              {TIPO_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-[60]">
+                {TIPO_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Categoria */}
@@ -241,7 +277,10 @@ export default function NewArtifactComposer({
           <div>
             <label className={labelClass}>Link do Google Drive *</label>
             <input
-              className={cn(inputClass, linkError ? "border-destructive focus:border-destructive" : "")}
+              className={cn(
+                inputClass,
+                linkError ? "border-destructive focus:border-destructive" : "",
+              )}
               type="url"
               placeholder="https://drive.google.com/…"
               value={driveLink}

@@ -50,5 +50,7 @@ src/
 ```
 
 O módulo `src/api` concentra os clients tipados. Além de `entityObject`, o frontend expõe:
+
+- `listProjects` para buscar todos os projetos.
 - `projectsById` para buscar detalhes de múltiplos projetos via `ids` repetido.
 - `projectsByUserId` para buscar IDs de projetos vinculados a um usuário.

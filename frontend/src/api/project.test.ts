@@ -1,11 +1,40 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiErrorResponse } from "./errors";
-import { projectsById, projectsByUserId } from "./project";
+import { listProjects, projectsById, projectsByUserId } from "./project";
 
 describe("project api", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("listProjects returns all projects payload", async () => {
+    const payload = [
+      {
+        id: "018f2f32-ff0a-7c30-9dfa-a9f765432101",
+        name: "Mobile App",
+        customerId: "018f2f32-ff0a-7c30-9dfa-a9f765432103",
+        startDate: "2026-03-22",
+        endDate: "2026-12-22",
+        status: "IN_PROGRESS",
+      },
+    ];
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 200 }),
+      );
+
+    await expect(listProjects()).resolves.toEqual(payload);
+    expect(fetchSpy).toHaveBeenCalledWith("/api/projects");
+  });
+
+  it("projectsById returns empty list when no ids are provided", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(projectsById([])).resolves.toEqual([]);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("projectsById sends repeated ids and returns parsed payload", async () => {
@@ -34,7 +63,9 @@ describe("project api", () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 200 }),
+      );
 
     await expect(projectsById([secondId, firstId])).resolves.toEqual(payload);
 
@@ -77,7 +108,9 @@ describe("project api", () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 200 }),
+      );
 
     await expect(projectsByUserId(userId)).resolves.toEqual(payload);
 

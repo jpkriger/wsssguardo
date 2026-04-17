@@ -1,4 +1,4 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router";
 import { ChevronLeft, Settings } from "lucide-react";
@@ -8,6 +8,7 @@ import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { projectsById, type ProjectResponse } from "../api/project";
 
 export const ProjectTabs = {
   Summary: "Resumo",
@@ -17,7 +18,7 @@ export const ProjectTabs = {
   Risks: "Riscos",
 } as const;
 
-type ProjectTab = typeof ProjectTabs[keyof typeof ProjectTabs];
+type ProjectTab = (typeof ProjectTabs)[keyof typeof ProjectTabs];
 
 const TABS: ProjectTab[] = [
   ProjectTabs.Summary,
@@ -30,6 +31,53 @@ const TABS: ProjectTab[] = [
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Summary);
   const { id: projectId } = useParams<{ id: string }>();
+  const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+  const [projectError, setProjectError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProject(): Promise<void> {
+      if (!projectId) {
+        setProject(null);
+        setProjectError("Projeto inválido.");
+        setLoadingProject(false);
+        return;
+      }
+
+      setLoadingProject(true);
+      setProjectError(null);
+
+      try {
+        const [response] = await projectsById([projectId]);
+        if (cancelled) return;
+
+        if (!response) {
+          setProject(null);
+          setProjectError("Projeto não encontrado.");
+          return;
+        }
+
+        setProject(response);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message =
+          err instanceof Error ? err.message : "Erro ao carregar projeto";
+        setProjectError(message);
+      } finally {
+        if (!cancelled) {
+          setLoadingProject(false);
+        }
+      }
+    }
+
+    void loadProject();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   return (
     <section className="mx-auto w-full max-w-6xl">
@@ -43,13 +91,19 @@ export default function Project(): ReactElement {
 
       <header className="mt-4 space-y-1">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">Projeto PRJ-001</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+            {project?.name ?? "Projeto"}
+          </h1>
           <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
             <Settings className="size-5" />
           </button>
         </div>
         <p className="text-sm text-muted-foreground sm:text-base">
-          Revisão de acessos privilegiados e hardening de endpoints do financeiro.
+          {loadingProject
+            ? "Carregando dados do projeto..."
+            : projectError
+              ? projectError
+              : `Status: ${project?.status ?? "-"}`}
         </p>
       </header>
 

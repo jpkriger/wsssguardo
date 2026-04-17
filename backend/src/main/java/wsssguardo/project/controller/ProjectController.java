@@ -24,13 +24,19 @@ public class ProjectController {
 
     private final ProjectService service;
 
+    @ApiListAll
+    @Operation(summary = "List all projects")
+    @GetMapping(params = {"!ids", "!userId"})
+    public ResponseEntity<List<ProjectResponse>> listAllProjects() {
+        return ResponseEntity.ok(service.listAllProjects());
+    }
+
     @Operation(summary = "Find projects by IDs")
-    @GetMapping(params = "!userId")
-    public List<ProjectResponse> projectsById(@RequestParam(required = false) List<UUID> ids) {
+    @GetMapping(params = {"ids", "!userId"})
+    public List<ProjectResponse> projectsById(@RequestParam List<UUID> ids) {
         return service.projectsById(ids);
     }
 
-    @ApiListAll
     @GetMapping(params = "userId")
     public ResponseEntity<List<UUID>> projectsByUserId(@RequestParam UUID userId) {
         return ResponseEntity.ok(service.projectsByUserId(userId));

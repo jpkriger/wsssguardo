@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,13 @@ public class ProjectService {
 
     private final ProjectRepository repository;
     private final ProjectMapper mapper;
+
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> listAllProjects() {
+        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+            .map(mapper::toResponse)
+            .toList();
+    }
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> projectsById(List<UUID> ids) {
