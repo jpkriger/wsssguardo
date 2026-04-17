@@ -1,6 +1,8 @@
 import { ReactElement, useState } from "react";
 import { useParams } from "react-router";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
+import AssetTable from "../components/AssetTable/AssetTable";
+import { ProjectProvider } from "../contexts/ProjectProvider";
 
 export const ProjectTabs = {
   Resumo: "Resumo",
@@ -55,6 +57,11 @@ export default function Project(): ReactElement {
       </nav>
 
       <div className="mt-6 min-h-[420px]">
+        {activeTab === ProjectTabs.Ativo && (
+          <ProjectProvider projectId={projectId}>
+            <AssetTable />
+          </ProjectProvider>
+        )}
         {activeTab === ProjectTabs.Artefatos && (
           <ArtifactList projectId={projectId} />
         )}

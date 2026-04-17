@@ -3,10 +3,8 @@ import "./AssetTable.css";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 import {
@@ -169,116 +167,110 @@ export default function AssetTable(): ReactElement {
   const rangeEnd = Math.min((page + 1) * PAGE_SIZE, totalElements);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
-        <div className="space-y-1">
-          <CardTitle>Ativos</CardTitle>
-          <CardDescription>
+    <Card className="py-0 gap-0">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-8 pt-6 pb-3">
+        <div>
+          <h2 className="text-2xl font-normal text-foreground leading-tight">Ativos</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             Ativos registrados e vinculados ao escopo da avaliação
-          </CardDescription>
+          </p>
         </div>
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+          type="button"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer flex-shrink-0"
           onClick={handleCreate}
         >
-          <PlusIcon size={16} /> Novo Ativo
+          <PlusIcon className="h-4 w-4" /> Novo Ativo
         </button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 pt-0 pb-0">
         {error && (
-          <div className="text-red-500 text-sm mb-4 p-3 bg-red-500/10 rounded-md">
-            {error}
-          </div>
+          <p className="text-destructive text-sm px-8 pb-4">{error}</p>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <LoaderCircleIcon
-              className="animate-spin text-muted-foreground"
-              size={32}
-            />
+            <LoaderCircleIcon className="animate-spin text-muted-foreground h-6 w-6" />
           </div>
         ) : assets.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <p className="text-muted-foreground text-sm py-12 text-center">
             Nenhum ativo encontrado.
-          </div>
+          </p>
         ) : (
-          <Table className="Table">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[15%]">Ativo</TableHead>
-                <TableHead className="w-[30%]">Descrição</TableHead>
-                <TableHead className="w-[15%]">Referência</TableHead>
-                <TableHead className="text-center w-[15%]">
-                  Achados ligados
-                </TableHead>
-                <TableHead className="w-[3%]"></TableHead>
-                <TableHead className="w-[3%]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assets.map((asset) => (
-                <TableRow key={asset.id}>
-                  <TableCell>{asset.name}</TableCell>
-                  <TableCell>{asset.description}</TableCell>
-                  <TableCell>
-                    <div className="ref-cell">
-                      <span className="ref-cell-text">
-                        {asset.content && asset.content.length > 20
-                          ? `${asset.content.slice(0, 20)}…`
-                          : asset.content ?? "—"}
-                      </span>
-                      {asset.content && (
-                        <button
-                          onClick={() => window.open(asset.content, "_blank")}
-                          className="icon-button"
-                        >
-                          <LinkIcon />
-                        </button>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">0</TableCell>
-                  <TableCell className="text-center">
-                    <button
-                      className="icon-button inline-flex items-center justify-center w-full"
-                      onClick={() => {
-                        handleEdit(asset);
-                      }}
-                    >
-                      <PencilIcon />
-                    </button>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <button
-                      className="icon-button inline-flex items-center justify-center w-full"
-                      onClick={() => {
-                        setAssetToDelete(asset);
-                        setConfirmDeleteOpen(true);
-                      }}
-                    >
-                      <TrashIcon className="text-red-500" />
-                    </button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[18%]">Ativo</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[32%]">Descrição</TableHead>
+                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[20%]">Referência</TableHead>
+                  <TableHead className="px-5 py-3 text-center text-lg font-normal text-foreground w-[18%]">Achados ligados</TableHead>
+                  <TableHead className="w-[4%]"></TableHead>
+                  <TableHead className="w-[4%]"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {assets.map((asset) => (
+                  <TableRow key={asset.id} className="border-t-2 border-border">
+                    <TableCell className="px-5 py-2.5 text-sm text-foreground">{asset.name}</TableCell>
+                    <TableCell className="px-5 py-2.5 text-sm text-muted-foreground">{asset.description}</TableCell>
+                    <TableCell className="px-5 py-2.5">
+                      <div className="ref-cell">
+                        <span className="ref-cell-text text-sm">
+                          {asset.content && asset.content.length > 20
+                            ? `${asset.content.slice(0, 20)}…`
+                            : asset.content ?? "—"}
+                        </span>
+                        {asset.content && (
+                          <button
+                            onClick={() => window.open(asset.content, "_blank")}
+                            className="icon-button"
+                          >
+                            <LinkIcon className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-5 py-2.5 text-sm text-center">0</TableCell>
+                    <TableCell className="px-3 py-2.5 text-center">
+                      <button
+                        className="icon-button inline-flex items-center justify-center"
+                        onClick={() => handleEdit(asset)}
+                      >
+                        <PencilIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-center">
+                      <button
+                        className="icon-button inline-flex items-center justify-center"
+                        onClick={() => {
+                          setAssetToDelete(asset);
+                          setConfirmDeleteOpen(true);
+                        }}
+                      >
+                        <TrashIcon className="h-3.5 w-3.5 text-destructive" />
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
       {!loading && totalElements > 0 && (
-        <CardFooter className="flex justify-between items-center w-full">
-          <span className="page-info">
+        <CardFooter className="flex justify-between items-center w-full px-8 py-5">
+          <span className="text-sm text-muted-foreground">
             Mostrando {rangeStart}–{rangeEnd} de {totalElements} ativos
           </span>
 
           <div className="flex items-center gap-1">
             <button
-              className="page-button-nav flex items-center gap-1"
+              className="page-button-nav flex items-center gap-1 text-sm"
               onClick={() => void loadAssets(page - 1)}
               disabled={page === 0}
             >
-              <ChevronLeftIcon /> Anterior
+              <ChevronLeftIcon className="h-4 w-4" /> Anterior
             </button>
 
             {(() => {
@@ -318,11 +310,11 @@ export default function AssetTable(): ReactElement {
             })()}
 
             <button
-              className="page-button-nav flex items-center gap-1"
+              className="page-button-nav flex items-center gap-1 text-sm"
               onClick={() => void loadAssets(page + 1)}
               disabled={page >= totalPages - 1}
             >
-              Próximo <ChevronRightIcon />
+              Próximo <ChevronRightIcon className="h-4 w-4" />
             </button>
           </div>
         </CardFooter>

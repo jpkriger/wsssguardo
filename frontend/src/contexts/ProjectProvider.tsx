@@ -1,9 +1,14 @@
 import type { ReactElement, ReactNode } from "react";
 import { MOCK_PROJECT_ID, ProjectContext } from "./ProjectContext";
 
-export function ProjectProvider({ children }: { children: ReactNode }): ReactElement {
+interface ProjectProviderProps {
+    children: ReactNode;
+    projectId?: string;
+}
+
+export function ProjectProvider({ children, projectId }: ProjectProviderProps): ReactElement {
     return (
-        <ProjectContext.Provider value={{ projectId: MOCK_PROJECT_ID }}>
+        <ProjectContext.Provider value={{ projectId: projectId ?? MOCK_PROJECT_ID }}>
             {children}
         </ProjectContext.Provider>
     );
