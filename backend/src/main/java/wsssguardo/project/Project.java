@@ -18,14 +18,19 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.processing.Find;
+import org.hibernate.type.SqlTypes;
 
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
 import wsssguardo.customer.Customer;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
+import wsssguardo.project.domain.projectConfiguration.ProjectConfiguration;
+import wsssguardo.risk.Risk;
 import wsssguardo.shared.domain.BaseEntity;
 
 @Entity
@@ -66,5 +71,12 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Find> finds;
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Risk> risks;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private ProjectConfiguration configuration;
 
 }

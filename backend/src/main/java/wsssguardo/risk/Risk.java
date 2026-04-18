@@ -1,4 +1,4 @@
-package wsssguardo.find;
+package wsssguardo.risk;
 
 import java.util.List;
 
@@ -16,23 +16,19 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import wsssguardo.artifact.Artifact;
-import wsssguardo.asset.Asset;
-import wsssguardo.find.domain.FindCategory;
+import wsssguardo.find.Find;
 import wsssguardo.project.Project;
-import wsssguardo.risk.Risk;
-import wsssguardo.shared.domain.BaseEntity;
 
 @Entity
-@Table(name = "finds")
+@Table(name = "risks")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE finds SET deleted_at = NOW() WHERE id = ?")
-public class Find extends BaseEntity {
-
+@SQLDelete(sql = "UPDATE risks SET deleted_at = NOW() WHERE id = ?")
+public class Risk {
+  
   @Column(nullable = false)
   private String name;
 
@@ -41,31 +37,15 @@ public class Find extends BaseEntity {
   private Project project;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  private List<FindCategory> categories;
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  private List<Asset> assets;
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  private List<Artifact> artifacts;
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  private List<Risk> risks;
-
-  private String sector;
-
-  @Column(name = "quantitative_criticality")
-  private Integer quantitativeCriticality;
-
-  private String criticality;
+  private List<Find> finds;
 
   private String description;
 
-  @Column(name = "threat_event")
-  private String threatEvent;
-
-  private String reference;
+  private String consequences;
 
   private String recommendation;
+
+  @Column(name = "quantitative_criticality")
+  private Integer quantitativeCriticality;
 
 }
