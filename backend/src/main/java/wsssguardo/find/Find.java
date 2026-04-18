@@ -2,6 +2,8 @@ package wsssguardo.find;
 
 import java.util.List;
 
+import org.hibernate.annotations.SQLDelete;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,6 +29,7 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
+@SQLDelete(sql = "UPDATE finds SET deleted_at = NOW() WHERE id = ?")
 public class Find extends BaseEntity {
 
   @Column(nullable = false)
@@ -37,12 +40,28 @@ public class Find extends BaseEntity {
   private Project project;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  private List<FindCategory> category;
+  private List<FindCategory> categories;
 
   @ManyToMany(fetch = FetchType.LAZY)
   private List<Asset> assets;
 
   @ManyToMany(fetch = FetchType.LAZY)
   private List<Artifact> artifacts;
+
+  private String sector;
+
+  @Column(name = "quantitative_criticality")
+  private Integer quantitativeCriticality;
+
+  private String criticality;
+
+  private String description;
+
+  @Column(name = "threat_event")
+  private String threatEvent;
+
+  private String reference;
+
+  private String recommendation;
 
 }
