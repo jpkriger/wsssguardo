@@ -28,7 +28,7 @@ import wsssguardo.shared.domain.BaseEntity;
 @Setter
 @Builder
 public class Find extends BaseEntity {
-  
+
   @Column(nullable = false)
   private String name;
 
@@ -42,6 +42,7 @@ public class Find extends BaseEntity {
   @ManyToMany(fetch = FetchType.LAZY)
   private List<Asset> assets;
 
+  @ManyToMany(fetch = FetchType.LAZY)
   private List<Artifact> artifacts;
 
 }
