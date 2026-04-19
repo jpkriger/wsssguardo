@@ -39,7 +39,7 @@ DB_PASSWORD="${DB_PASSWORD:-}"
 [[ -z "$DB_PASSWORD" ]] && die "DB_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
 
 # ─── Pré-requisitos ────────────────────────────────────────────────────────────
-for cmd in aws terraform docker git dig; do
+for cmd in aws terraform docker git dig bun; do
   command -v "$cmd" &>/dev/null || die "'$cmd' não encontrado no PATH"
 done
 
