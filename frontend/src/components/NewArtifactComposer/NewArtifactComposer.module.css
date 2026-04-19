@@ -1,0 +1,28 @@
+.modal {
+  position: fixed;
+  z-index: 100;
+  width: 520px;
+  min-width: 380px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.header {
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.header:active {
+  cursor: grabbing;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.footer {
+  flex-shrink: 0;
+}

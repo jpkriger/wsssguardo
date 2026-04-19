@@ -8,11 +8,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.project.Project;
 import wsssguardo.shared.domain.BaseEntity;
@@ -24,18 +21,25 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
+@SQLDelete(sql = "UPDATE artifacts SET deleted_at = NOW() WHERE id = ?")
 public class Artifact extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "llm_summary")
-    private String llmSummary;
+    private String category;
 
-    /* Category? */
+    @Column(name = "drive_link")
+    private String driveLink;
+
+    @Column(name = "llm_summary", columnDefinition = "TEXT")
+    private String llmSummary;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -44,5 +48,5 @@ public class Artifact extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
-    
+
 }
