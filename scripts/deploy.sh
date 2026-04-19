@@ -265,10 +265,10 @@ log "[4/4] Frontend — build e deploy no S3/CloudFront..."
 cd "$ROOT_DIR/frontend"
 
 info "Instalando dependências..."
-npm ci
+bun install --frozen-lockfile
 
-info "Build Vite (API: https://$BACKEND_DOMAIN)..."
-VITE_API_BASE_URL="https://$BACKEND_DOMAIN" npm run build
+info "Build Vite..."
+bun run build
 
 info "Upload para S3..."
 aws s3 sync dist/ "s3://$S3_BUCKET/" \
