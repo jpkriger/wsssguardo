@@ -6,6 +6,7 @@
 #   bash scripts/deploy.sh --skip-infra  # pula o terraform apply
 
 set -euo pipefail
+export AWS_PAGER=""
 
 # ─── Configuração ──────────────────────────────────────────────────────────────
 AWS_PROFILE="${AWS_PROFILE:-wsssguardo}"
@@ -33,10 +34,12 @@ SECRETS_FILE="${ROOT_DIR}/.env.secrets"
 DB_NAME="${DB_NAME:-}"
 DB_USERNAME="${DB_USERNAME:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
+GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-}"
 
-[[ -z "$DB_NAME"     ]] && die "DB_NAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_USERNAME" ]] && die "DB_USERNAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_PASSWORD" ]] && die "DB_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
+[[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env.secrets ou como variável de ambiente."
+[[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env.secrets ou como variável de ambiente."
+[[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
+[[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
 
 # ─── Pré-requisitos ────────────────────────────────────────────────────────────
 for cmd in aws terraform docker git dig bun; do
@@ -51,7 +54,7 @@ aws sts get-caller-identity --profile "$AWS_PROFILE" --output table --no-cli-pag
 
 # ─── 1. Terraform ──────────────────────────────────────────────────────────────
 if [[ "$SKIP_INFRA" == false ]]; then
-  log "[1/4] Infraestrutura — terraform apply..."
+  log "[1/5] Infraestrutura — terraform apply..."
   cd "$INFRA_DIR"
   AWS_PROFILE=$AWS_PROFILE terraform init -reconfigure -input=false
 
@@ -96,7 +99,7 @@ if [[ "$SKIP_INFRA" == false ]]; then
   # Segundo apply: cria o resto da infra com o cert já validado
   AWS_PROFILE=$AWS_PROFILE terraform apply -auto-approve -input=false
 else
-  log "[1/4] Infraestrutura — pulando (--skip-infra)"
+  log "[1/5] Infraestrutura — pulando (--skip-infra)"
   cd "$INFRA_DIR"
   AWS_PROFILE=$AWS_PROFILE terraform init -reconfigure -input=false
   AWS_PROFILE=$AWS_PROFILE terraform apply -auto-approve -input=false -refresh-only
@@ -104,10 +107,13 @@ fi
 
 ECR_URL=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw ecr_repository_url)
 BACKEND_IP=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw backend_ip)
+BACKEND_PRIVATE_IP=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw backend_private_ip)
 S3_BUCKET=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw s3_bucket_name)
 CF_DOMAIN=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cloudfront_domain_name)
 CF_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cloudfront_distribution_id)
 FRONTEND_DOMAIN=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw frontend_domain)
+OBS_INSTANCE_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_instance_id)
+OBS_PRIVATE_IP=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_private_ip)
 
 info "ECR URL    : $ECR_URL"
 info "Backend IP : $BACKEND_IP"
@@ -115,7 +121,7 @@ info "S3 Bucket  : $S3_BUCKET"
 info "CloudFront : https://$CF_DOMAIN"
 
 # ─── 2. Backend — build + push ECR ─────────────────────────────────────────────
-log "[2/4] Backend — build e push para ECR..."
+log "[2/5] Backend — build e push para ECR..."
 cd "$ROOT_DIR"
 IMAGE_TAG=$(git rev-parse --short HEAD)
 
@@ -131,7 +137,7 @@ docker push "$ECR_URL:$IMAGE_TAG"
 docker push "$ECR_URL:latest"
 
 # ─── 3. Backend — deploy na EC2 via SSM ────────────────────────────────────────
-log "[3/4] Backend — deploy na EC2 via SSM..."
+log "[3/5] Backend — deploy na EC2 via SSM..."
 
 INSTANCE_ID=$(aws ec2 describe-instances \
   --profile "$AWS_PROFILE" \
@@ -186,7 +192,32 @@ done
 
 # Prepara arquivos em base64
 COMPOSE_B64=$(base64 -w 0 < "$ROOT_DIR/docker-compose.ec2.yml")
-NGINX_B64=$(base64 -w 0 < "$ROOT_DIR/nginx/default.conf")
+NGINX_B64=$(sed "s/__OBS_PRIVATE_IP__/${OBS_PRIVATE_IP}/g" "$ROOT_DIR/nginx/default.conf" | base64 -w 0)
+
+PROMTAIL_YML=$(cat <<PROM
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://${OBS_PRIVATE_IP}:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label: stream
+PROM
+)
+PROMTAIL_B64=$(printf '%s' "$PROMTAIL_YML" | base64 -w 0)
 
 # Script que será executado na EC2 (tudo em base64 para evitar problemas de escaping no SSM)
 EC2_SCRIPT=$(cat <<SCRIPT
@@ -195,8 +226,9 @@ set -euo pipefail
 
 mkdir -p /opt/${PROJECT}
 
-echo '${COMPOSE_B64}' | base64 -d > /opt/${PROJECT}/docker-compose.yml
-echo '${NGINX_B64}'   | base64 -d > /opt/${PROJECT}/nginx.conf
+echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
+echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
+echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
 printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\n' \
   > /opt/${PROJECT}/.env
 
@@ -205,13 +237,22 @@ aws ecr get-login-password --region ${REGION} | \
 
 if [ ! -f "/etc/letsencrypt/live/${BACKEND_DOMAIN}/fullchain.pem" ]; then
   echo "==> Emitindo certificado TLS..."
-  certbot certonly --standalone -d ${BACKEND_DOMAIN} \
-    --non-interactive --agree-tos -m ${CERTBOT_EMAIL}
+  for attempt in 1 2 3; do
+    EDITOR=/bin/true VISUAL=/bin/true \
+    certbot certonly --standalone -d ${BACKEND_DOMAIN} \
+      --non-interactive --agree-tos --no-eff-email -m ${CERTBOT_EMAIL} 2>&1 \
+      && break
+    echo "  Tentativa \$attempt falhou, aguardando 20s..."
+    sleep 20
+  done
+  [ ! -f "/etc/letsencrypt/live/${BACKEND_DOMAIN}/fullchain.pem" ] && \
+    { echo "ERRO: certbot falhou após 3 tentativas"; exit 1; }
 fi
 
 cd /opt/${PROJECT}
 docker-compose pull
 docker-compose up -d
+docker-compose restart nginx
 SCRIPT
 )
 
@@ -261,7 +302,7 @@ if [[ "$STATUS" != "Success" ]]; then
 fi
 
 # ─── 4. Frontend — build + S3 + CloudFront ─────────────────────────────────────
-log "[4/4] Frontend — build e deploy no S3/CloudFront..."
+log "[4/5] Frontend — build e deploy no S3/CloudFront..."
 cd "$ROOT_DIR/frontend"
 
 info "Instalando dependências..."
@@ -286,6 +327,174 @@ INVALIDATION_ID=$(aws cloudfront create-invalidation \
 
 info "Invalidation: $INVALIDATION_ID"
 
+# ─── 5. Observabilidade — deploy na EC2 via SSM ────────────────────────────────
+log "[5/5] Observabilidade — deploy na EC2 via SSM..."
+
+[[ "$OBS_INSTANCE_ID" == "None" || -z "$OBS_INSTANCE_ID" ]] && \
+  die "EC2 de observabilidade não encontrada no estado do Terraform."
+
+info "Aguardando SSM agent na EC2 de observabilidade..."
+for i in $(seq 1 24); do
+  OBS_SSM_STATUS=$(aws ssm describe-instance-information \
+    --profile "$AWS_PROFILE" \
+    --region "$REGION" \
+    --filters "Key=InstanceIds,Values=$OBS_INSTANCE_ID" \
+    --query "InstanceInformationList[0].PingStatus" \
+    --output text 2>/dev/null || echo "None")
+  [[ "$OBS_SSM_STATUS" == "Online" ]] && { info "SSM Online."; break; }
+  info "SSM não disponível ainda ($i/24), aguardando 15s..."
+  sleep 15
+done
+[[ "$OBS_SSM_STATUS" != "Online" ]] && die "EC2 de observabilidade não ficou disponível via SSM após 6 minutos."
+
+# Gera prometheus.yml com o IP privado real do backend
+PROMETHEUS_YML=$(cat <<PROM
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: spring_boot
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['${BACKEND_PRIVATE_IP}:8080']
+        labels:
+          instance: backend
+
+  - job_name: node_exporter
+    static_configs:
+      - targets: ['${BACKEND_PRIVATE_IP}:9100']
+        labels:
+          instance: backend
+PROM
+)
+
+COMPOSE_OBS=$(cat <<'COMPOSE'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: https://${BACKEND_DOMAIN}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+COMPOSE
+)
+
+DATASOURCE_YML=$(cat <<'DS'
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+DS
+)
+
+PROMETHEUS_B64=$(printf '%s' "$PROMETHEUS_YML" | base64 -w 0)
+COMPOSE_OBS_B64=$(printf '%s' "$COMPOSE_OBS"   | base64 -w 0)
+DATASOURCE_B64=$(printf '%s'  "$DATASOURCE_YML" | base64 -w 0)
+
+OBS_SCRIPT=$(cat <<SCRIPT
+#!/bin/bash
+set -euo pipefail
+
+mkdir -p /opt/${PROJECT}-obs/grafana/provisioning/datasources
+
+echo '${PROMETHEUS_B64}' | base64 -d > /opt/${PROJECT}-obs/prometheus.yml
+echo '${COMPOSE_OBS_B64}' | base64 -d > /opt/${PROJECT}-obs/docker-compose.yml
+echo '${DATASOURCE_B64}' | base64 -d > /opt/${PROJECT}-obs/grafana/provisioning/datasources/prometheus.yml
+printf 'GRAFANA_PASSWORD=${GRAFANA_PASSWORD}\nBACKEND_DOMAIN=${BACKEND_DOMAIN}\n' > /opt/${PROJECT}-obs/.env
+
+cd /opt/${PROJECT}-obs
+docker-compose pull
+docker-compose up -d
+SCRIPT
+)
+
+OBS_SCRIPT_B64=$(printf '%s' "$OBS_SCRIPT" | base64 -w 0)
+
+OBS_COMMAND_ID=$(aws ssm send-command \
+  --profile "$AWS_PROFILE" \
+  --region "$REGION" \
+  --instance-ids "$OBS_INSTANCE_ID" \
+  --document-name "AWS-RunShellScript" \
+  --comment "deploy observabilidade" \
+  --parameters "commands=[\"echo '${OBS_SCRIPT_B64}' | base64 -d | bash\"]" \
+  --query "Command.CommandId" \
+  --output text)
+
+info "SSM Command ID: $OBS_COMMAND_ID"
+info "Aguardando execução..."
+
+aws ssm wait command-executed \
+  --profile "$AWS_PROFILE" \
+  --region "$REGION" \
+  --command-id "$OBS_COMMAND_ID" \
+  --instance-id "$OBS_INSTANCE_ID" 2>/dev/null || true
+
+OBS_STATUS=$(aws ssm get-command-invocation \
+  --profile "$AWS_PROFILE" \
+  --region "$REGION" \
+  --command-id "$OBS_COMMAND_ID" \
+  --instance-id "$OBS_INSTANCE_ID" \
+  --query "Status" \
+  --output text)
+
+info "Status: $OBS_STATUS"
+
+if [[ "$OBS_STATUS" != "Success" ]]; then
+  echo "--- stdout ---"
+  aws ssm get-command-invocation \
+    --profile "$AWS_PROFILE" --region "$REGION" \
+    --command-id "$OBS_COMMAND_ID" --instance-id "$OBS_INSTANCE_ID" \
+    --query "StandardOutputContent" --output text
+  echo "--- stderr ---"
+  aws ssm get-command-invocation \
+    --profile "$AWS_PROFILE" --region "$REGION" \
+    --command-id "$OBS_COMMAND_ID" --instance-id "$OBS_INSTANCE_ID" \
+    --query "StandardErrorContent" --output text
+  die "Deploy de observabilidade falhou (status: $OBS_STATUS)"
+fi
+
 # ─── Resumo ────────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════"
@@ -293,4 +502,6 @@ echo "  Deploy concluído!"
 echo ""
 echo "  Frontend : https://$CF_DOMAIN"
 echo "  Backend  : https://$BACKEND_DOMAIN"
+echo ""
+echo "  Grafana  : https://$BACKEND_DOMAIN/grafana  (admin / \$GRAFANA_PASSWORD)"
 echo "════════════════════════════════════════════════"

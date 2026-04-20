@@ -35,3 +35,18 @@ output "ecr_repository_url" {
   description = "URL do repositório ECR para push de imagens"
   value       = aws_ecr_repository.backend.repository_url
 }
+
+output "backend_private_ip" {
+  description = "IP privado da EC2 do backend (usado pelo Prometheus para scrape)"
+  value       = aws_instance.backend.private_ip
+}
+
+output "obs_instance_id" {
+  description = "Instance ID da EC2 de observabilidade (para acesso via SSM)"
+  value       = aws_instance.obs.id
+}
+
+output "obs_private_ip" {
+  description = "IP privado da EC2 de observabilidade (usado pelo nginx do backend)"
+  value       = aws_instance.obs.private_ip
+}

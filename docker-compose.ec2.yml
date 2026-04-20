@@ -16,6 +16,8 @@ services:
 
   backend:
     image: ${ECR_URL}:${IMAGE_TAG}
+    ports:
+      - "8080:8080"
     environment:
       DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
       DB_DRIVER: org.postgresql.Driver
@@ -40,6 +42,29 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/wsssguardo/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    network_mode: host
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
     restart: unless-stopped
 
 volumes:
