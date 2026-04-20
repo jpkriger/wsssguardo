@@ -12,6 +12,7 @@ import {
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
 import NewNoteComposer from "../NewNoteComposer/NewNoteComposer";
+import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import { cn } from "../../lib/utils";
 import { type NoteCreateRequest } from "../../api/note";
 
@@ -21,7 +22,7 @@ interface ArtifactListProps {
   refreshKey?: number;
   projectId?: string;
   artifacts?: ArtifactResponse[];
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   onDownload?: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void;
 }
@@ -54,12 +55,25 @@ export default function ArtifactList({
   const [currentPage, setCurrentPage] = useState(1);
   const [composerOpen, setComposerOpen] = useState(false);
   const [noteComposerOpen, setNoteComposerOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [artifactToDelete, setArtifactToDelete] = useState<ArtifactResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (isControlled) return;
     void load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
+
+  useEffect(() => {
+    if (artifacts.length === 0) {
+      setCurrentPage(1);
+      return;
+    }
+
+    const nextTotalPages = Math.ceil(artifacts.length / PAGE_SIZE);
+    setCurrentPage((prev) => Math.min(prev, nextTotalPages));
+  }, [artifacts.length]);
 
   async function load(): Promise<void> {
     if (!projectId) return;
@@ -79,18 +93,53 @@ export default function ArtifactList({
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  async function handleDelete(id: string): Promise<void> {
-    if (onDelete) {
-      onDelete(id);
+  function requestDelete(id: string): void {
+    const artifact = artifacts.find((item) => item.id === id);
+    if (!artifact) {
+      setError("Artefato não encontrado para exclusão");
       return;
     }
-    if (!projectId) return;
+
+    setArtifactToDelete(artifact);
+    setConfirmDeleteOpen(true);
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (!artifactToDelete) return;
+
+    if (onDelete) {
+      setDeleting(true);
+      setError(null);
+      try {
+        await Promise.resolve(onDelete(artifactToDelete.id));
+        setConfirmDeleteOpen(false);
+        setArtifactToDelete(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+      } finally {
+        setDeleting(false);
+      }
+      return;
+    }
+
+    if (!projectId) {
+      setConfirmDeleteOpen(false);
+      setArtifactToDelete(null);
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
     try {
-      await deleteArtifact(projectId, id);
-      setFetchedArtifacts((prev) => prev.filter((a) => a.id !== id));
-      if (expandedId === id) setExpandedId(null);
+      await deleteArtifact(projectId, artifactToDelete.id);
+      setFetchedArtifacts((prev) => prev.filter((a) => a.id !== artifactToDelete.id));
+      if (expandedId === artifactToDelete.id) setExpandedId(null);
+      setConfirmDeleteOpen(false);
+      setArtifactToDelete(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -229,7 +278,7 @@ export default function ArtifactList({
                   isExpanded={expandedId === artifact.id}
                   onToggleExpand={toggleExpand}
                   onEdit={() => {}}
-                  onDelete={handleDelete}
+                  onDelete={requestDelete}
                   onDownload={handleDownload}
                   onUpdate={handleUpdate}
                 />
@@ -304,6 +353,23 @@ export default function ArtifactList({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Confirmar exclusão"
+        message={`Tem certeza que deseja excluir o artefato "${artifactToDelete?.name ?? ""}"?`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={() => {
+          void handleDelete();
+        }}
+        onCancel={() => {
+          if (deleting) return;
+          setConfirmDeleteOpen(false);
+          setArtifactToDelete(null);
+        }}
+        loading={deleting}
+      />
     </div>
   );
 }
