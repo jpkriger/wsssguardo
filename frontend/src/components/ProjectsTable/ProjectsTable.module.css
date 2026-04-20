@@ -29,3 +29,30 @@
 .sort-icon:hover {
     opacity: 1;
 }
+
+.risk-cell {
+    container-type: inline-size;
+}
+
+.risk-badges {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    gap: 6px;
+    width: fit-content;
+}
+
+.risk-badges--three > :nth-child(3) {
+    grid-column: 1 / -1;
+    justify-self: center;
+}
+
+@container (max-width: 130px) {
+    .risk-badges {
+        grid-template-columns: 1fr;
+    }
+
+    .risk-badges--three > :nth-child(3) {
+        grid-column: auto;
+        justify-self: start;
+    }
+}
