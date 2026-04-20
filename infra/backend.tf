@@ -91,7 +91,7 @@ data "aws_ami" "amazon_linux_2023" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = ["al2023-ami-*-arm64"]
   }
 
   filter {
@@ -145,12 +145,12 @@ resource "aws_security_group" "backend" {
 }
 
 # ---------------------------------------------------------------------------
-# EC2 — t3.small com Amazon Linux 2023
+# EC2 — t4g.small ARM (Amazon Linux 2023 arm64)
 # ---------------------------------------------------------------------------
 
 resource "aws_instance" "backend" {
   ami                    = data.aws_ami.amazon_linux_2023.id
-  instance_type          = "t3.small"
+  instance_type          = "t4g.small"
   subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.backend.id]
   iam_instance_profile   = aws_iam_instance_profile.backend.name
@@ -174,7 +174,7 @@ resource "aws_instance" "backend" {
     usermod -aG docker ec2-user
 
     # Docker Compose
-    curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+    curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64 \
       -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 

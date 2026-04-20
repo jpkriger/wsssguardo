@@ -130,11 +130,11 @@ aws ecr get-login-password --region "$REGION" --profile "$AWS_PROFILE" | \
   docker login --username AWS --password-stdin "$ECR_URL"
 
 info "Build da imagem (tag: $IMAGE_TAG)..."
-docker build -t "$ECR_URL:$IMAGE_TAG" -t "$ECR_URL:latest" ./backend
+docker buildx build --platform linux/arm64 \
+  -t "$ECR_URL:$IMAGE_TAG" -t "$ECR_URL:latest" \
+  --push ./backend
 
-info "Push para ECR..."
-docker push "$ECR_URL:$IMAGE_TAG"
-docker push "$ECR_URL:latest"
+info "Push para ECR concluido (--push inline no buildx)."
 
 # ─── 3. Backend — deploy na EC2 via SSM ────────────────────────────────────────
 log "[3/5] Backend — deploy na EC2 via SSM..."
