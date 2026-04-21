@@ -301,7 +301,7 @@ export default function AssetTable(): ReactElement {
 
           <div className="flex items-center gap-1">
             <button
-              className="page-button-nav flex items-center gap-1 text-sm"
+              className="flex items-center gap-1 text-sm px-2 py-1 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               onClick={() => void loadAssets(page - 1)}
               disabled={page === 0}
             >
@@ -329,13 +329,21 @@ export default function AssetTable(): ReactElement {
 
               return pages.map((p, i) =>
                 p === "..." ? (
-                  <span key={`dots-${i}`} className="page-dots">
+                  <span
+                    key={`dots-${i}`}
+                    className="px-1 text-muted-foreground text-sm"
+                  >
                     …
                   </span>
                 ) : (
                   <button
                     key={p}
-                    className={`page-button ${p === displayPage ? "page-button-active" : ""}`}
+                    className={`w-8 h-8 rounded-md text-sm transition-colors
+              ${
+                p === displayPage
+                  ? "text-foreground font-semibold border border-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
                     onClick={() => void loadAssets((p as number) - 1)}
                   >
                     {p}
@@ -345,7 +353,7 @@ export default function AssetTable(): ReactElement {
             })()}
 
             <button
-              className="page-button-nav flex items-center gap-1 text-sm"
+              className="flex items-center gap-1 text-sm px-2 py-1 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               onClick={() => void loadAssets(page + 1)}
               disabled={page >= totalPages - 1}
             >
