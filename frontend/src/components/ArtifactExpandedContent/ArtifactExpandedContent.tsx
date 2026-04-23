@@ -76,6 +76,28 @@ function FindingRow({
   );
 }
 
+function SidePanelCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactElement | ReactElement[] | string;
+}): ReactElement {
+  return (
+    <div className="w-full border border-border rounded-lg p-4 flex flex-col gap-3">
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 const FIELD_BORDER = "rounded-md px-3 py-2.5 border border-border";
 
 export default function ArtifactExpandedContent({
@@ -99,6 +121,7 @@ export default function ArtifactExpandedContent({
   );
 
   const findings = artifact.findings ?? { high: 0, medium: 0, low: 0 };
+  const riskSummary = artifact.riskSummary?.trim();
   const isLong = artifact.description.length > SHORT_LIMIT;
   const visibleDesc =
     descExpanded || !isLong
@@ -134,7 +157,7 @@ export default function ArtifactExpandedContent({
     "bg-card outline-none text-sm text-foreground mt-0.5 font-sans cursor-pointer border-none";
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 lg:flex-row">
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -331,18 +354,23 @@ export default function ArtifactExpandedContent({
         </div>
       </div>
 
-      <div className="w-52 flex-shrink-0 border border-border rounded-lg p-4 flex flex-col gap-3 self-start">
-        <div>
-          <h4 className="text-sm font-semibold text-foreground">Achados</h4>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Criticidade dos achados ligados
+      <div className="w-full lg:w-52 flex-shrink-0 flex flex-col gap-3 self-start">
+        <SidePanelCard
+          title="Achados"
+          subtitle="Criticidade dos achados ligados"
+        >
+          <div className="flex flex-col gap-2.5">
+            <FindingRow color="bg-red-500" label="Alto" count={findings.high} />
+            <FindingRow color="bg-yellow-400" label="Médio" count={findings.medium} />
+            <FindingRow color="bg-green-500" label="Baixo" count={findings.low} />
+          </div>
+        </SidePanelCard>
+
+        <SidePanelCard title="Resumo de riscos">
+          <p className="text-sm text-foreground leading-relaxed min-h-32 whitespace-pre-wrap">
+            {riskSummary ?? "Nenhum resumo de riscos disponivel para este artefato."}
           </p>
-        </div>
-        <div className="flex flex-col gap-2.5">
-          <FindingRow color="bg-red-500" label="Alto" count={findings.high} />
-          <FindingRow color="bg-yellow-400" label="Médio" count={findings.medium} />
-          <FindingRow color="bg-green-500" label="Baixo" count={findings.low} />
-        </div>
+        </SidePanelCard>
       </div>
     </div>
   );
