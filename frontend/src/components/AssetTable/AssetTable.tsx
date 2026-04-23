@@ -39,6 +39,7 @@ import AssetModal, {
   type AssetModalAsset,
 } from "../AssetModal/AssetModal";
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
 
@@ -62,6 +63,10 @@ export default function AssetTable(): ReactElement {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<AssetResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  function getErrorMessage(error: unknown, fallback: string): string {
+    return error instanceof Error ? error.message : fallback;
+  }
 
   const loadAssets = useCallback(
     async (targetPage: number) => {
@@ -106,10 +111,13 @@ export default function AssetTable(): ReactElement {
       } else {
         await loadAssets(page);
       }
+      setError(null);
+      toast.success("Ativo excluido com sucesso.");
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro ao excluir ativo";
-      setError(message);
+      const message = getErrorMessage(err, "Erro ao excluir ativo");
+      toast.error("Falha ao excluir ativo.", {
+        description: message,
+      });
     } finally {
       setDeleting(false);
     }
@@ -152,10 +160,22 @@ export default function AssetTable(): ReactElement {
       }
       setModalOpen(false);
       await loadAssets(page);
+      setError(null);
+      toast.success(
+        modalMode === "create"
+          ? "Ativo criado com sucesso."
+          : "Ativo atualizado com sucesso.",
+      );
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro ao salvar ativo";
-      setError(message);
+      const message = getErrorMessage(err, "Erro ao salvar ativo");
+      toast.error(
+        modalMode === "create"
+          ? "Falha ao criar ativo."
+          : "Falha ao atualizar ativo.",
+        {
+          description: message,
+        },
+      );
     } finally {
       setModalLoading(false);
     }

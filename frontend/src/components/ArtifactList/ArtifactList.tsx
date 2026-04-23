@@ -14,6 +14,7 @@ import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
 import NewNoteComposer from "../NewNoteComposer/NewNoteComposer";
 import { cn } from "../../lib/utils";
 import { type NoteCreateRequest } from "../../api/note";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
 
@@ -55,6 +56,10 @@ export default function ArtifactList({
   const [composerOpen, setComposerOpen] = useState(false);
   const [noteComposerOpen, setNoteComposerOpen] = useState(false);
 
+  function getErrorMessage(error: unknown, fallback: string): string {
+    return error instanceof Error ? error.message : fallback;
+  }
+
   useEffect(() => {
     if (isControlled) return;
     void load();
@@ -89,8 +94,13 @@ export default function ArtifactList({
       await deleteArtifact(projectId, id);
       setFetchedArtifacts((prev) => prev.filter((a) => a.id !== id));
       if (expandedId === id) setExpandedId(null);
+      setError(null);
+      toast.success("Artefato excluido com sucesso.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+      const message = getErrorMessage(e, "Erro ao excluir artefato");
+      toast.error("Falha ao excluir artefato.", {
+        description: message,
+      });
     }
   }
 
@@ -103,8 +113,14 @@ export default function ArtifactList({
     try {
       const updated = await updateArtifact(projectId, id, updates as ArtifactUpdateRequest);
       setFetchedArtifacts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      setError(null);
+      toast.success("Artefato atualizado com sucesso.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao atualizar artefato");
+      const message = getErrorMessage(e, "Erro ao atualizar artefato");
+      toast.error("Falha ao atualizar artefato.", {
+        description: message,
+      });
+      throw e;
     }
   }
 
@@ -117,8 +133,15 @@ export default function ArtifactList({
     try {
       const created = await createArtifact(projectId, data as ArtifactCreateRequest);
       setFetchedArtifacts((prev) => [...prev, created]);
+      setComposerOpen(false);
+      setError(null);
+      toast.success("Artefato criado com sucesso.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao criar artefato");
+      const message = getErrorMessage(e, "Erro ao criar artefato");
+      toast.error("Falha ao criar artefato.", {
+        description: message,
+      });
+      throw e;
     }
   }
 
@@ -130,6 +153,8 @@ export default function ArtifactList({
       contentType: "note",
     });
     setFetchedArtifacts((prev) => [...prev, created]);
+    setNoteComposerOpen(false);
+    setError(null);
   }
 
   const totalPages = Math.ceil(artifacts.length / PAGE_SIZE);
@@ -179,7 +204,7 @@ export default function ArtifactList({
       <NewArtifactComposer
         open={composerOpen}
         onOpenChange={setComposerOpen}
-        onSaveArtifact={(data) => { void handleCreate(data); }}
+        onSaveArtifact={handleCreate}
       />
       <NewNoteComposer
         open={noteComposerOpen}

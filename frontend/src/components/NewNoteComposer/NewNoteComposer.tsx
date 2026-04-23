@@ -5,6 +5,7 @@ import { ApiErrorResponse } from "../../api/errors";
 import NoteEditor from "../NoteEditor/NoteEditor";
 import { cn } from "../../lib/utils";
 import styles from "./NewNoteComposer.module.css";
+import { toast } from "sonner";
 
 interface NewNoteComposerProps {
   onSave?: () => void;
@@ -98,9 +99,21 @@ export default function NewNoteComposer({ onSave, open: controlledOpen, onOpenCh
       } else {
         await createNote({ title: title.trim(), content });
       }
+      toast.success("Nota criada com sucesso.");
       reset();
       onSave?.();
     } catch (e) {
+      const message =
+        e instanceof ApiErrorResponse
+          ? e.getUserMessage()
+          : e instanceof Error
+            ? e.message
+            : "Erro ao salvar nota.";
+
+      toast.error("Falha ao criar nota.", {
+        description: message,
+      });
+
       if (e instanceof ApiErrorResponse) {
         setError(e.getUserMessage());
       } else {
