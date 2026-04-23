@@ -78,6 +78,7 @@ services:
       dockerfile: Dockerfile
       target: dev
     working_dir: /app
+    command: ["sh", "-lc", "bun install && bun run lint && bun run dev --host 0.0.0.0 --port 5173"]
     environment:
       VITE_PROXY_TARGET: http://backend-dev:8080
       VITE_USE_POLLING: "true"
