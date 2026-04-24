@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import wsssguardo.asset.Asset;
 import wsssguardo.find.Find;
 import wsssguardo.project.Project;
 
@@ -43,9 +44,22 @@ public class Risk {
 
   private String consequences;
 
+  private Float occurrenceProbability;
+
+  private Float impactProbability;
+
+  private String damageOperations;
+
+  private List<Asset> damageAssets;
+
+  private String damageIndividuals;
+
+  private String damageOtherOrgs;
+
   private String recommendation;
 
-  @Column(name = "quantitative_criticality")
-  private Integer quantitativeCriticality;
+  // Valor normalizado 0 - 10000 mapeia em runtime conforme configuração
+  @Column(name = "risk_level")
+  private Integer riskLevel;
 
 }

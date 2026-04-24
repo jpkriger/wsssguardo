@@ -57,8 +57,6 @@ public class Find extends BaseEntity {
   @Column(name = "quantitative_criticality")
   private Integer quantitativeCriticality;
 
-  private String criticality;
-
   private String description;
 
   @Column(name = "threat_event")
