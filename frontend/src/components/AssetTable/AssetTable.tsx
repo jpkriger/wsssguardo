@@ -60,7 +60,9 @@ export default function AssetTable(): ReactElement {
   const [modalLoading, setModalLoading] = useState(false);
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [assetToDelete, setAssetToDelete] = useState<AssetResponse | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<AssetResponse | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
 
   const loadAssets = useCallback(
@@ -167,10 +169,12 @@ export default function AssetTable(): ReactElement {
   const rangeEnd = Math.min((page + 1) * PAGE_SIZE, totalElements);
 
   return (
-    <Card className="py-0 gap-0">
+    <Card className="py-0 gap-0 ">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-8 pt-6 pb-3">
         <div>
-          <h2 className="text-2xl font-normal text-foreground leading-tight">Ativos</h2>
+          <h2 className="text-2xl font-normal text-foreground leading-tight">
+            Ativos
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Ativos registrados e vinculados ao escopo da avaliação
           </p>
@@ -184,77 +188,108 @@ export default function AssetTable(): ReactElement {
         </button>
       </CardHeader>
       <CardContent className="px-0 pt-0 pb-0">
-        {error && (
-          <p className="text-destructive text-sm px-8 pb-4">{error}</p>
-        )}
+        {error && <p className="text-destructive text-sm px-8 pb-4">{error}</p>}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div
+            className="flex items-center justify-center"
+            style={{ minHeight: "calc(5 * 45px)" }}
+          >
             <LoaderCircleIcon className="animate-spin text-muted-foreground h-6 w-6" />
           </div>
         ) : assets.length === 0 ? (
-          <p className="text-muted-foreground text-sm py-12 text-center">
+          <p
+            className="text-muted-foreground text-sm text-center flex items-center justify-center"
+            style={{ minHeight: "calc(5 * 45px)" }}
+          >
             Nenhum ativo encontrado.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[18%]">Ativo</TableHead>
-                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[32%]">Descrição</TableHead>
-                  <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[20%]">Referência</TableHead>
-                  <TableHead className="px-5 py-3 text-center text-lg font-normal text-foreground w-[18%]">Achados ligados</TableHead>
-                  <TableHead className="w-[4%]"></TableHead>
-                  <TableHead className="w-[4%]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assets.map((asset) => (
-                  <TableRow key={asset.id} className="border-t-2 border-border">
-                    <TableCell className="px-5 py-2.5 text-sm text-foreground">{asset.name}</TableCell>
-                    <TableCell className="px-5 py-2.5 text-sm text-muted-foreground">{asset.description}</TableCell>
-                    <TableCell className="px-5 py-2.5">
-                      <div className="ref-cell">
-                        <span className="ref-cell-text text-sm">
-                          {asset.content && asset.content.length > 20
-                            ? `${asset.content.slice(0, 20)}…`
-                            : asset.content ?? "—"}
-                        </span>
-                        {asset.content && (
-                          <button
-                            onClick={() => window.open(asset.content, "_blank")}
-                            className="icon-button"
-                          >
-                            <LinkIcon className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-5 py-2.5 text-sm text-center">0</TableCell>
-                    <TableCell className="px-3 py-2.5 text-center">
-                      <button
-                        className="icon-button inline-flex items-center justify-center"
-                        onClick={() => handleEdit(asset)}
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </TableCell>
-                    <TableCell className="px-3 py-2.5 text-center">
-                      <button
-                        className="icon-button inline-flex items-center justify-center"
-                        onClick={() => {
-                          setAssetToDelete(asset);
-                          setConfirmDeleteOpen(true);
-                        }}
-                      >
-                        <TrashIcon className="h-3.5 w-3.5 text-destructive" />
-                      </button>
-                    </TableCell>
+          <div
+            className="overflow-x-auto"
+            style={{ minHeight: "calc(5 * 45px + 48px)" }}
+          >
+            <div
+              style={{ minHeight: "calc(5 * 45px + 48px)" }}
+              className="flex flex-col justify-start"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[18%]">
+                      Ativo
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[32%]">
+                      Descrição
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-left text-lg font-normal text-foreground w-[20%]">
+                      Referência
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-center text-lg font-normal text-foreground w-[18%]">
+                      Achados ligados
+                    </TableHead>
+                    <TableHead className="w-[4%]"></TableHead>
+                    <TableHead className="w-[4%]"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {assets.map((asset) => (
+                    <TableRow
+                      key={asset.id}
+                      className="border-t-2 border-border"
+                    >
+                      <TableCell className="px-5 py-2.5 text-sm text-foreground">
+                        {asset.name}
+                      </TableCell>
+                      <TableCell className="px-5 py-2.5 text-sm text-muted-foreground align-top">
+                        {asset.description}
+                      </TableCell>
+                      <TableCell className="px-5 py-2.5">
+                        <div className="ref-cell">
+                          <span className="ref-cell-text text-sm">
+                            {asset.content && asset.content.length > 20
+                              ? `${asset.content.slice(0, 20)}…`
+                              : (asset.content ?? "—")}
+                          </span>
+                          {asset.content && (
+                            <button
+                              onClick={() =>
+                                window.open(asset.content, "_blank")
+                              }
+                              className="icon-button"
+                            >
+                              <LinkIcon className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-5 py-2.5 text-sm text-center">
+                        0
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-center">
+                        <button
+                          className="icon-button inline-flex items-center justify-center"
+                          onClick={() => handleEdit(asset)}
+                        >
+                          <PencilIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-center">
+                        <button
+                          className="icon-button inline-flex items-center justify-center"
+                          onClick={() => {
+                            setAssetToDelete(asset);
+                            setConfirmDeleteOpen(true);
+                          }}
+                        >
+                          <TrashIcon className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>
@@ -266,7 +301,7 @@ export default function AssetTable(): ReactElement {
 
           <div className="flex items-center gap-1">
             <button
-              className="page-button-nav flex items-center gap-1 text-sm"
+              className="flex items-center gap-1 text-sm px-2 py-1 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               onClick={() => void loadAssets(page - 1)}
               disabled={page === 0}
             >
@@ -294,13 +329,21 @@ export default function AssetTable(): ReactElement {
 
               return pages.map((p, i) =>
                 p === "..." ? (
-                  <span key={`dots-${i}`} className="page-dots">
+                  <span
+                    key={`dots-${i}`}
+                    className="px-1 text-muted-foreground text-sm"
+                  >
                     …
                   </span>
                 ) : (
                   <button
                     key={p}
-                    className={`page-button ${p === displayPage ? "page-button-active" : ""}`}
+                    className={`w-8 h-8 rounded-md text-sm transition-colors
+              ${
+                p === displayPage
+                  ? "text-foreground font-semibold border border-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
                     onClick={() => void loadAssets((p as number) - 1)}
                   >
                     {p}
@@ -310,7 +353,7 @@ export default function AssetTable(): ReactElement {
             })()}
 
             <button
-              className="page-button-nav flex items-center gap-1 text-sm"
+              className="flex items-center gap-1 text-sm px-2 py-1 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               onClick={() => void loadAssets(page + 1)}
               disabled={page >= totalPages - 1}
             >
