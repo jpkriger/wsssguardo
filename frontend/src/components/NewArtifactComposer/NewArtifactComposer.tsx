@@ -228,7 +228,7 @@ export default function NewArtifactComposer({
           <div>
             <label className={labelClass}>Tipo *</label>
             <Select
-              value={contentType}
+              value={TIPO_OPTIONS.find(o => o.value === contentType)?.label}
               onValueChange={(value) =>
                 handleContentTypeChange(value as ArtifactContentType)
               }
