@@ -251,7 +251,11 @@ fi
 
 cd /opt/${PROJECT}
 docker-compose pull
-docker-compose up -d
+if ! docker-compose up -d; then
+  echo "==> Logs do container db:"
+  docker logs wsssguardo-db-1 2>&1 || true
+  exit 1
+fi
 docker-compose restart nginx
 SCRIPT
 )
