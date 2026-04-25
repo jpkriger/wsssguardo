@@ -58,6 +58,7 @@ services:
       DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       OTLP_ENABLED: "false"
       SECURITY_AUTH_DISABLED: "true"
+      SPRING_LIQUIBASE_CONTEXTS: seed
     volumes:
       - maven_cache:/root/.m2
     depends_on:
