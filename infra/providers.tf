@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "wsssguardo-tfstate-prod"
+    bucket       = "wsssguardo-tf-prod"
     key          = "terraform.tfstate"
     region       = "us-east-2"
     use_lockfile = true
