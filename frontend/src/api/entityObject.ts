@@ -22,7 +22,7 @@ export interface EntityObjectUpdateRequest {
   project_id: number;
 }
 
-const BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/entity-objects`;
+const BASE = "/api/entity-objects";
 
 export async function listEntityObjects(): Promise<EntityObjectResponse[]> {
   const res = await fetch(BASE);

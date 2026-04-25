@@ -14,7 +14,7 @@ export interface NoteResponse {
   createdAt: string;
 }
 
-const BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/artifacts`;
+const BASE = "/api/artifacts";
 
 export async function createNote(body: NoteCreateRequest): Promise<NoteResponse> {
   const res = await fetch(BASE, {
