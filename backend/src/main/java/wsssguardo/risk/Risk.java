@@ -19,6 +19,7 @@ import lombok.Setter;
 import wsssguardo.asset.Asset;
 import wsssguardo.find.Find;
 import wsssguardo.project.Project;
+import wsssguardo.shared.domain.BaseEntity;
 
 @Entity
 @Table(name = "risks")
@@ -28,7 +29,7 @@ import wsssguardo.project.Project;
 @Setter
 @Builder
 @SQLDelete(sql = "UPDATE risks SET deleted_at = NOW() WHERE id = ?")
-public class Risk {
+public class Risk extends BaseEntity {
   
   @Column(nullable = false)
   private String name;
@@ -50,6 +51,7 @@ public class Risk {
 
   private String damageOperations;
 
+  @ManyToMany(fetch = FetchType.LAZY)
   private List<Asset> damageAssets;
 
   private String damageIndividuals;
