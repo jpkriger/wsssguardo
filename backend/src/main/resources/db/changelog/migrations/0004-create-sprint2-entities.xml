@@ -80,16 +80,6 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet id="1777077804783-7" author="francisco">
-        <createTable tableName="finds_risks">
-            <column name="find_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="risks_id" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
     <changeSet id="1777077804783-8" author="francisco">
         <createTable tableName="risks">
             <column name="id" type="UUID">
@@ -182,16 +172,6 @@
         <addForeignKeyConstraint baseColumnNames="categories_id" baseTableName="finds_categories"
                                  constraintName="fk_fincat_on_find_category" referencedColumnNames="id"
                                  referencedTableName="find_categories"/>
-    </changeSet>
-    <changeSet id="1777077804783-20" author="francisco">
-        <addForeignKeyConstraint baseColumnNames="find_id" baseTableName="finds_risks"
-                                 constraintName="fk_finris_on_find" referencedColumnNames="id"
-                                 referencedTableName="finds"/>
-    </changeSet>
-    <changeSet id="1777077804783-21" author="francisco">
-        <addForeignKeyConstraint baseColumnNames="risks_id" baseTableName="finds_risks"
-                                 constraintName="fk_finris_on_risk" referencedColumnNames="id"
-                                 referencedTableName="risks"/>
     </changeSet>
     <changeSet id="1777077804783-22" author="francisco">
         <addForeignKeyConstraint baseColumnNames="damage_assets_id" baseTableName="risks_damage_assets"

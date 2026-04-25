@@ -49,7 +49,7 @@ public class Find extends BaseEntity {
   @ManyToMany(fetch = FetchType.LAZY)
   private List<Artifact> artifacts;
 
-  @ManyToMany(fetch = FetchType.LAZY)
+  @ManyToMany(fetch = FetchType.LAZY, mappedBy = "finds")
   private List<Risk> risks;
 
   private String sector;
