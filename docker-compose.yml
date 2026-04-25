@@ -33,6 +33,20 @@ services:
     profiles:
       - prod
 
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    profiles:
+      - prod
+
   frontend:
     build: ./frontend
     ports:
