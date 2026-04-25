@@ -41,6 +41,25 @@ resource "aws_acm_certificate" "frontend" {
 }
 
 # -------------------------------------------------------------------------
+# CloudFront Function — SPA routing (reescreve rotas do React para index.html)
+# -------------------------------------------------------------------------
+
+resource "aws_cloudfront_function" "spa_routing" {
+  name    = "${var.project}-spa-routing"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var uri = event.request.uri;
+      if (!uri.startsWith('/api/') && !uri.includes('.')) {
+        event.request.uri = '/index.html';
+      }
+      return event.request;
+    }
+  EOT
+}
+
+# -------------------------------------------------------------------------
 # Cloudfront OAC — Controle de acesso
 # -------------------------------------------------------------------------
 
@@ -127,18 +146,10 @@ resource "aws_cloudfront_distribution" "frontend" {
         forward = "none"
       }
     }
-  }
-
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_routing.arn
+    }
   }
 
   depends_on = [aws_acm_certificate.frontend]
