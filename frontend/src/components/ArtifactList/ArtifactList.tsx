@@ -293,7 +293,6 @@ export default function ArtifactList({
           </span>
 
           <div className="flex items-center gap-2">
-            {/* Anterior */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
@@ -308,7 +307,6 @@ export default function ArtifactList({
               Anterior
             </button>
 
-            {/* Page numbers */}
             {getPageNumbers(currentPage, totalPages).map((page, idx) =>
               page === "..." ? (
                 <span
@@ -333,7 +331,6 @@ export default function ArtifactList({
               ),
             )}
 
-            {/* Próximo */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
