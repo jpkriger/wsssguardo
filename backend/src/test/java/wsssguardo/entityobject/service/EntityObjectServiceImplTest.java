@@ -42,7 +42,7 @@ class EntityObjectServiceImplTest {
     @Test
     void createShouldPersistAndReturnResponse() {
         UUID id = UUID.randomUUID();
-        EntityObjectRequestDTO request = new EntityObjectRequestDTO("Example");
+        EntityObjectRequestDTO request = new EntityObjectRequestDTO("Example", null, null);
         EntityObject saved = new EntityObject();
         saved.setId(id);
         saved.setName("Example");

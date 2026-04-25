@@ -1,0 +1,387 @@
+/* ─── Layout wrapper ────────────────────────────────────────────────────── */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ─── Action buttons row ────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1.5px solid #c9a227;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.btnOutline:hover {
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.plusIcon {
+  color: #c9a227;
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.btnFilled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: #c9a227;
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.btnFilled:hover {
+  background: #b89020;
+}
+
+.btnIcon {
+  flex-shrink: 0;
+}
+
+/* ─── Card ──────────────────────────────────────────────────────────────── */
+.card {
+  background: #1a1f2e;
+  border: 1px solid #2a3045;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid #2a3045;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.25rem;
+}
+
+.cardSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ─── Table ─────────────────────────────────────────────────────────────── */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.th {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #1a1f2e;
+  border-bottom: 1px solid #2a3045;
+  white-space: nowrap;
+}
+
+.thCenter {
+  text-align: center;
+}
+
+.td {
+  padding: 0.875rem 1rem;
+  color: #e2e8f0;
+  border-bottom: 1px solid #222840;
+  vertical-align: middle;
+}
+
+.tdChevron {
+  width: 2.5rem;
+  padding-right: 0.25rem;
+}
+
+.tdCenter {
+  text-align: center;
+}
+
+/* ─── Rows ──────────────────────────────────────────────────────────────── */
+.row {
+  background: #151929;
+  transition: background 0.1s;
+}
+
+.row:hover {
+  background: #1e2436;
+}
+
+.row:last-child .td {
+  border-bottom: none;
+}
+
+.rowExpanded {
+  background: #1e2436;
+}
+
+.expandedRow {
+  background: #111626;
+}
+
+.expandedRow td {
+  border-bottom: 1px solid #2a3045;
+}
+
+.expandedCell {
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.expandedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.expandedText {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.expandedActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.expandedBtn {
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.3rem;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.expandedBtn:hover {
+  border-color: #c9a227;
+  color: #c9a227;
+}
+
+.expandedBtnDelete:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+/* ─── Chevron button ────────────────────────────────────────────────────── */
+.chevronBtn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.chevronBtn:hover {
+  color: #c9a227;
+  background: rgba(201, 162, 39, 0.08);
+}
+
+/* ─── Artifact name ─────────────────────────────────────────────────────── */
+.artifactName {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+/* ─── Resumo (truncated) ────────────────────────────────────────────────── */
+.resumo {
+  color: #64748b;
+  display: block;
+  max-width: 28rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Achados count ─────────────────────────────────────────────────────── */
+.achadosCount {
+  display: inline-block;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+/* ─── Badges ────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.fileIcon {
+  flex-shrink: 0;
+}
+
+.badgeNota {
+  background: rgba(201, 162, 39, 0.12);
+  color: #c9a227;
+}
+
+.badgePdf {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.badgeDoc {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+}
+
+.badgePlanilha {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+/* ─── Pagination ────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.5rem;
+  border-top: 1px solid #2a3045;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.paginationInfo {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pageNav {
+  padding: 0.3rem 0.6rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 0.3rem;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+
+.pageNav:disabled {
+  color: #334155;
+  cursor: default;
+}
+
+.pageNav:not(:disabled):hover {
+  color: #e2e8f0;
+}
+
+.pageNavNext {
+  color: #c9a227;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.pageNavNext:disabled {
+  color: #334155;
+}
+
+.pageNavNext:not(:disabled):hover {
+  color: #d4b040;
+}
+
+.navArrow {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.pageBtn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 0.3rem;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+.pageBtn:hover {
+  color: #e2e8f0;
+  background: #1e2436;
+}
+
+.pageBtnActive {
+  border-color: #c9a227;
+  color: #c9a227;
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.pageBtnActive:hover {
+  background: rgba(201, 162, 39, 0.12);
+  color: #c9a227;
+}
+
+.ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  color: #334155;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  user-select: none;
+}

@@ -10,5 +10,6 @@
     <include file="db/changelog/migrations/0003-add-artifact-category-drivelink.xml"/>
     <include file="db/changelog/migrations/0003-add-seed-data.xml"/>
     <include file="db/changelog/migrations/0004-create-sprint2-entities.xml"/>
+    <include file="db/changelog/migrations/0004-add-entity-object-description-reference.xml"/>
 
 </databaseChangeLog>
