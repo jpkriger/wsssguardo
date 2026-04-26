@@ -121,7 +121,6 @@ export default function ArtifactExpandedContent({
   );
 
   const findings = artifact.findings ?? { high: 0, medium: 0, low: 0 };
-  const riskSummary = artifact.riskSummary?.trim();
   const isLong = artifact.description.length > SHORT_LIMIT;
   const visibleDesc =
     descExpanded || !isLong
@@ -366,10 +365,15 @@ export default function ArtifactExpandedContent({
           </div>
         </SidePanelCard>
 
-        <SidePanelCard title="Resumo de riscos">
-          <p className="text-sm text-foreground leading-relaxed min-h-32 whitespace-pre-wrap">
-            {riskSummary ?? "Nenhum resumo de riscos disponivel para este artefato."}
-          </p>
+        <SidePanelCard
+          title="Riscos"
+          subtitle="Criticidade dos riscos ligados"
+        >
+          <div className="flex flex-col gap-2.5">
+            <FindingRow color="bg-red-500" label="Alto" count={findings.high} />
+            <FindingRow color="bg-yellow-400" label="Médio" count={findings.medium} />
+            <FindingRow color="bg-green-500" label="Baixo" count={findings.low} />
+          </div>
         </SidePanelCard>
       </div>
     </div>
