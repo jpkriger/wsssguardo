@@ -56,10 +56,6 @@ export default function ArtifactList({
   const [composerOpen, setComposerOpen] = useState(false);
   const [noteComposerOpen, setNoteComposerOpen] = useState(false);
 
-  function getErrorMessage(error: unknown, fallback: string): string {
-    return error instanceof Error ? error.message : fallback;
-  }
-
   useEffect(() => {
     if (isControlled) return;
     void load();
@@ -96,11 +92,8 @@ export default function ArtifactList({
       if (expandedId === id) setExpandedId(null);
       setError(null);
       toast.success("Artefato excluido com sucesso.");
-    } catch (e) {
-      const message = getErrorMessage(e, "Erro ao excluir artefato");
-      toast.error("Falha ao excluir artefato.", {
-        description: message,
-      });
+    } catch {
+      toast.error("Falha ao excluir artefato.");
     }
   }
 
@@ -116,10 +109,7 @@ export default function ArtifactList({
       setError(null);
       toast.success("Artefato atualizado com sucesso.");
     } catch (e) {
-      const message = getErrorMessage(e, "Erro ao atualizar artefato");
-      toast.error("Falha ao atualizar artefato.", {
-        description: message,
-      });
+      toast.error("Falha ao editar artefato.");
       throw e;
     }
   }
@@ -136,12 +126,9 @@ export default function ArtifactList({
       setComposerOpen(false);
       setError(null);
       toast.success("Artefato criado com sucesso.");
-    } catch (e) {
-      const message = getErrorMessage(e, "Erro ao criar artefato");
-      toast.error("Falha ao criar artefato.", {
-        description: message,
-      });
-      throw e;
+    } catch (error) {
+      toast.error("Falha ao criar artefato.");
+      throw error;
     }
   }
 

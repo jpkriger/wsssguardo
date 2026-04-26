@@ -64,10 +64,6 @@ export default function AssetTable(): ReactElement {
   const [assetToDelete, setAssetToDelete] = useState<AssetResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  function getErrorMessage(error: unknown, fallback: string): string {
-    return error instanceof Error ? error.message : fallback;
-  }
-
   const loadAssets = useCallback(
     async (targetPage: number) => {
       setLoading(true);
@@ -113,11 +109,8 @@ export default function AssetTable(): ReactElement {
       }
       setError(null);
       toast.success("Ativo excluido com sucesso.");
-    } catch (err: unknown) {
-      const message = getErrorMessage(err, "Erro ao excluir ativo");
-      toast.error("Falha ao excluir ativo.", {
-        description: message,
-      });
+    } catch {
+      toast.error("Falha ao excluir ativo.");
     } finally {
       setDeleting(false);
     }
@@ -166,15 +159,11 @@ export default function AssetTable(): ReactElement {
           ? "Ativo criado com sucesso."
           : "Ativo atualizado com sucesso.",
       );
-    } catch (err: unknown) {
-      const message = getErrorMessage(err, "Erro ao salvar ativo");
+    } catch {
       toast.error(
         modalMode === "create"
           ? "Falha ao criar ativo."
           : "Falha ao atualizar ativo.",
-        {
-          description: message,
-        },
       );
     } finally {
       setModalLoading(false);

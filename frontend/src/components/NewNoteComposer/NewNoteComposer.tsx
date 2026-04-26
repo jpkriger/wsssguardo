@@ -103,16 +103,7 @@ export default function NewNoteComposer({ onSave, open: controlledOpen, onOpenCh
       reset();
       onSave?.();
     } catch (e) {
-      const message =
-        e instanceof ApiErrorResponse
-          ? e.getUserMessage()
-          : e instanceof Error
-            ? e.message
-            : "Erro ao salvar nota.";
-
-      toast.error("Falha ao criar nota.", {
-        description: message,
-      });
+      toast.error("Falha ao criar nota.");
 
       if (e instanceof ApiErrorResponse) {
         setError(e.getUserMessage());
