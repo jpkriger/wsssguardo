@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   listArtifacts,
@@ -69,13 +69,7 @@ export default function ArtifactList({
   const [composerOpen, setComposerOpen] = useState(false);
   const [noteComposerOpen, setNoteComposerOpen] = useState(false);
 
-  useEffect(() => {
-    if (isControlled) return;
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
-
-  async function load(): Promise<void> {
+  const load = useCallback(async (): Promise<void> => {
     if (!projectId) return;
     setLoading(true);
     setError(null);
@@ -87,7 +81,12 @@ export default function ArtifactList({
     } finally {
       setLoading(false);
     }
-  }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    void load();
+  }, [refreshKey, projectId, isControlled, load]);
 
   function toggleExpand(id: string): void {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -181,7 +180,6 @@ export default function ArtifactList({
 
   return (
     <div className="rounded-[20px] overflow-hidden bg-card">
-      {/* Title */}
       <div className="px-8 pt-6 pb-3 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-normal text-foreground leading-tight">
@@ -227,7 +225,6 @@ export default function ArtifactList({
         onSave={() => setNoteComposerOpen(false)}
       />
 
-      {/* Error / Loading / Empty states */}
       {error && <p className="text-destructive text-sm px-8 pb-4">{error}</p>}
       {loading && (
         <p className="text-muted-foreground text-sm px-8 pb-4">Carregando…</p>
@@ -241,7 +238,6 @@ export default function ArtifactList({
         </p>
       )}
 
-      {/* Table */}
       {artifacts.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
@@ -290,7 +286,6 @@ export default function ArtifactList({
         </div>
       )}
 
-      {/* Pagination */}
       {artifacts.length > 0 && (
         <div className="flex items-center justify-between px-8 py-5">
           <span className="text-base text-muted-foreground">
@@ -298,7 +293,6 @@ export default function ArtifactList({
           </span>
 
           <div className="flex items-center gap-2">
-            {/* Anterior */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
@@ -313,7 +307,6 @@ export default function ArtifactList({
               Anterior
             </button>
 
-            {/* Page numbers */}
             {getPageNumbers(currentPage, totalPages).map((page, idx) =>
               page === "..." ? (
                 <span
@@ -338,7 +331,6 @@ export default function ArtifactList({
               ),
             )}
 
-            {/* Próximo */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
