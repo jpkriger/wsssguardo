@@ -11,21 +11,6 @@ interface Artefato {
   achadosLigados: number;
 }
 
-const MOCK_ARTEFATOS: Artefato[] = [
-  { id: 1, nome: "Nota de entrevista", tipo: "nota", resumo: "Registro de entrevistas com lideranças da organização sobre os processos de segurança", achadosLigados: 1 },
-  { id: 2, nome: "PDF exemplo", tipo: "pdf", resumo: "Registro de entrevistas com lideranças da organização sobre os processos de segurança", achadosLigados: 1 },
-  { id: 3, nome: "Docx example", tipo: "doc", resumo: "Registro de entrevistas com lideranças da organização sobre os processos de segurança", achadosLigados: 1 },
-  { id: 4, nome: "Exel example", tipo: "planilha", resumo: "Registro de entrevistas com lideranças da organização sobre os processos de segurança", achadosLigados: 1 },
-  { id: 5, nome: "Nota de entrevista", tipo: "nota", resumo: "Registro de entrevistas com lideranças da organização sobre os processos de segurança", achadosLigados: 1 },
-  { id: 6, nome: "Relatório de conformidade", tipo: "pdf", resumo: "Análise detalhada dos processos internos e conformidade com normas de segurança", achadosLigados: 2 },
-  { id: 7, nome: "Política de acesso", tipo: "doc", resumo: "Documentação das políticas de controle de acesso e autenticação", achadosLigados: 3 },
-  { id: 8, nome: "Inventário de ativos", tipo: "planilha", resumo: "Lista completa dos ativos críticos e suas classificações de risco", achadosLigados: 2 },
-  { id: 9, nome: "Nota de campo", tipo: "nota", resumo: "Observações de campo durante auditoria presencial na sede da organização", achadosLigados: 1 },
-  { id: 10, nome: "Certificado SSL", tipo: "pdf", resumo: "Documentação de certificados digitais e chaves criptográficas em uso", achadosLigados: 0 },
-  { id: 11, nome: "Mapeamento de rede", tipo: "doc", resumo: "Diagrama e documentação completa da infraestrutura de rede interna", achadosLigados: 2 },
-  { id: 12, nome: "Controles de acesso", tipo: "planilha", resumo: "Planilha de mapeamento de usuários, perfis e permissões por sistema", achadosLigados: 1 },
-];
-
 const TIPO_LABEL: Record<ArtefatoTipo, string> = {
   nota: "NOTA",
   pdf: "PDF",
@@ -34,7 +19,6 @@ const TIPO_LABEL: Record<ArtefatoTipo, string> = {
 };
 
 const PAGE_SIZE = 5;
-const TOTAL_PAGES = Math.ceil(MOCK_ARTEFATOS.length / PAGE_SIZE);
 
 function FileIcon(): ReactElement {
   return (
@@ -100,12 +84,14 @@ function buildPageNumbers(current: number, total: number): (number | "...")[] {
 }
 
 export default function ArtefatosTab(): ReactElement {
+  const artefatos: Artefato[] = [];
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  const totalPages = Math.ceil(artefatos.length / PAGE_SIZE);
   const start = (page - 1) * PAGE_SIZE;
-  const pageItems = MOCK_ARTEFATOS.slice(start, start + PAGE_SIZE);
-  const pageNumbers = buildPageNumbers(page, TOTAL_PAGES);
+  const pageItems = artefatos.slice(start, start + PAGE_SIZE);
+  const pageNumbers = buildPageNumbers(page, totalPages);
 
   function toggleExpand(id: number): void {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -146,6 +132,13 @@ export default function ArtefatosTab(): ReactElement {
               </tr>
             </thead>
             <tbody>
+              {pageItems.length === 0 && (
+                <tr>
+                  <td colSpan={5} className={styles.td} style={{ textAlign: "center" }}>
+                    Nenhum artefato encontrado.
+                  </td>
+                </tr>
+              )}
               {pageItems.map((artefato) => (
                 <Fragment key={artefato.id}>
                   <tr
@@ -199,8 +192,9 @@ export default function ArtefatosTab(): ReactElement {
 
         <div className={styles.pagination}>
           <span className={styles.paginationInfo}>
-            Mostrando {start + 1}–{Math.min(start + PAGE_SIZE, MOCK_ARTEFATOS.length)} de{" "}
-            {MOCK_ARTEFATOS.length} artefatos
+            {artefatos.length === 0
+              ? "Nenhum artefato"
+              : `Mostrando ${start + 1}–${Math.min(start + PAGE_SIZE, artefatos.length)} de ${artefatos.length} artefatos`}
           </span>
           <div className={styles.paginationControls}>
             <button
@@ -229,8 +223,8 @@ export default function ArtefatosTab(): ReactElement {
             )}
             <button
               className={`${styles.pageNav} ${styles.pageNavNext}`}
-              onClick={() => setPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-              disabled={page === TOTAL_PAGES}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
               type="button"
             >
               Próximo <span className={styles.navArrow}>›</span>
