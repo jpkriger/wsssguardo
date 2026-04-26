@@ -1,14 +1,11 @@
 package wsssguardo.find.service;
 
-import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.UUID;
 
-import lombok.RequiredArgsConstructor;
-import wsssguardo.find.repository.FindRepository;
+import wsssguardo.find.dto.responsedto.FindNameResponseDTO;
 
-@Service
-@RequiredArgsConstructor
-public class FindService {
-  
-  private final FindRepository repository;
+public interface FindService {
 
+    List<FindNameResponseDTO> getFindingNameByProjectId(UUID projectId);
 }
