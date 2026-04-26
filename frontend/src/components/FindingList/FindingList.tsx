@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { ChevronLeft, ChevronRight, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import {
   listFindings,
   deleteFinding,
+  createFinding,
+  updateFinding,
   type FindingResponse,
   type FindingSeverity,
 } from "../../api/finding";
 import { cn } from "../../lib/utils";
+import FindingModal, {
+  type FindingModalSubmitData,
+} from "../FindingModal/FindingModal";
 
 const PAGE_SIZE = 5;
 
@@ -83,6 +88,11 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
   const [colsOpen, setColsOpen] = useState(false);
   const colsRef = useRef<HTMLDivElement>(null);
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [modalFinding, setModalFinding] = useState<FindingResponse | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,6 +128,54 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao excluir achado");
     }
+  }
+
+  async function handleModalSubmit(data: FindingModalSubmitData): Promise<void> {
+    setModalLoading(true);
+    try {
+      if (data.id) {
+        const updated = await updateFinding(projectId, data.id, {
+          name: data.name,
+          description: data.description,
+          numericSeverity: data.numericSeverity,
+          categoricalSeverity: data.categoricalSeverity,
+          category: data.category,
+          reference: data.reference,
+          linkedAssetIds: data.linkedAssetIds,
+          linkedArtifactIds: data.linkedArtifactIds,
+        });
+        setFindings((prev) => prev.map((f) => (f.id === data.id ? updated : f)));
+      } else {
+        const created = await createFinding(projectId, {
+          name: data.name,
+          description: data.description,
+          numericSeverity: data.numericSeverity,
+          categoricalSeverity: data.categoricalSeverity,
+          category: data.category,
+          reference: data.reference,
+          linkedAssetIds: data.linkedAssetIds,
+          linkedArtifactIds: data.linkedArtifactIds,
+        });
+        setFindings((prev) => [created, ...prev]);
+      }
+      setModalOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar achado");
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  function openCreate(): void {
+    setModalMode("create");
+    setModalFinding(null);
+    setModalOpen(true);
+  }
+
+  function openEdit(finding: FindingResponse): void {
+    setModalMode("edit");
+    setModalFinding(finding);
+    setModalOpen(true);
   }
 
   function toggleCol(key: string): void {
@@ -190,7 +248,7 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
           <button
             type="button"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer"
-            onClick={() => {}}
+            onClick={openCreate}
           >
             <Plus className="h-4 w-4" />
             Adicionar
@@ -317,14 +375,24 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
                     </td>
                   )}
                   <td className="px-5 py-3 text-center">
-                    <button
-                      type="button"
-                      title="Excluir achado"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-none bg-transparent outline-none"
-                      onClick={() => void handleDelete(finding.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        title="Editar achado"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer border-none bg-transparent outline-none"
+                        onClick={() => openEdit(finding)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Excluir achado"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-none bg-transparent outline-none"
+                        onClick={() => void handleDelete(finding.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -410,6 +478,16 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
           </div>
         </div>
       )}
+
+      <FindingModal
+        open={modalOpen}
+        loading={modalLoading}
+        mode={modalMode}
+        finding={modalFinding}
+        projectId={projectId}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(data) => void handleModalSubmit(data)}
+      />
     </div>
   );
 }
