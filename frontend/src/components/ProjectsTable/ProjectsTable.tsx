@@ -123,21 +123,22 @@ function ProgressBar({
 }
 
 function RiskBadges({ risks }: { risks: Project["risks"] }): React.JSX.Element {
+  const hasThreeRisks = risks.length === 3;
+
   return (
     <div
-      className="grid grid-cols-2 gap-[6px]"
-      style={{ width: "fit-content", minWidth: 0 }}
+      className={cn(
+        styles["risk-badges"],
+        hasThreeRisks && styles["risk-badges--three"],
+      )}
     >
-      {risks.map((risk, i) => {
+      {risks.map((risk) => {
         const cfg = riskConfig[risk.level];
-        const isLast = i === risks.length - 1;
-        const isOdd = risks.length % 2 !== 0;
         return (
           <Badge
             key={risk.level}
             className={cn(
               "!w-[55px] !h-[24px] flex items-center justify-center !text-[12px] !rounded-[6px] whitespace-nowrap px-2",
-              isLast && isOdd ? "col-span-2 mx-auto" : "",
               cfg.className,
             )}
           >
@@ -233,6 +234,8 @@ interface ProjectsTableProps {
   totalCount: number;
 }
 
+type SortField = "name" | "daysRemaining" | "consultant";
+
 export function ProjectsTable({
   projects,
   totalCount,
@@ -241,7 +244,12 @@ export function ProjectsTable({
   const [search, setSearch] = useState("");
   const [consultant, setConsultant] = useState(ALL_CONSULTANTS_LABEL);
   const [page, setPage] = useState(1);
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirections, setSortDirections] = useState<Record<SortField, boolean>>({
+    name: true,
+    daysRemaining: true,
+    consultant: true,
+  });
 
   const consultantOptions = useMemo(() => {
     const names = Array.from(
@@ -274,9 +282,27 @@ export function ProjectsTable({
     return matchSearch && matchConsultant;
   });
 
-  const sorted = [...filtered].sort((a, b) =>
-    sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-  );
+  const sorted = useMemo(() => {
+    const activeSortAsc = sortDirections[sortField];
+
+    return [...filtered].sort((a, b) => {
+      if (sortField === "name") {
+        return activeSortAsc
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      }
+      else if (sortField === "consultant") {
+        return activeSortAsc
+          ? a.consultant.name.localeCompare(b.consultant.name)
+          : b.consultant.name.localeCompare(a.consultant.name);
+      }
+      else {
+        return activeSortAsc
+          ? a.daysRemaining - b.daysRemaining
+          : b.daysRemaining - a.daysRemaining;
+      }
+    });
+  }, [filtered, sortField, sortDirections]);
 
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const start = (page - 1) * PAGE_SIZE + 1;
@@ -330,40 +356,74 @@ export function ProjectsTable({
         <TableHeader>
           <TableRow>
             {["Projeto", "Tempo restante", "Consultor", "Riscos", "Ação"].map(
-              (label, i) => (
-                <TableHead key={label} className="!text-[18px] px-5 py-3">
-                  <span
-                    className={cn(
-                      "flex items-center gap-[10px]",
-                      i === 4 && "justify-end",
-                      i === 0 && "cursor-pointer select-none",
-                    )}
-                    onClick={
-                      i === 0 ? () => setSortAsc((prev) => !prev) : undefined
-                    }
-                  >
-                    {label}
-                    {i === 0 &&
-                      (sortAsc ? (
-                        <ChevronUp
-                          className={cn("h-4 w-4", styles["sort-icon"])}
-                        />
-                      ) : (
-                        <ChevronDown
-                          className={cn("h-4 w-4", styles["sort-icon"])}
-                        />
-                      ))}
-                    {i > 0 && i < 4 && (
-                      <ArrowUpDown
-                        className={cn(
-                          "h-4 w-4 cursor-pointer",
-                          styles["sort-icon"],
-                        )}
-                      />
-                    )}
-                  </span>
-                </TableHead>
-              ),
+              (label, i) => {
+                const isSortable = i === 0 || i === 1 || i === 2;
+
+                let currentField: SortField = "name";
+                if (i === 1) currentField = "daysRemaining";
+                if (i === 2) currentField = "consultant";
+
+                const isProjectColumn = i === 0;
+                const isActiveSort = sortField === currentField;
+                const currentSortAsc = sortDirections[currentField];
+
+                return (
+                  <TableHead key={label} className="!text-[18px] px-5 py-3">
+                    <span
+                      className={cn(
+                        "flex items-center gap-[10px] select-none",
+                        isSortable &&
+                          "cursor-pointer hover:text-foreground transition-colors",
+                        i === 4 && "justify-end",
+                      )}
+                      onClick={() => {
+                        if (!isSortable) return;
+
+                        if (sortField === currentField) {
+                          setSortDirections((prev) => ({
+                            ...prev,
+                            [currentField]: !prev[currentField],
+                          }));
+                          return;
+                        }
+
+                        setSortField(currentField);
+                      }}
+                    >
+                      {label}
+
+                      {isSortable &&
+                        (isProjectColumn ? (
+                          currentSortAsc ? (
+                            <ChevronUp
+                              className={cn(
+                                "h-4 w-4",
+                                !isActiveSort && "opacity-40",
+                                styles["sort-icon"],
+                              )}
+                            />
+                          ) : (
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4",
+                                !isActiveSort && "opacity-40",
+                                styles["sort-icon"],
+                              )}
+                            />
+                          )
+                        ) : (
+                          <ArrowUpDown
+                            className={cn(
+                              "h-4 w-4",
+                              isActiveSort ? "text-foreground" : "opacity-40",
+                              styles["sort-icon"],
+                            )}
+                          />
+                        ))}
+                    </span>
+                  </TableHead>
+                );
+              },
             )}
           </TableRow>
         </TableHeader>
@@ -405,7 +465,7 @@ export function ProjectsTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="px-5 py-4">
+                <TableCell className={cn("px-5 py-4", styles["risk-cell"])}>
                   <RiskBadges risks={project.risks} />
                 </TableCell>
                 <TableCell className="px-5 py-4 text-right">

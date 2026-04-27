@@ -17,6 +17,7 @@ import wsssguardo.user.domain.UserRole;
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Getter
 @Setter
 public class User extends BaseEntity {

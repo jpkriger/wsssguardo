@@ -6,7 +6,7 @@ PROJECT="wsssguardo"
 REGION="us-east-2"
 BOOTSTRAP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../infra/bootstrap" && pwd)"
 
-BUCKET_NAME="${PROJECT}-tfstate-${ENVIRONMENT}"
+BUCKET_NAME="${PROJECT}-tf-${ENVIRONMENT}"
 
 echo "==> Ambiente    : ${ENVIRONMENT}"
 echo "==> Bootstrap   : ${BOOTSTRAP_DIR}"
