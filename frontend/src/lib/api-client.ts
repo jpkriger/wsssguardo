@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import ky, { HTTPError } from "ky"
+=======
+import ky, { type BeforeErrorState, type HTTPError } from "ky";
+>>>>>>> 10a2ec3a363ec844d7365edae99578e9823f5f77
 
 const apiClient = ky.create({
   prefix: "/api",
@@ -7,16 +11,13 @@ const apiClient = ky.create({
   },
   hooks: {
     beforeError: [
-      async (error) => {
-        const response = error.response as Response;
-        if (response?.body) {
+      async (state: BeforeErrorState): Promise<Error> => {
+        const error = state.error as HTTPError;
+        if (error.response?.body) {
           try {
-            const body = (await response.clone().json()) as { message?: string };
-            // Attach message so callers can read error.message
-            (error as Error).message = body.message ?? response.statusText;
-          } catch {
-            // JSON parse failed — leave message as-is
-          }
+            const body = (await error.response.clone().json()) as { message?: string };
+            error.message = body.message ?? error.response.statusText;
+          } catch { /* ignore */ }
         }
         return error;
       },

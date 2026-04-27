@@ -5,8 +5,8 @@
 }
 
 .ref-cell-text {
-  color: #9A9DA0;
-  filter: blur(1.5px);
+  color: var(--muted-foreground);
+  filter: blur(2.5px);
   user-select: none;
 }
 
@@ -21,51 +21,4 @@
 
 .icon-button:hover {
   opacity: 1;
-}
-
-.page-button {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  background: transparent;
-  color: #9A9DA0;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.page-button:not(:disabled):hover {
-  background: #2a2a2a;
-  border-radius: 5px;
-  color: #fff;
-}
-
-.page-button:disabled,
-.page-button-nav:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.page-button-active {
-  color: #fff;
-  border-radius: 5px;
-  border: 0.5px solid #ffffff;
-  
-}
-
-.page-dots {
-  font-size: 12px;
-  color: #9A9DA0;
-  padding: 0 4px;
-  user-select: none;
-}
-
-.page-button-nav {
-  background: transparent;
-  cursor: pointer;
-  padding: 0 4px;
-  color: #9A9DA0;
-}
-
-.page-info {
-  color: #9A9DA0;
 }
