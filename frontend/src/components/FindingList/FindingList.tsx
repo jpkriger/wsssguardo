@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
+import { Plus } from "lucide-react";
 import {
   listFindings,
   deleteFinding,
@@ -8,44 +8,12 @@ import {
   type FindingResponse,
   type FindingSeverity,
 } from "../../api/finding";
-import { cn } from "../../lib/utils";
 import FindingModal, {
   type FindingModalSubmitData,
 } from "../FindingModal/FindingModal";
+import CategoryFilter from "../CategoryFilter/CategoryFilter";
 
 const PAGE_SIZE = 5;
-
-const STORAGE_KEY = "sguardo-finding-columns";
-
-interface ColumnDef {
-  key: string;
-  label: string;
-}
-
-const OPTIONAL_COLUMNS: ColumnDef[] = [
-  { key: "descricao", label: "Descrição" },
-  { key: "severidadeNum", label: "Severidade Numérica" },
-  { key: "severidadeCat", label: "Severidade Categórica" },
-  { key: "categoria", label: "Categoria" },
-  { key: "ativosLigados", label: "Ativos Ligados" },
-  { key: "artefatosLigados", label: "Artefatos Ligados" },
-  { key: "referencia", label: "Referência" },
-];
-
-const ALL_KEYS = new Set(OPTIONAL_COLUMNS.map((c) => c.key));
-
-function loadVisibleCols(): Set<string> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (Array.isArray(parsed)) return new Set(parsed as string[]);
-    }
-  } catch {
-    // ignore
-  }
-  return new Set(ALL_KEYS);
-}
 
 const SEVERITY_LABELS: Record<FindingSeverity, string> = {
   CRITICAL: "Crítica",
@@ -55,18 +23,15 @@ const SEVERITY_LABELS: Record<FindingSeverity, string> = {
   INFO: "Info",
 };
 
-const SEVERITY_COLORS: Record<FindingSeverity, string> = {
-  CRITICAL: "text-red-600",
-  HIGH: "text-red-500",
-  MEDIUM: "text-yellow-400",
-  LOW: "text-green-500",
-  INFO: "text-blue-400",
+const SEVERITY_BADGE: Record<FindingSeverity, string> = {
+  CRITICAL: "bg-red-700 text-white",
+  HIGH: "bg-red-600 text-white",
+  MEDIUM: "bg-yellow-500 text-white",
+  LOW: "bg-green-600 text-white",
+  INFO: "bg-blue-500 text-white",
 };
 
-function getPageNumbers(
-  currentPage: number,
-  totalPages: number,
-): (number | "...")[] {
+function getPageNumbers(currentPage: number, totalPages: number): (number | "...")[] {
   if (totalPages <= 7)
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   if (currentPage <= 3) return [1, 2, 3, "...", totalPages - 1, totalPages];
@@ -84,9 +49,9 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [visibleCols, setVisibleCols] = useState<Set<string>>(loadVisibleCols);
-  const [colsOpen, setColsOpen] = useState(false);
-  const colsRef = useRef<HTMLDivElement>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const [categoryConfig, setCategoryConfig] = useState<Record<string, boolean>>({});
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -97,16 +62,6 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent): void {
-      if (colsRef.current && !colsRef.current.contains(e.target as Node)) {
-        setColsOpen(false);
-      }
-    }
-    if (colsOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [colsOpen]);
 
   async function load(): Promise<void> {
     setLoading(true);
@@ -125,6 +80,7 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
     try {
       await deleteFinding(projectId, id);
       setFindings((prev) => prev.filter((f) => f.id !== id));
+      if (expandedId === id) setExpandedId(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao excluir achado");
     }
@@ -178,73 +134,57 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
     setModalOpen(true);
   }
 
-  function toggleCol(key: string): void {
-    setVisibleCols((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
-      return next;
-    });
+  const categoryColumns = useMemo(
+    () =>
+      [...new Set(findings.flatMap((f) => (f.category ? [f.category] : [])))].sort().map((cat) => ({ id: cat, label: cat })),
+    [findings],
+  );
+
+  useEffect(() => {
+    setCategoryConfig(Object.fromEntries(categoryColumns.map((c) => [c.id, false])));
+    setCurrentPage(1);
+  }, [categoryColumns]);
+
+  function toggleCategory(columnId: string): void {
+    setCategoryConfig((prev) => ({ ...prev, [columnId]: !prev[columnId] }));
   }
 
-  const totalPages = Math.ceil(findings.length / PAGE_SIZE);
+  function resetCategories(): void {
+    setCategoryConfig(Object.fromEntries(categoryColumns.map((c) => [c.id, false])));
+  }
+
+  const filteredFindings = useMemo(() => {
+    const activeFilters = Object.entries(categoryConfig).filter(([, v]) => v).map(([k]) => k);
+    if (activeFilters.length === 0) return findings;
+    return findings.filter((f) => f.category && activeFilters.includes(f.category));
+  }, [findings, categoryConfig]);
+
+  const totalPages = Math.ceil(filteredFindings.length / PAGE_SIZE);
   const paged = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return findings.slice(start, start + PAGE_SIZE);
-  }, [findings, currentPage]);
+    return filteredFindings.slice(start, start + PAGE_SIZE);
+  }, [filteredFindings, currentPage]);
 
-  const pageStart = findings.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const pageEnd = Math.min(currentPage * PAGE_SIZE, findings.length);
-
-  const vis = visibleCols;
+  const pageStart = filteredFindings.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const pageEnd = Math.min(currentPage * PAGE_SIZE, filteredFindings.length);
 
   return (
-    <div className="rounded-[20px] overflow-hidden bg-card">
+    <div className="rounded-xl overflow-hidden bg-card border border-border">
       {/* Header */}
-      <div className="px-8 pt-6 pb-3 flex items-start justify-between gap-4">
+      <div className="px-6 pt-5 pb-4 border-b border-border flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-normal text-foreground leading-tight">
-            Achados identificados
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Vulnerabilidades e observações encontradas durante a análise
-          </p>
+          <div className="text-base font-bold text-foreground">Achados</div>
+          <div className="text-sm text-muted-foreground mt-0.5">
+            Achados registrados e vinculados ao escopo da avaliação
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Column visibility selector */}
-          <div className="relative" ref={colsRef}>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border border-border cursor-pointer"
-              onClick={() => setColsOpen((o) => !o)}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Colunas
-            </button>
-            {colsOpen && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg p-3 min-w-[200px]">
-                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                  Colunas visíveis
-                </p>
-                {OPTIONAL_COLUMNS.map((col) => (
-                  <label
-                    key={col.key}
-                    className="flex items-center gap-2 py-1 cursor-pointer text-sm text-foreground hover:text-foreground/80"
-                  >
-                    <input
-                      type="checkbox"
-                      className="accent-primary"
-                      checked={vis.has(col.key)}
-                      onChange={() => toggleCol(col.key)}
-                    />
-                    {col.label}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
+          <CategoryFilter
+            columns={categoryColumns}
+            visibleColumns={categoryConfig}
+            onToggleColumn={(id) => { toggleCategory(id); setCurrentPage(1); }}
+            onReset={resetCategories}
+          />
           <button
             type="button"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 transition-opacity outline-none border-none cursor-pointer"
@@ -256,206 +196,180 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
         </div>
       </div>
 
-      {/* States */}
-      {error && <p className="text-destructive text-sm px-8 pb-4">{error}</p>}
+      {error && <div className="text-destructive text-sm px-6 py-4">{error}</div>}
       {loading && (
-        <p className="text-muted-foreground text-sm px-8 pb-4">Carregando…</p>
+        <div className="text-muted-foreground text-sm px-6 py-4">Carregando…</div>
       )}
       {!loading && findings.length === 0 && !error && (
-        <p
-          className="text-muted-foreground text-sm text-center flex items-center justify-center"
-          style={{ minHeight: "273px" }}
-        >
+        <div className="text-muted-foreground text-sm text-center py-16">
           Nenhum achado encontrado.
-        </p>
+        </div>
       )}
 
-      {/* Table */}
       {findings.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th className="px-5 py-3 text-left text-lg font-normal text-foreground whitespace-nowrap">
-                  Achado
+              <tr className="border-b border-border">
+                <th className="w-10 px-4 py-3" aria-label="Expandir" />
+                <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                  Título
                 </th>
-                {vis.has("descricao") && (
-                  <th className="px-5 py-3 text-left text-lg font-normal text-foreground whitespace-nowrap">
-                    Descrição
-                  </th>
-                )}
-                {vis.has("severidadeNum") && (
-                  <th className="px-5 py-3 text-center text-lg font-normal text-foreground whitespace-nowrap">
-                    Severidade Numérica
-                  </th>
-                )}
-                {vis.has("severidadeCat") && (
-                  <th className="px-5 py-3 text-left text-lg font-normal text-foreground whitespace-nowrap">
-                    Severidade Categórica
-                  </th>
-                )}
-                {vis.has("categoria") && (
-                  <th className="px-5 py-3 text-left text-lg font-normal text-foreground whitespace-nowrap">
-                    Categoria
-                  </th>
-                )}
-                {vis.has("ativosLigados") && (
-                  <th className="px-5 py-3 text-center text-lg font-normal text-foreground whitespace-nowrap">
-                    Ativos Ligados
-                  </th>
-                )}
-                {vis.has("artefatosLigados") && (
-                  <th className="px-5 py-3 text-center text-lg font-normal text-foreground whitespace-nowrap">
-                    Artefatos Ligados
-                  </th>
-                )}
-                {vis.has("referencia") && (
-                  <th className="px-5 py-3 text-left text-lg font-normal text-foreground whitespace-nowrap">
-                    Referência
-                  </th>
-                )}
-                <th className="px-5 py-3 text-center text-lg font-normal text-foreground whitespace-nowrap">
-                  Ações
+                <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                  Descrição
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                  Classificação
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                  Artefatos ligados
                 </th>
               </tr>
             </thead>
             <tbody>
               {paged.map((finding) => (
-                <tr
-                  key={finding.id}
-                  className="border-t border-border hover:bg-muted/40 transition-colors"
-                >
-                  <td className="px-5 py-3 text-sm text-foreground font-medium">
-                    {finding.name}
-                  </td>
-                  {vis.has("descricao") && (
-                    <td className="px-5 py-3 text-sm text-muted-foreground max-w-[220px] truncate">
+                <Fragment key={finding.id}>
+                  <tr
+                    className={`border-t border-border transition-colors ${
+                      expandedId === finding.id
+                        ? "bg-muted/30"
+                        : "hover:bg-muted/20"
+                    }`}
+                  >
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer text-sm leading-none p-1"
+                        onClick={() =>
+                          setExpandedId((prev) =>
+                            prev === finding.id ? null : finding.id,
+                          )
+                        }
+                        aria-label={
+                          expandedId === finding.id ? "Recolher" : "Expandir"
+                        }
+                      >
+                        {expandedId === finding.id ? "▴" : "▾"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground font-medium">
+                      {finding.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-[260px] truncate">
                       {finding.description ?? "—"}
                     </td>
-                  )}
-                  {vis.has("severidadeNum") && (
-                    <td className="px-5 py-3 text-sm text-center text-foreground">
-                      {finding.numericSeverity ?? "—"}
-                    </td>
-                  )}
-                  {vis.has("severidadeCat") && (
-                    <td className="px-5 py-3 text-sm">
+                    <td className="px-4 py-3">
                       {finding.categoricalSeverity ? (
                         <span
-                          className={cn(
-                            "font-medium",
-                            SEVERITY_COLORS[finding.categoricalSeverity],
-                          )}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold ${SEVERITY_BADGE[finding.categoricalSeverity]}`}
                         >
                           {SEVERITY_LABELS[finding.categoricalSeverity]}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </td>
-                  )}
-                  {vis.has("categoria") && (
-                    <td className="px-5 py-3 text-sm text-muted-foreground">
-                      {finding.category ?? "—"}
-                    </td>
-                  )}
-                  {vis.has("ativosLigados") && (
-                    <td className="px-5 py-3 text-sm text-center text-foreground">
-                      {finding.linkedAssetIds.length}
-                    </td>
-                  )}
-                  {vis.has("artefatosLigados") && (
-                    <td className="px-5 py-3 text-sm text-center text-foreground">
+                    <td className="px-4 py-3 text-sm text-center text-foreground">
                       {finding.linkedArtifactIds.length}
                     </td>
-                  )}
-                  {vis.has("referencia") && (
-                    <td className="px-5 py-3 text-sm text-muted-foreground">
-                      {finding.reference ?? "—"}
-                    </td>
-                  )}
-                  <td className="px-5 py-3 text-center">
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        type="button"
-                        title="Editar achado"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer border-none bg-transparent outline-none"
-                        onClick={() => openEdit(finding)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        title="Excluir achado"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border-none bg-transparent outline-none"
-                        onClick={() => void handleDelete(finding.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {Array.from({ length: Math.max(0, PAGE_SIZE - paged.length) }).map(
-                (_, i) => (
-                  <tr key={`ghost-${i}`} aria-hidden="true">
-                    <td
-                      colSpan={
-                        1 +
-                        OPTIONAL_COLUMNS.filter((c) => vis.has(c.key)).length +
-                        1
-                      }
-                      className="px-5 py-2.5"
-                    >
-                      <span className="inline-flex px-4 py-2 text-sm invisible">
-                        ghost
-                      </span>
-                    </td>
                   </tr>
-                ),
-              )}
+
+                  {expandedId === finding.id && (
+                    <tr className="border-t border-border bg-muted/10">
+                      <td colSpan={5} className="px-8 py-4">
+                        <div className="flex flex-col gap-3">
+                          <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm">
+                            {finding.description && (
+                              <div className="col-span-2">
+                                <span className="text-muted-foreground">Descrição: </span>
+                                <span className="text-foreground">{finding.description}</span>
+                              </div>
+                            )}
+                            {finding.category && (
+                              <div>
+                                <span className="text-muted-foreground">Categoria: </span>
+                                <span className="text-foreground">{finding.category}</span>
+                              </div>
+                            )}
+                            {finding.reference && (
+                              <div>
+                                <span className="text-muted-foreground">Referência: </span>
+                                <span className="text-foreground">{finding.reference}</span>
+                              </div>
+                            )}
+                            {finding.numericSeverity != null && (
+                              <div>
+                                <span className="text-muted-foreground">Severidade numérica: </span>
+                                <span className="text-foreground">{finding.numericSeverity}</span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="text-muted-foreground">Ativos ligados: </span>
+                              <span className="text-foreground">{finding.linkedAssetIds.length}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              className="px-3 py-1 text-sm rounded border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer"
+                              onClick={() => openEdit(finding)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="px-3 py-1 text-sm rounded border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors bg-transparent cursor-pointer"
+                              onClick={() => void handleDelete(finding.id)}
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Pagination */}
       {findings.length > 0 && (
-        <div className="flex items-center justify-between px-8 py-5">
-          <span className="text-base text-muted-foreground">
-            Mostrando {pageStart}-{pageEnd} de {findings.length} achados
-          </span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {pageStart}-{pageEnd} de {filteredFindings.length} achados
+          </div>
+          <div className="flex items-center gap-1">
             <button
-              className={cn(
-                "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
+              type="button"
+              className={`px-3 py-1.5 text-sm rounded border bg-transparent transition-colors ${
                 currentPage === 1
-                  ? "opacity-40 cursor-not-allowed text-muted-foreground"
-                  : "cursor-pointer text-muted-foreground hover:text-foreground",
-              )}
+                  ? "border-border/40 text-muted-foreground/40 cursor-not-allowed"
+                  : "border-border text-muted-foreground hover:text-foreground cursor-pointer"
+              }`}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
               Anterior
             </button>
             {getPageNumbers(currentPage, totalPages).map((page, idx) =>
               page === "..." ? (
                 <span
                   key={`ellipsis-${idx}`}
-                  className="flex items-center justify-center w-9 h-9 text-sm text-muted-foreground"
+                  className="flex items-center justify-center w-8 h-8 text-sm text-muted-foreground"
                 >
-                  …
+                  ···
                 </span>
               ) : (
                 <button
                   key={page}
-                  className={cn(
-                    "flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-colors cursor-pointer",
+                  type="button"
+                  className={`flex items-center justify-center w-8 h-8 rounded text-sm transition-colors cursor-pointer border bg-transparent ${
                     page === currentPage
-                      ? "border border-border text-foreground cursor-default"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page}
@@ -463,17 +377,16 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
               ),
             )}
             <button
-              className={cn(
-                "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
+              type="button"
+              className={`px-3 py-1.5 text-sm rounded border bg-transparent transition-colors ${
                 currentPage === totalPages
-                  ? "opacity-40 cursor-not-allowed text-muted-foreground"
-                  : "cursor-pointer text-muted-foreground hover:text-foreground",
-              )}
+                  ? "border-border/40 text-muted-foreground/40 cursor-not-allowed"
+                  : "border-border text-muted-foreground hover:text-foreground cursor-pointer"
+              }`}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             >
-              Próximo
-              <ChevronRight className="h-4 w-4" />
+              Próximo ›
             </button>
           </div>
         </div>
