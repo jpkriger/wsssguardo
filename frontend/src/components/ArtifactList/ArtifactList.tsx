@@ -5,9 +5,7 @@ import {
   deleteArtifact,
   updateArtifact,
   createArtifact,
-  type ArtifactResponse,
-  type ArtifactUpdateRequest,
-  type ArtifactCreateRequest,
+  type ArtifactResponse
 } from "../../api/artifact";
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
@@ -120,7 +118,7 @@ export default function ArtifactList({
       const updated = await updateArtifact(
         projectId,
         id,
-        updates as ArtifactUpdateRequest,
+        updates
       );
       setFetchedArtifacts((prev) =>
         prev.map((a) => (a.id === id ? updated : a)),
@@ -149,7 +147,7 @@ export default function ArtifactList({
     try {
       const created = await createArtifact(
         projectId,
-        data as ArtifactCreateRequest,
+        data
       );
       setFetchedArtifacts((prev) => [...prev, created]);
     } catch (e) {
