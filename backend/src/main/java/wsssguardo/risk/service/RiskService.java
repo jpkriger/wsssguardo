@@ -1,14 +1,8 @@
 package wsssguardo.risk.service;
 
-import org.springframework.stereotype.Service;
+import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
+import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 
-import lombok.RequiredArgsConstructor;
-import wsssguardo.risk.repository.RiskRepository;
-
-@Service
-@RequiredArgsConstructor
-public class RiskService {
-  
-  private final RiskRepository repository;
-
+public interface RiskService {
+  RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username);
 }

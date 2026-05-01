@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -39,6 +40,10 @@ public class Risk extends BaseEntity {
   private Project project;
 
   @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+      name = "risks_finds",
+      joinColumns = @JoinColumn(name = "risk_id"),
+      inverseJoinColumns = @JoinColumn(name = "finds_id"))
   private List<Find> finds;
 
   private String description;
@@ -52,6 +57,10 @@ public class Risk extends BaseEntity {
   private String damageOperations;
 
   @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+      name = "risks_damage_assets",
+      joinColumns = @JoinColumn(name = "risk_id"),
+      inverseJoinColumns = @JoinColumn(name = "damage_assets_id"))
   private List<Asset> damageAssets;
 
   private String damageIndividuals;
