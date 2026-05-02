@@ -5,9 +5,7 @@ import {
   deleteArtifact,
   updateArtifact,
   createArtifact,
-  type ArtifactResponse,
-  type ArtifactUpdateRequest,
-  type ArtifactCreateRequest,
+  type ArtifactResponse
 } from "../../api/artifact";
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
@@ -101,7 +99,7 @@ export default function ArtifactList({
     }
     if (!projectId) return;
     try {
-      const updated = await updateArtifact(projectId, id, updates as ArtifactUpdateRequest);
+      const updated = await updateArtifact(projectId, id, updates);
       setFetchedArtifacts((prev) => prev.map((a) => (a.id === id ? updated : a)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao atualizar artefato");
@@ -115,7 +113,7 @@ export default function ArtifactList({
   ): Promise<void> {
     if (!projectId) return;
     try {
-      const created = await createArtifact(projectId, data as ArtifactCreateRequest);
+      const created = await createArtifact(projectId, data);
       setFetchedArtifacts((prev) => [...prev, created]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao criar artefato");

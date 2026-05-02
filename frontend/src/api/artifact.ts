@@ -36,10 +36,10 @@ export interface ArtifactResponse {
   category?: string;
   content?: string;
   driveLink?: string;
-  riskSummary?: string;
   lastEditedBy?: string;
   lastEditedAt?: string;
   findings?: { high: number; medium: number; low: number };
+  risks?: { high: number; medium: number; low: number };
 }
 
 export interface ArtifactCreateRequest {
@@ -123,7 +123,6 @@ function toFrontend(dto: BackendArtifactResponse): ArtifactResponse {
     category: dto.category ?? undefined,
     content: dto.content ?? undefined,
     driveLink: dto.driveLink ?? undefined,
-    riskSummary: dto.llmSummary ?? undefined,
     lastEditedBy: dto.lastModifiedBy ?? undefined,
     lastEditedAt: dto.updatedAt ?? undefined,
   };
