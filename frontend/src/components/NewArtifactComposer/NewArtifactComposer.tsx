@@ -228,14 +228,16 @@ export default function NewArtifactComposer({
           <div>
             <label className={labelClass}>Tipo *</label>
             <Select
-              value={TIPO_OPTIONS.find(o => o.value === contentType)?.label}
+              value={contentType}
               onValueChange={(value) =>
                 handleContentTypeChange(value as ArtifactContentType)
               }
               disabled={saving}
             >
               <SelectTrigger className={selectTriggerClass}>
-                <SelectValue />
+                <SelectValue placeholder="Selecione um tipo">
+                  {TIPO_OPTIONS.find(o => o.value === contentType)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="z-[60]">
                 {TIPO_OPTIONS.map((opt) => (
