@@ -33,7 +33,6 @@ describe("entityObject api", () => {
         new Response(JSON.stringify(payload), { status: 201 }),
       );
 
-<<<<<<< HEAD
     const request: Parameters<typeof createEntityObject>[0] = {
       name: "Second",
       description: "desc",
@@ -42,20 +41,11 @@ describe("entityObject api", () => {
     };
 
     await expect(createEntityObject(request)).resolves.toEqual(payload);
-=======
-    await expect(createEntityObject({ name: "Second", description: "", reference: "" })).resolves.toEqual(
-      payload,
-    );
->>>>>>> 80f4007 (FIX(frontend): remove project_id de EntityObjectCreateRequest e EntityObjectUpdateRequest)
 
     expect(fetchSpy).toHaveBeenCalledWith("/api/entity-objects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-<<<<<<< HEAD
       body: JSON.stringify(request),
-=======
-      body: JSON.stringify({ name: "Second", description: "", reference: "" }),
->>>>>>> 80f4007 (FIX(frontend): remove project_id de EntityObjectCreateRequest e EntityObjectUpdateRequest)
     });
   });
 
