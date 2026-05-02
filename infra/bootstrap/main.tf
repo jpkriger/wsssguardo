@@ -1,5 +1,5 @@
 locals {
-  bucket_name = "${var.project}-tfstate-${var.environment}"
+  bucket_name = "${var.project}-tf-${var.environment}"
 
   tags = {
     Project     = var.project

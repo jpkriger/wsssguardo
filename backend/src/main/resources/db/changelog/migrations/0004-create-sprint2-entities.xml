@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="1777077804783-2" author="francisco">
+        <createTable tableName="find_categories">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_find_categories"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME"/>
+            <column name="deleted_at" type="DATETIME"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="last_modified_by" type="VARCHAR(255)"/>
+            <column name="deleted_by" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-3" author="francisco">
+        <createTable tableName="finds">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_finds"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME"/>
+            <column name="deleted_at" type="DATETIME"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="last_modified_by" type="VARCHAR(255)"/>
+            <column name="deleted_by" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="project_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sector" type="VARCHAR(255)"/>
+            <column name="quantitative_criticality" type="INT"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="threat_event" type="VARCHAR(255)"/>
+            <column name="reference" type="VARCHAR(255)"/>
+            <column name="recommendation" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-4" author="francisco">
+        <createTable tableName="finds_artifacts">
+            <column name="find_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="artifacts_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-5" author="francisco">
+        <createTable tableName="finds_assets">
+            <column name="find_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assets_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-6" author="francisco">
+        <createTable tableName="finds_categories">
+            <column name="find_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="categories_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-8" author="francisco">
+        <createTable tableName="risks">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_risks"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME"/>
+            <column name="deleted_at" type="DATETIME"/>
+            <column name="created_by" type="VARCHAR(255)"/>
+            <column name="last_modified_by" type="VARCHAR(255)"/>
+            <column name="deleted_by" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="project_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="consequences" type="VARCHAR(255)"/>
+            <column name="occurrence_probability" type="FLOAT"/>
+            <column name="impact_probability" type="FLOAT"/>
+            <column name="damage_operations" type="VARCHAR(255)"/>
+            <column name="damage_individuals" type="VARCHAR(255)"/>
+            <column name="damage_other_orgs" type="VARCHAR(255)"/>
+            <column name="recommendation" type="VARCHAR(255)"/>
+            <column name="risk_level" type="INT"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-9" author="francisco">
+        <createTable tableName="risks_damage_assets">
+            <column name="risk_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="damage_assets_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-10" author="francisco">
+        <createTable tableName="risks_finds">
+            <column name="risk_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="finds_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1777077804783-11" author="francisco">
+        <addColumn tableName="projects">
+            <column name="configuration" type="jsonb"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="1777077804783-12" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="finds" constraintName="FK_FINDS_ON_PROJECT"
+                                 referencedColumnNames="id" referencedTableName="projects"/>
+    </changeSet>
+    <changeSet id="1777077804783-13" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="risks" constraintName="FK_RISKS_ON_PROJECT"
+                                 referencedColumnNames="id" referencedTableName="projects"/>
+    </changeSet>
+    <changeSet id="1777077804783-14" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="artifacts_id" baseTableName="finds_artifacts"
+                                 constraintName="fk_finart_on_artifact" referencedColumnNames="id"
+                                 referencedTableName="artifacts"/>
+    </changeSet>
+    <changeSet id="1777077804783-15" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="find_id" baseTableName="finds_artifacts"
+                                 constraintName="fk_finart_on_find" referencedColumnNames="id"
+                                 referencedTableName="finds"/>
+    </changeSet>
+    <changeSet id="1777077804783-16" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="assets_id" baseTableName="finds_assets"
+                                 constraintName="fk_finass_on_asset" referencedColumnNames="id"
+                                 referencedTableName="assets"/>
+    </changeSet>
+    <changeSet id="1777077804783-17" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="find_id" baseTableName="finds_assets"
+                                 constraintName="fk_finass_on_find" referencedColumnNames="id"
+                                 referencedTableName="finds"/>
+    </changeSet>
+    <changeSet id="1777077804783-18" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="find_id" baseTableName="finds_categories"
+                                 constraintName="fk_fincat_on_find" referencedColumnNames="id"
+                                 referencedTableName="finds"/>
+    </changeSet>
+    <changeSet id="1777077804783-19" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="categories_id" baseTableName="finds_categories"
+                                 constraintName="fk_fincat_on_find_category" referencedColumnNames="id"
+                                 referencedTableName="find_categories"/>
+    </changeSet>
+    <changeSet id="1777077804783-22" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="damage_assets_id" baseTableName="risks_damage_assets"
+                                 constraintName="fk_risdamass_on_asset" referencedColumnNames="id"
+                                 referencedTableName="assets"/>
+    </changeSet>
+    <changeSet id="1777077804783-23" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="risk_id" baseTableName="risks_damage_assets"
+                                 constraintName="fk_risdamass_on_risk" referencedColumnNames="id"
+                                 referencedTableName="risks"/>
+    </changeSet>
+    <changeSet id="1777077804783-24" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="finds_id" baseTableName="risks_finds"
+                                 constraintName="fk_risfin_on_find" referencedColumnNames="id"
+                                 referencedTableName="finds"/>
+    </changeSet>
+    <changeSet id="1777077804783-25" author="francisco">
+        <addForeignKeyConstraint baseColumnNames="risk_id" baseTableName="risks_finds"
+                                 constraintName="fk_risfin_on_risk" referencedColumnNames="id"
+                                 referencedTableName="risks"/>
+    </changeSet>
+    <changeSet id="1777077804783-1" author="francisco">
+        <modifyDataType columnName="drive_link" newDataType="VARCHAR(255)" tableName="artifacts"/>
+    </changeSet>
+
+</databaseChangeLog>
