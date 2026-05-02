@@ -77,5 +77,6 @@ public class Project extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
+    @Builder.Default
     private ProjectConfiguration configuration = ProjectConfiguration.createDefault();
 }

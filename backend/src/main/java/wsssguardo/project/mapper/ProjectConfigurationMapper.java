@@ -13,24 +13,33 @@ import wsssguardo.project.dto.RiskConfigDTO;
 public class ProjectConfigurationMapper {
     
     public ProjectConfigurationDTO toProjectConfigurationDTO(ProjectConfiguration projectConfiguration) {
-       return ProjectConfigurationDTO.builder()
-       .riskConfig(toRiskConfigDTO(projectConfiguration.getRiskConfig()))
-       .build();
+        if (projectConfiguration == null) {
+            projectConfiguration = ProjectConfiguration.createDefault();
+        }
+        return ProjectConfigurationDTO.builder()
+               .riskConfig(toRiskConfigDTO(projectConfiguration.getRiskConfig()))
+               .build();
     }
 
     public RiskCategoryDTO toRiskCategoryDTO(RiskCategory riskCategory) {
+        if (riskCategory == null) {
+            return null;
+        }
         return RiskCategoryDTO.builder()
-        .name(riskCategory.getLabel())
-        .minValue(riskCategory.getMinRange())
-        .maxValue(riskCategory.getMaxRange())
-        .build();
+               .name(riskCategory.getLabel())
+               .minValue(riskCategory.getMinRange())
+               .maxValue(riskCategory.getMaxRange())
+               .build();
     }
 
     public RiskConfigDTO toRiskConfigDTO(RiskConfig riskConfig) {
+        if (riskConfig == null) {
+            riskConfig = ProjectConfiguration.createDefault().getRiskConfig();
+        }
         return RiskConfigDTO.builder()
-        .minRange(riskConfig.getMinRange())
-        .maxRange(riskConfig.getMaxRange())
-        .categories(riskConfig.getCategories().stream().map(this::toRiskCategoryDTO).toList())
-        .build();
+               .minRange(riskConfig.getMinRange())
+               .maxRange(riskConfig.getMaxRange())
+               .categories(riskConfig.getCategories().stream().map(this::toRiskCategoryDTO).toList())
+               .build();
     }
 }

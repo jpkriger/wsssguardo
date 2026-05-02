@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="0006" author="wsssguardo">
+        <update tableName="projects">
+            <column name="configuration" type="jsonb" value='{"riskConfig": {"minRange": 0, "maxRange": 10, "categories": [{"label": "Baixo", "minRange": 0, "maxRange": 3}, {"label": "Médio", "minRange": 4, "maxRange": 7}, {"label": "Alto", "minRange": 8, "maxRange": 10}]}}' />
+            <where>configuration IS NULL</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>
