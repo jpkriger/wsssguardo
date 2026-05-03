@@ -1,18 +1,27 @@
 package wsssguardo.project.controller;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import wsssguardo.project.dto.ProjectCreateRequest;
 import wsssguardo.project.dto.ProjectResponse;
+import wsssguardo.project.dto.ProjectUpdateRequest;
 import wsssguardo.project.service.ProjectService;
 import wsssguardo.shared.openapi.ApiListAll;
 
@@ -40,5 +49,27 @@ public class ProjectController {
     @GetMapping(params = "userId")
     public ResponseEntity<List<UUID>> projectsByUserId(@RequestParam UUID userId) {
         return ResponseEntity.ok(service.projectsByUserId(userId));
+    }
+
+    @Operation(summary = "Criar projeto")
+    @PostMapping
+    public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
+        ProjectResponse response = service.createProject(request);
+        URI location = URI.create("/api/projects/" + response.id());
+        return ResponseEntity.created(location).body(response);
+    }
+
+    @Operation(summary = "Atualizar projeto")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProjectResponse> updateProject(@PathVariable UUID id,
+            @Valid @RequestBody ProjectUpdateRequest request) {
+        return ResponseEntity.ok(service.updateProject(id, request));
+    }
+
+    @Operation(summary = "Deletar projeto")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
+        service.deleteProject(id);
+        return ResponseEntity.noContent().build();
     }
 }

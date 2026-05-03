@@ -24,6 +24,12 @@ public class EntityObject {
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 255)
+    private String reference;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
