@@ -3,6 +3,7 @@ package wsssguardo.customer.service;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import wsssguardo.customer.Customer;
@@ -22,26 +23,24 @@ public class CustomerService {
     private final CustomerMapper mapper;
     private final CustomerUpdateMapper updateMapper;
 
+    @Transactional
     public CustomerResponseDTO create(CustomerRequestDTO dto) {
-        Customer customer = Customer.builder()
-                .name(dto.name())
-                .build();
-
+        Customer customer = mapper.toEntity(dto);
         repository.save(customer);
-
         return mapper.toResponseDTO(customer);
     }
 
+    @Transactional
     public CustomerResponseDTO update(UUID id, CustomerUpdateRequestDTO dto) {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
 
         updateMapper.update(customer, dto);
-        repository.save(customer);
 
         return mapper.toResponseDTO(customer);
     }
 
+    @Transactional
     public void delete(UUID id) {
         Customer customer = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
