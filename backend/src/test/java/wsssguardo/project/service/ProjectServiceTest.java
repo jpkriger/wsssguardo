@@ -11,19 +11,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
 import wsssguardo.customer.Customer;
+import wsssguardo.customer.repository.CustomerRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.dto.ProjectResponse;
 import wsssguardo.project.mapper.ProjectMapper;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -31,12 +34,17 @@ class ProjectServiceTest {
     @Mock
     private ProjectRepository repository;
 
-    private ProjectService service;
+    @Mock
+    private CustomerRepository customerRepository;
 
-    @BeforeEach
-    void setUp() {
-        service = new ProjectService(repository, new ProjectMapper());
-    }
+    @Mock
+    private UserRepository userRepository;
+
+    @Spy
+    private ProjectMapper mapper = new ProjectMapper();
+
+    @InjectMocks
+    private ProjectService service;
 
     @Test
     void listAllProjectsShouldReturnMappedProjects() {
