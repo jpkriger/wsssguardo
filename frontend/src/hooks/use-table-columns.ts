@@ -14,7 +14,7 @@ export function useTableColumns(
   resetColumns: () => void;
 } {
   const [visibleColumns, setVisibleColumns] = useState<ColumnConfig>(() => {
-    const saved = localStorage.getItem(table-columns-${tableId});
+    const saved = localStorage.getItem(`table-columns-${tableId}`);
     return saved ? (JSON.parse(saved) as ColumnConfig) : defaultColumns;
   });
 
@@ -22,7 +22,7 @@ export function useTableColumns(
     (columnId: string) => {
       setVisibleColumns((prev) => {
         const updated = { ...prev, [columnId]: !prev[columnId] };
-        localStorage.setItem(table-columns-${tableId}, JSON.stringify(updated));
+        localStorage.setItem(`table-columns-${tableId}`, JSON.stringify(updated));
         return updated;
       });
     },
@@ -36,7 +36,7 @@ export function useTableColumns(
 
   const resetColumns = useCallback(() => {
     setVisibleColumns(defaultColumns);
-    localStorage.setItem(table-columns-${tableId}, JSON.stringify(defaultColumns));
+    localStorage.setItem(`table-columns-${tableId}`, JSON.stringify(defaultColumns));
   }, [tableId, defaultColumns]);
 
   return { visibleColumns, toggleColumn, getVisibleColumnIds, resetColumns };

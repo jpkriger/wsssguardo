@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import ky, { HTTPError } from "ky"
-=======
 import ky, { type BeforeErrorState, type HTTPError } from "ky";
->>>>>>> 10a2ec3a363ec844d7365edae99578e9823f5f77
 
 const apiClient = ky.create({
   prefix: "/api",

@@ -32,7 +32,7 @@ export default function ColumnVisibilityDropdown({
 
       <div className="absolute right-0 top-full pt-1 w-72 hidden group-hover:block">
         <div className="bg-background border border-input rounded-lg shadow-lg z-50 p-4">
-        <div className="space-y-3 max-h-80 overflow-y-auto">
+          <div className="space-y-3 max-h-80 overflow-y-auto">
           {columns.map((column) => (
             <div
               key={column.id}
@@ -40,17 +40,17 @@ export default function ColumnVisibilityDropdown({
             >
               <input
                 type="checkbox"
-                id={col-${column.id}}
+                id={`col-${column.id}`}
                 checked={visibleColumns[column.id] ?? true}
                 onChange={() => onToggleColumn(column.id)}
                 className="w-4 h-4 cursor-pointer rounded border-input"
               />
-              <label htmlFor={col-${column.id}} className="text-sm cursor-pointer flex-1">
+              <label htmlFor={`col-${column.id}`} className="text-sm cursor-pointer flex-1">
                 {column.label}
               </label>
             </div>
           ))}
-        </div>
+          </div>
 
         {onReset && (
           <div className="mt-4 pt-4 border-t border-input">
