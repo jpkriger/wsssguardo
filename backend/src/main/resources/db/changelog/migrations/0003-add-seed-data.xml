@@ -84,4 +84,165 @@
             ('66666666-6666-6666-6666-000000000021', CURRENT_TIMESTAMP, 'system_seed', 'Contratos NDAs', 'Drive Jurídico', 'https://drive.google.com/folder1', 'NDAs terceiros.', 'LINK', '33333333-3333-3333-3333-000000000003');
         </sql>
     </changeSet>
+
+    <changeSet id="1775379395672-seed-remaining-data" author="Leonardo" context="seed">
+        <sql>
+            -- 7. Entity Objects (Conceitos de Segurança)
+            INSERT INTO entity_objects (id, created_at, created_by, name, description, reference) VALUES
+            ('77777777-7777-7777-7777-000000000001', CURRENT_TIMESTAMP, 'Daniel', 'Autenticação', 'Verificação de identidade do usuário', 'OWASP-A7-2021'),
+            ('77777777-7777-7777-7777-000000000002', CURRENT_TIMESTAMP, 'Daniel', 'Autorização', 'Controle de acesso e permissões', 'OWASP-A1-2021'),
+            ('77777777-7777-7777-7777-000000000003', CURRENT_TIMESTAMP, 'Daniel', 'Criptografia', 'Proteção de dados em trânsito e repouso', 'OWASP-A2-2021'),
+            ('77777777-7777-7777-7777-000000000004', CURRENT_TIMESTAMP, 'Daniel', 'Auditoria e Logging', 'Registro de eventos e atividades', 'ISO-27001-A.12.4'),
+            ('77777777-7777-7777-7777-000000000005', CURRENT_TIMESTAMP, 'Daniel', 'Gestão de Vulnerabilidades', 'Identificação e correção de fraquezas', 'NIST-CM-3'),
+            ('77777777-7777-7777-7777-000000000006', CURRENT_TIMESTAMP, 'Daniel', 'Conformidade Regulatória', 'Atendimento a requisitos legais e normativos', 'ISO-27001'),
+            ('77777777-7777-7777-7777-000000000007', CURRENT_TIMESTAMP, 'Daniel', 'Continuidade de Negócios', 'Planos de recuperação e resiliência', 'ISO-22301');
+
+            -- 8. Find Categories (Categorias de Achados)
+            INSERT INTO find_categories (id, created_at, created_by, name) VALUES
+            ('88888888-8888-8888-8888-000000000001', CURRENT_TIMESTAMP, 'Daniel', 'OWASP Top 10'),
+            ('88888888-8888-8888-8888-000000000002', CURRENT_TIMESTAMP, 'Daniel', 'CWE'),
+            ('88888888-8888-8888-8888-000000000003', CURRENT_TIMESTAMP, 'Daniel', 'Configuração'),
+            ('88888888-8888-8888-8888-000000000004', CURRENT_TIMESTAMP, 'Daniel', 'Conformidade'),
+            ('88888888-8888-8888-8888-000000000005', CURRENT_TIMESTAMP, 'Daniel', 'Boas Práticas');
+
+            -- 9. Finds - Projeto 1 (Alpha - Fintech)
+            INSERT INTO finds (id, created_at, created_by, name, project_id, description, threat_event, reference, recommendation, sector, quantitative_criticality) VALUES
+            ('99999999-9999-9999-9999-000000000001', CURRENT_TIMESTAMP, 'Daniel', 'Autenticação Fraca em API', '33333333-3333-3333-3333-000000000001', 'API aceita tokens sem validação apropriada', 'Acesso não autorizado a dados de transação', 'CWE-287', 'Implementar OAuth 2.0 e validação de JWT', 'Segurança', 9),
+            ('99999999-9999-9999-9999-000000000002', CURRENT_TIMESTAMP, 'Daniel', 'Falta de Criptografia em Repouso', '33333333-3333-3333-3333-000000000001', 'Dados no RDS não estão criptografados', 'Exposição de dados pessoais de clientes', 'CWE-327', 'Ativar criptografia AWS KMS', 'Conformidade', 10),
+            ('99999999-9999-9999-9999-000000000003', CURRENT_TIMESTAMP, 'Daniel', 'Regras WAF em Modo Learning', '33333333-3333-3333-3333-000000000001', 'WAF apenas monitora, não bloqueia ataques', 'Ataque via Web Application Firewall', 'CWE-16', 'Ativar modo bloqueio das regras', 'Segurança', 8),
+            ('99999999-9999-9999-9999-000000000004', CURRENT_TIMESTAMP, 'Daniel', 'Repositório GitHub sem Proteção de Branch', '33333333-3333-3333-3333-000000000001', 'Push direto na main sem code review', 'Deploy de código malicioso em produção', 'CWE-434', 'Ativar branch protection rules', 'Desenvolvimento', 8),
+            ('99999999-9999-9999-9999-000000000005', CURRENT_TIMESTAMP, 'Daniel', 'S3 Bucket com Acesso Público', '33333333-3333-3333-3333-000000000001', 'Documentos KYC podem ser listados publicamente', 'Exposição de dados sensíveis LGPD', 'CWE-732', 'Bloquear Block Public Access, revisar ACLs', 'Conformidade', 9),
+            ('99999999-9999-9999-9999-000000000006', CURRENT_TIMESTAMP, 'Daniel', 'Patches Desatualizado (60 dias)', '33333333-3333-3333-3333-000000000002', 'Servidor Windows sem patches há 2 meses', 'Exploração de CVEs conhecidas', 'CWE-1104', 'Implementar plano mensal de patching', 'Segurança', 9),
+            ('99999999-9999-9999-9999-000000000007', CURRENT_TIMESTAMP, 'Daniel', 'Cabeçalho HSTS Ausente', '33333333-3333-3333-3333-000000000002', 'Site de e-commerce sem HSTS header', 'MITM em conexão HTTPS', 'CWE-295', 'Configurar Strict-Transport-Security', 'Segurança', 7),
+            ('99999999-9999-9999-9999-000000000008', CURRENT_TIMESTAMP, 'Daniel', 'Excesso de Domain Admins (15)', '33333333-3333-3333-3333-000000000002', 'AD com 15 contas admin, deveria ter 2-3', 'Maior superfície de ataque, privilégios', 'CWE-269', 'Revisar e remover contas admin desnecessárias', 'Acesso', 8),
+            ('99999999-9999-9999-9999-000000000009', CURRENT_TIMESTAMP, 'Daniel', 'ERP Acessível via Servidor Arquivos', '33333333-3333-3333-3333-000000000002', 'SAP conectável a partir de servidor aberto', 'Lateral movement para dados críticos', 'CWE-922', 'Segmentar rede, aplicar firewall interno', 'Rede', 9),
+            ('99999999-9999-9999-9999-000000000010', CURRENT_TIMESTAMP, 'Daniel', 'Backup sem Teste de Restauração', '33333333-3333-3333-3333-000000000002', 'Backups realizados, nunca testados', 'Impossibilidade de recuperar em desastre', 'CWE-1242', 'Planejar e executar testes trimestrais', 'Continuidade', 8),
+            ('99999999-9999-9999-9999-000000000011', CURRENT_TIMESTAMP, 'Daniel', 'VPN com Certificados Compartilhados', '33333333-3333-3333-3333-000000000003', 'Múltiplos usuários compartilham cert VPN', 'Impossibilidade de auditoria individual', 'CWE-306', 'Implementar certificados por usuário com PKI', 'Acesso', 9),
+            ('99999999-9999-9999-9999-000000000012', CURRENT_TIMESTAMP, 'Daniel', 'Permissões Excessivas no Prontuário', '33333333-3333-3333-3333-000000000003', 'Enfermeiros podem exportar BD completo', 'Violação HIPAA, exposição de PII', 'CWE-269', 'Implementar controle RBAC fino por módulo', 'Acesso', 10),
+            ('99999999-9999-9999-9999-000000000013', CURRENT_TIMESTAMP, 'Daniel', 'SQL Server 2016 Sem Suporte', '33333333-3333-3333-3333-000000000003', 'SQL Server 2016 fora do suporte desde 2024', 'Vulnerabilidades não-corrigidas', 'CWE-1104', 'Planejar upgrade para SQL Server 2022', 'Infraestrutura', 9),
+            ('99999999-9999-9999-9999-000000000014', CURRENT_TIMESTAMP, 'Daniel', 'Exchange Armazenado Localmente', '33333333-3333-3333-3333-000000000003', 'E-mail com dados de saúde em servidor on-prem', 'Risco de perda, backup inadequado', 'CWE-200', 'Migrar para Exchange Online com proteção DLP', 'Conformidade', 8),
+            ('99999999-9999-9999-9999-000000000015', CURRENT_TIMESTAMP, 'Daniel', 'Estações Admin Sem Criptografia', '33333333-3333-3333-3333-000000000003', 'PCs administrativos rodando Windows 10 sem BitLocker', 'Roubo de disco, vazamento de credenciais', 'CWE-311', 'Ativar BitLocker e implementar MBAM', 'Segurança', 8);
+
+            -- 10. Risks - Projeto 1 (Alpha - Fintech)
+            INSERT INTO risks (id, created_at, created_by, name, project_id, description, consequences, occurrence_probability, impact_probability, damage_operations, damage_individuals, damage_other_orgs, recommendation, risk_level) VALUES
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', CURRENT_TIMESTAMP, 'Daniel', 'Comprometimento de Dados Financeiros', '33333333-3333-3333-3333-000000000001', 'Falha em múltiplos controles de autenticação e criptografia', 'Prejuízo financeiro, perda de confiança', 0.7, 0.95, 'Paralização de transações, fraude massiva', 'Roubo de dados bancários', 'Impacto no sistema financeiro', 'Implementar MFA, criptografia E2E, SOC 24/7', 8500),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', CURRENT_TIMESTAMP, 'Daniel', 'Vazamento de Dados PII via WAF', '33333333-3333-3333-3333-000000000001', 'WAF não bloqueia ataque a dados pessoais', 'Multa LGPD, exposição de identidades', 0.6, 0.85, 'Dano reputacional, perda de clientes', 'CPF, RG expostos publicamente', 'Impacto em agências de crédito', 'Ativar WAF em modo bloqueio, audit logs', 7800),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000003', CURRENT_TIMESTAMP, 'Daniel', 'Deploy de Código Malicioso via GitHub', '33333333-3333-3333-3333-000000000001', 'Falta branch protection permite push direto em produção', 'Aplicação comprometida, transações falsas', 0.4, 0.9, 'Impossibilidade de prestar serviço', 'Roubo de credenciais de sessão', 'Perda de confiança no ecossistema', 'Branch protection rules, code review obrigatório', 6900),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000004', CURRENT_TIMESTAMP, 'Daniel', 'Exploração de CVE em Windows', '33333333-3333-3333-3333-000000000002', 'Máquinas sem patches de 60 dias', 'Ransomware, perda de dados de clientes', 0.8, 0.8, 'Fechamento temporário de lojas', 'Roubo de dados de cartão, frode', 'Impacto em fornecedores, esquema', 'Patch management mensal obrigatório', 8200),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', CURRENT_TIMESTAMP, 'Daniel', 'Invasão via AD', '33333333-3333-3333-3333-000000000002', 'Excesso de Domain Admins, fraca segurança', 'Comprometimento de toda a infraestrutura', 0.5, 0.95, 'Paralização total de operações', 'Acesso a dados de compra histórico', 'Impacto em bancos e processadores de pagamento', 'Reduzir DAs, MFA em admin, PAM', 8400),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000006', CURRENT_TIMESTAMP, 'Daniel', 'Falha de Recuperação pós-Desastre', '33333333-3333-3333-3333-000000000002', 'Backup sem teste, pode estar corrompido', 'Impossibilidade de recuperar dados em 3+ dias', 0.3, 0.85, 'Fechamento definitivo em cenário extremo', 'Perda histórico de pedidos', 'Impacto em cadeia de suprimentos', 'Testes de RTO/RPO trimestrais', 7100),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000007', CURRENT_TIMESTAMP, 'Daniel', 'Violação de HIPAA - Exposição de Prontuários', '33333333-3333-3333-3333-000000000003', 'Permissões excessivas, VPN com cert compartilhado', 'Multa HIPAA, processos judiciais', 0.7, 0.95, 'Impossibilidade de atender pacientes', 'Exposição completa de saúde pessoal', 'Dano a comunidade médica, desabilitação', 'RBAC fino, auditoria de acesso, PKI', 9200),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000008', CURRENT_TIMESTAMP, 'Daniel', 'Perda de Dados Críticos - SQL Server EOL', '33333333-3333-3333-3333-000000000003', 'SQL Server fora de suporte, sem patches', 'Perda irreversível de prontuários', 0.5, 0.9, 'Encerramento de operações', 'Falta acesso ao histórico de saúde', 'Impacto em pacientes, seguros saúde', 'Upgrade imediato com plano de migração', 8100),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000009', CURRENT_TIMESTAMP, 'Daniel', 'Vazamento de E-mail com PII de Saúde', '33333333-3333-3333-3333-000000000003', 'Exchange on-prem sem DLP, criptografia offline', 'Multa LGPD, violação de confidencialidade', 0.6, 0.8, 'Bloqueio de atendimento, auditoria', 'Exposição de diagnósticos, medicações', 'Dano ao sistema de saúde', 'Migrar para O365 com DLP, MIP', 7600);
+
+            -- 11. Find-Category Associations (many-to-many)
+            INSERT INTO finds_categories (find_id, categories_id) VALUES
+            ('99999999-9999-9999-9999-000000000001', '88888888-8888-8888-8888-000000000002'), -- Auth fraca = CWE
+            ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000004'), -- Cripto = Conformidade
+            ('99999999-9999-9999-9999-000000000003', '88888888-8888-8888-8888-000000000005'), -- WAF = Boas Práticas
+            ('99999999-9999-9999-9999-000000000004', '88888888-8888-8888-8888-000000000005'), -- GitHub = Boas Práticas
+            ('99999999-9999-9999-9999-000000000005', '88888888-8888-8888-8888-000000000003'), -- S3 = Configuração
+            ('99999999-9999-9999-9999-000000000006', '88888888-8888-8888-8888-000000000002'), -- Patches = CWE
+            ('99999999-9999-9999-9999-000000000007', '88888888-8888-8888-8888-000000000005'), -- HSTS = Boas Práticas
+            ('99999999-9999-9999-9999-000000000008', '88888888-8888-8888-8888-000000000002'), -- Domain Admins = CWE
+            ('99999999-9999-9999-9999-000000000009', '88888888-8888-8888-8888-000000000003'), -- ERP = Configuração
+            ('99999999-9999-9999-9999-000000000010', '88888888-8888-8888-8888-000000000005'), -- Backup = Boas Práticas
+            ('99999999-9999-9999-9999-000000000011', '88888888-8888-8888-8888-000000000004'), -- VPN = Conformidade
+            ('99999999-9999-9999-9999-000000000012', '88888888-8888-8888-8888-000000000002'), -- Permissões = CWE
+            ('99999999-9999-9999-9999-000000000013', '88888888-8888-8888-8888-000000000002'), -- SQL EOL = CWE
+            ('99999999-9999-9999-9999-000000000014', '88888888-8888-8888-8888-000000000004'), -- Exchange = Conformidade
+            ('99999999-9999-9999-9999-000000000015', '88888888-8888-8888-8888-000000000005'); -- BitLocker = Boas Práticas
+
+            -- 12. Find-Asset Associations (many-to-many)
+            INSERT INTO finds_assets (find_id, assets_id) VALUES
+            ('99999999-9999-9999-9999-000000000001', '55555555-5555-5555-5555-000000000001'), -- Auth = API Backend
+            ('99999999-9999-9999-9999-000000000002', '55555555-5555-5555-5555-000000000002'), -- Cripto = RDS
+            ('99999999-9999-9999-9999-000000000003', '55555555-5555-5555-5555-000000000003'), -- WAF = AWS WAF
+            ('99999999-9999-9999-9999-000000000004', '55555555-5555-5555-5555-000000000004'), -- GitHub = Repositório
+            ('99999999-9999-9999-9999-000000000005', '55555555-5555-5555-5555-000000000005'), -- S3 = S3 Bucket
+            ('99999999-9999-9999-9999-000000000006', '55555555-5555-5555-5555-000000000006'), -- Patches = File Server
+            ('99999999-9999-9999-9999-000000000007', '55555555-5555-5555-5555-000000000010'), -- HSTS = E-commerce
+            ('99999999-9999-9999-9999-000000000008', '55555555-5555-5555-5555-000000000009'), -- DA = Active Directory
+            ('99999999-9999-9999-9999-000000000009', '55555555-5555-5555-5555-000000000007'), -- ERP = SAP ERP
+            ('99999999-9999-9999-9999-000000000010', '55555555-5555-5555-5555-000000000006'), -- Backup = File Server
+            ('99999999-9999-9999-9999-000000000011', '55555555-5555-5555-5555-000000000011'), -- VPN = Gateway VPN
+            ('99999999-9999-9999-9999-000000000012', '55555555-5555-5555-5555-000000000012'), -- Prontuário = App Prontuário
+            ('99999999-9999-9999-9999-000000000013', '55555555-5555-5555-5555-000000000013'), -- SQL = SQL Server
+            ('99999999-9999-9999-9999-000000000014', '55555555-5555-5555-5555-000000000014'), -- Exchange = Exchange
+            ('99999999-9999-9999-9999-000000000015', '55555555-5555-5555-5555-000000000015'); -- BitLocker = Estações
+
+            -- 13. Find-Artifact Associations (many-to-many)
+            INSERT INTO finds_artifacts (find_id, artifacts_id) VALUES
+            -- Projeto 1 (Alpha) - Finds 1-5 with Artifacts 1-7
+            ('99999999-9999-9999-9999-000000000001', '66666666-6666-6666-6666-000000000001'), -- Auth = Nota CISO
+            ('99999999-9999-9999-9999-000000000001', '66666666-6666-6666-6666-000000000004'), -- Auth = docker-compose
+            ('99999999-9999-9999-9999-000000000002', '66666666-6666-6666-6666-000000000005'), -- Cripto = Política Senhas
+            ('99999999-9999-9999-9999-000000000002', '66666666-6666-6666-6666-000000000016'), -- Cripto = Doc Topologia
+            ('99999999-9999-9999-9999-000000000003', '66666666-6666-6666-6666-000000000002'), -- WAF = Nota GitHub
+            ('99999999-9999-9999-9999-000000000003', '66666666-6666-6666-6666-000000000003'), -- WAF = Nota WAF
+            ('99999999-9999-9999-9999-000000000004', '66666666-6666-6666-6666-000000000002'), -- GitHub = Nota GitHub
+            ('99999999-9999-9999-9999-000000000004', '66666666-6666-6666-6666-000000000017'), -- GitHub = Pentest
+            ('99999999-9999-9999-9999-000000000005', '66666666-6666-6666-6666-000000000001'), -- S3 = Nota CISO
+            ('99999999-9999-9999-9999-000000000005', '66666666-6666-6666-6666-000000000005'), -- S3 = Política Senhas
+
+            -- Projeto 2 (Beta) - Finds 6-10 with Artifacts 6-14
+            ('99999999-9999-9999-9999-000000000006', '66666666-6666-6666-6666-000000000006'), -- Patches = Nota Reunião Infra
+            ('99999999-9999-9999-9999-000000000006', '66666666-6666-6666-6666-000000000009'), -- Patches = Export Fortigate
+            ('99999999-9999-9999-9999-000000000007', '66666666-6666-6666-6666-000000000007'), -- HSTS = Nota E-commerce
+            ('99999999-9999-9999-9999-000000000007', '66666666-6666-6666-6666-000000000018'), -- HSTS = Matriz Acessos
+            ('99999999-9999-9999-9999-000000000008', '66666666-6666-6666-6666-000000000008'), -- Domain Admins = Nota AD
+            ('99999999-9999-9999-9999-000000000008', '66666666-6666-6666-6666-000000000009'), -- Domain Admins = Export Fortigate
+            ('99999999-9999-9999-9999-000000000009', '66666666-6666-6666-6666-000000000006'), -- ERP = Nota Reunião Infra
+            ('99999999-9999-9999-9999-000000000009', '66666666-6666-6666-6666-000000000019'), -- ERP = Guia Hardening
+            ('99999999-9999-9999-9999-000000000010', '66666666-6666-6666-6666-000000000010'), -- Backup = Print Backup
+            ('99999999-9999-9999-9999-000000000010', '66666666-6666-6666-6666-000000000018'), -- Backup = Matriz Acessos
+
+            -- Projeto 3 (Gamma) - Finds 11-15 with Artifacts 11-21
+            ('99999999-9999-9999-9999-000000000011', '66666666-6666-6666-6666-000000000011'), -- VPN = Nota Onboarding
+            ('99999999-9999-9999-9999-000000000011', '66666666-6666-6666-6666-000000000014'), -- VPN = Logs VPN
+            ('99999999-9999-9999-9999-000000000012', '66666666-6666-6666-6666-000000000012'), -- Prontuário = Nota Prontuário
+            ('99999999-9999-9999-9999-000000000012', '66666666-6666-6666-6666-000000000015'), -- Prontuário = Norma ISO
+            ('99999999-9999-9999-9999-000000000013', '66666666-6666-6666-6666-000000000013'), -- SQL = Nota Redes
+            ('99999999-9999-9999-9999-000000000013', '66666666-6666-6666-6666-000000000015'), -- SQL = Norma ISO
+            ('99999999-9999-9999-9999-000000000014', '66666666-6666-6666-6666-000000000013'), -- Exchange = Nota Redes
+            ('99999999-9999-9999-9999-000000000014', '66666666-6666-6666-6666-000000000020'), -- Exchange = Plano Continuidade
+            ('99999999-9999-9999-9999-000000000015', '66666666-6666-6666-6666-000000000012'), -- BitLocker = Nota Prontuário
+            ('99999999-9999-9999-9999-000000000015', '66666666-6666-6666-6666-000000000021'); -- BitLocker = Contratos NDAs
+
+            -- 14. Risk-Find Associations (many-to-many)
+            INSERT INTO risks_finds (risk_id, finds_id) VALUES
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '99999999-9999-9999-9999-000000000001'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '99999999-9999-9999-9999-000000000002'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '99999999-9999-9999-9999-000000000005'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000003'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000005'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000003', '99999999-9999-9999-9999-000000000004'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000004', '99999999-9999-9999-9999-000000000006'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', '99999999-9999-9999-9999-000000000008'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', '99999999-9999-9999-9999-000000000009'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000006', '99999999-9999-9999-9999-000000000010'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000007', '99999999-9999-9999-9999-000000000011'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000007', '99999999-9999-9999-9999-000000000012'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000008', '99999999-9999-9999-9999-000000000013'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000009', '99999999-9999-9999-9999-000000000014');
+
+            -- 15. Risk-Asset Associations (many-to-many)
+            INSERT INTO risks_damage_assets (risk_id, damage_assets_id) VALUES
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '55555555-5555-5555-5555-000000000001'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '55555555-5555-5555-5555-000000000002'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '55555555-5555-5555-5555-000000000005'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '55555555-5555-5555-5555-000000000003'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '55555555-5555-5555-5555-000000000005'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000003', '55555555-5555-5555-5555-000000000004'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000004', '55555555-5555-5555-5555-000000000006'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', '55555555-5555-5555-5555-000000000008'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000005', '55555555-5555-5555-5555-000000000009'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000006', '55555555-5555-5555-5555-000000000007'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000007', '55555555-5555-5555-5555-000000000011'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000007', '55555555-5555-5555-5555-000000000012'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000008', '55555555-5555-5555-5555-000000000013'),
+            ('aaaaaaaa-aaaa-aaaa-aaaa-000000000009', '55555555-5555-5555-5555-000000000014');
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
