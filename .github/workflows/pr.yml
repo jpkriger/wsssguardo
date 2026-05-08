@@ -19,7 +19,12 @@ jobs:
 
       - name: Install
         working-directory: frontend
-        run: bun install --frozen-lockfile
+        run: |
+          if [ -f bun.lock ] || [ -f bun.lockb ]; then
+            bun install --frozen-lockfile
+          else
+            bun install
+          fi
 
       - name: Lint
         working-directory: frontend
