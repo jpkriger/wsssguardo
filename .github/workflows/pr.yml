@@ -35,7 +35,7 @@ jobs:
         run: bun run test
 
       - name: Build container
-        run: docker build -f frontend/Dockerfile frontend/
+        run: docker build --target dev -f frontend/Dockerfile frontend/
 
   backend:
     name: Backend
