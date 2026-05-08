@@ -3,6 +3,9 @@ name: PR — Build & Lint
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
     name: Frontend
