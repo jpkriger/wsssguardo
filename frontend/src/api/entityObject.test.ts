@@ -37,7 +37,6 @@ describe("entityObject api", () => {
       name: "Second",
       description: "desc",
       reference: "ref",
-      project_id: 1,
     };
 
     await expect(createEntityObject(request)).resolves.toEqual(payload);
@@ -82,7 +81,7 @@ describe("entityObject api", () => {
       }),
     );
 
-    const request = createEntityObject({ name: "Second", description: "desc", reference: "ref", project_id: 1 });
+    const request = createEntityObject({ name: "Second", description: "desc", reference: "ref" });
 
     await expect(request).rejects.toBeInstanceOf(ApiErrorResponse);
     await expect(request).rejects.toMatchObject({
