@@ -25,6 +25,10 @@ jobs:
         working-directory: frontend
         run: bun run lint
 
+      - name: Test
+        working-directory: frontend
+        run: bun run test
+
       - name: Build container
         run: docker build -f frontend/Dockerfile frontend/
 
