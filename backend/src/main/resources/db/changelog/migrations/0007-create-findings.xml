@@ -6,7 +6,7 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
         objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
 
-    <changeSet id="0005-1" author="wsssguardo">
+    <changeSet id="0007-1" author="wsssguardo">
         <createTable tableName="findings">
             <column name="id" type="UUID">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="pk_findings"/>
@@ -33,7 +33,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="0005-2" author="wsssguardo">
+    <changeSet id="0007-2" author="wsssguardo">
         <createTable tableName="finding_assets">
             <column name="finding_id" type="UUID">
                 <constraints nullable="false"/>
@@ -46,7 +46,7 @@
                        constraintName="pk_finding_assets"/>
     </changeSet>
 
-    <changeSet id="0005-3" author="wsssguardo">
+    <changeSet id="0007-3" author="wsssguardo">
         <createTable tableName="finding_artifacts">
             <column name="finding_id" type="UUID">
                 <constraints nullable="false"/>
@@ -59,31 +59,31 @@
                        constraintName="pk_finding_artifacts"/>
     </changeSet>
 
-    <changeSet id="0005-4" author="wsssguardo">
+    <changeSet id="0007-4" author="wsssguardo">
         <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="findings"
                                  constraintName="FK_FINDINGS_ON_PROJECT"
                                  referencedColumnNames="id" referencedTableName="projects"/>
     </changeSet>
 
-    <changeSet id="0005-5" author="wsssguardo">
+    <changeSet id="0007-5" author="wsssguardo">
         <addForeignKeyConstraint baseColumnNames="finding_id" baseTableName="finding_assets"
                                  constraintName="FK_FINDING_ASSETS_ON_FINDING"
                                  referencedColumnNames="id" referencedTableName="findings"/>
     </changeSet>
 
-    <changeSet id="0005-6" author="wsssguardo">
+    <changeSet id="0007-6" author="wsssguardo">
         <addForeignKeyConstraint baseColumnNames="asset_id" baseTableName="finding_assets"
                                  constraintName="FK_FINDING_ASSETS_ON_ASSET"
                                  referencedColumnNames="id" referencedTableName="assets"/>
     </changeSet>
 
-    <changeSet id="0005-7" author="wsssguardo">
+    <changeSet id="0007-7" author="wsssguardo">
         <addForeignKeyConstraint baseColumnNames="finding_id" baseTableName="finding_artifacts"
                                  constraintName="FK_FINDING_ARTIFACTS_ON_FINDING"
                                  referencedColumnNames="id" referencedTableName="findings"/>
     </changeSet>
 
-    <changeSet id="0005-8" author="wsssguardo">
+    <changeSet id="0007-8" author="wsssguardo">
         <addForeignKeyConstraint baseColumnNames="artifact_id" baseTableName="finding_artifacts"
                                  constraintName="FK_FINDING_ARTIFACTS_ON_ARTIFACT"
                                  referencedColumnNames="id" referencedTableName="artifacts"/>
