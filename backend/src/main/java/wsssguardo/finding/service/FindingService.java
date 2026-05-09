@@ -15,9 +15,12 @@ import wsssguardo.finding.mapper.FindingMapper;
 import wsssguardo.finding.repository.FindingRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +42,8 @@ public class FindingService {
     @Transactional
     public FindingResponseDTO create(UUID projectId, FindingRequestDTO request) {
         Project project = requireProjectExists(projectId);
-        Set<Asset> assets = resolveAssets(request.linkedAssetIds());
-        Set<Artifact> artifacts = resolveArtifacts(request.linkedArtifactIds());
+        Set<Asset> assets = resolveAssets(projectId, request.linkedAssetIds());
+        Set<Artifact> artifacts = resolveArtifacts(projectId, request.linkedArtifactIds());
         Finding finding = mapper.toEntity(
                 request.name(), request.description(), request.numericSeverity(),
                 request.categoricalSeverity(), request.category(), request.reference(),
@@ -62,8 +65,8 @@ public class FindingService {
         if (request.categoricalSeverity() != null) finding.setCategoricalSeverity(request.categoricalSeverity());
         if (request.category() != null) finding.setCategory(request.category());
         if (request.reference() != null) finding.setReference(request.reference());
-        if (request.linkedAssetIds() != null) finding.setLinkedAssets(resolveAssets(request.linkedAssetIds()));
-        if (request.linkedArtifactIds() != null) finding.setLinkedArtifacts(resolveArtifacts(request.linkedArtifactIds()));
+        if (request.linkedAssetIds() != null) finding.setLinkedAssets(resolveAssets(projectId, request.linkedAssetIds()));
+        if (request.linkedArtifactIds() != null) finding.setLinkedArtifacts(resolveArtifacts(projectId, request.linkedArtifactIds()));
         return mapper.toResponse(repository.saveAndFlush(finding));
     }
 
@@ -83,13 +86,25 @@ public class FindingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Finding", id));
     }
 
-    private Set<Asset> resolveAssets(List<UUID> ids) {
+    private Set<Asset> resolveAssets(UUID projectId, List<UUID> ids) {
         if (ids == null || ids.isEmpty()) return new HashSet<>();
-        return new HashSet<>(assetRepository.findAllById(ids));
+        List<Asset> found = assetRepository.findAllByIdInAndProjectId(ids, projectId);
+        if (found.size() != ids.size()) {
+            Set<UUID> foundIds = found.stream().map(Asset::getId).collect(Collectors.toSet());
+            List<UUID> missing = ids.stream().filter(id -> !foundIds.contains(id)).toList();
+            throw new ApiException("Assets not found or do not belong to project: " + missing, HttpStatus.BAD_REQUEST);
+        }
+        return new HashSet<>(found);
     }
 
-    private Set<Artifact> resolveArtifacts(List<UUID> ids) {
+    private Set<Artifact> resolveArtifacts(UUID projectId, List<UUID> ids) {
         if (ids == null || ids.isEmpty()) return new HashSet<>();
-        return new HashSet<>(artifactRepository.findAllById(ids));
+        List<Artifact> found = artifactRepository.findAllByIdInAndProjectId(ids, projectId);
+        if (found.size() != ids.size()) {
+            Set<UUID> foundIds = found.stream().map(Artifact::getId).collect(Collectors.toSet());
+            List<UUID> missing = ids.stream().filter(id -> !foundIds.contains(id)).toList();
+            throw new ApiException("Artifacts not found or do not belong to project: " + missing, HttpStatus.BAD_REQUEST);
+        }
+        return new HashSet<>(found);
     }
 }

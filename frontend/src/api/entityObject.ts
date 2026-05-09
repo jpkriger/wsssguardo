@@ -10,16 +10,16 @@ export interface EntityObjectResponse {
 
 export interface EntityObjectCreateRequest {
   name: string;
-  description: string;
-  reference: string;
-  project_id: number;
+  description?: string;
+  reference?: string;
+  project_id?: number;
 }
 
 export interface EntityObjectUpdateRequest {
   name: string;
-  description: string;
-  reference: string;
-  project_id: number;
+  description?: string;
+  reference?: string;
+  project_id?: number;
 }
 
 const BASE = "/api/entity-objects";

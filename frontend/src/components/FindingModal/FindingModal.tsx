@@ -17,6 +17,8 @@ import { listArtifacts, type ArtifactResponse } from "../../api/artifact";
 import { cn } from "../../lib/utils";
 import { deriveSeverity } from "../../lib/severity";
 
+const ASSET_PAGE_SIZE = 200;
+
 const SEVERITY_LABELS: Record<FindingSeverity, string> = {
   CRITICAL: "Crítica",
   HIGH: "Alta",
@@ -113,7 +115,7 @@ export default function FindingModal({
 
     setLoadingData(true);
     Promise.all([
-      fetchAssetsByProject(projectId, 0, 200).then((r) => setAssets(r.content)),
+      fetchAssetsByProject(projectId, 0, ASSET_PAGE_SIZE).then((r) => setAssets(r.content)),
       listArtifacts(projectId).then(setArtifacts),
     ])
       .catch(() => {})
