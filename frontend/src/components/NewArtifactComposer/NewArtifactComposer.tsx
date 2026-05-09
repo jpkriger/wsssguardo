@@ -235,7 +235,9 @@ export default function NewArtifactComposer({
               disabled={saving}
             >
               <SelectTrigger className={selectTriggerClass}>
-                <SelectValue />
+                <SelectValue placeholder="Selecione um tipo">
+                  {TIPO_OPTIONS.find(o => o.value === contentType)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="z-[60]">
                 {TIPO_OPTIONS.map((opt) => (
