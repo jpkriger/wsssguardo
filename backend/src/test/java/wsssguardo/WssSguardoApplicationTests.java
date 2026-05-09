@@ -7,7 +7,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @ActiveProfiles("dev")
-@TestPropertySource(properties = "security.auth.disabled=true")
+@TestPropertySource(properties = {"security.auth.disabled=true", "spring.liquibase.contexts=test"})
 class WssSguardoApplicationTests {
 
 	@Test

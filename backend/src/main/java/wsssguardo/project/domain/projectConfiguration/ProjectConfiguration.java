@@ -1,8 +1,11 @@
 package wsssguardo.project.domain.projectConfiguration;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +17,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProjectConfiguration implements Serializable {
 
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
   private RiskConfig riskConfig;
+
+  // H2 2.x devolve colunas jsonb via rs.getString() envoltas em aspas duplas,
+  // fazendo o Jackson receber token STRING em vez de OBJECT. Este creator re-parseia.
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+  public static ProjectConfiguration fromJsonString(String json) throws IOException {
+    return MAPPER.readValue(json, ProjectConfiguration.class);
+  }
 
   public static ProjectConfiguration createDefault() {
     RiskCategory baixo = RiskCategory.builder()

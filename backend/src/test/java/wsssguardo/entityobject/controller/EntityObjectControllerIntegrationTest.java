@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
-@TestPropertySource(properties = "security.auth.disabled=true")
+@TestPropertySource(properties = {"security.auth.disabled=true", "spring.liquibase.contexts=test"})
 @Transactional
 class EntityObjectControllerIntegrationTest {
 
