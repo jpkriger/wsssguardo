@@ -40,8 +40,6 @@ jobs:
       - name: Test
         working-directory: backend
         run: ./mvnw --batch-mode --no-transfer-progress verify
-        env:
-          SPRING_PROFILES_ACTIVE: dev
 
       - name: Build container
         run: docker build -f backend/Dockerfile backend/
