@@ -30,13 +30,11 @@ public class RiskService {
   }
 
   private RiskConfig resolveRiskConfig(Project project) {
-    ProjectConfiguration configuration = project.getConfiguration() != null
-        ? project.getConfiguration()
-        : ProjectConfiguration.createDefault();
-    RiskConfig riskConfig = configuration.getRiskConfig();
-    return riskConfig != null
-        ? riskConfig
-        : ProjectConfiguration.createDefault().getRiskConfig();
+    ProjectConfiguration configuration = project.getConfiguration();
+    if (configuration == null || configuration.getRiskConfig() == null) {
+      return ProjectConfiguration.createDefault().getRiskConfig();
+    }
+    return configuration.getRiskConfig();
   }
 
 }

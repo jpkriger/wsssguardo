@@ -18,9 +18,7 @@ public class RiskLevelMapper {
       return null;
     }
 
-    RiskConfig effective = riskConfig != null
-        ? riskConfig
-        : ProjectConfiguration.createDefault().getRiskConfig();
+    RiskConfig effective = effectiveConfig(riskConfig);
 
     int value = scaleToConfiguredRange(riskLevel, effective);
     String label = findLabel(value, effective);
@@ -28,15 +26,18 @@ public class RiskLevelMapper {
     return new RiskLevelDTO(value, label);
   }
 
+  private RiskConfig effectiveConfig(RiskConfig riskConfig) {
+    if (riskConfig == null || riskConfig.getMinRange() == null || riskConfig.getMaxRange() == null) {
+      return ProjectConfiguration.createDefault().getRiskConfig();
+    }
+    return riskConfig;
+  }
+
   private int scaleToConfiguredRange(int riskLevel, RiskConfig config) {
     int clamped = Math.max(NORMALIZED_MIN, Math.min(NORMALIZED_MAX, riskLevel));
     int min = config.getMinRange();
     int max = config.getMaxRange();
-    int normalizedSpan = NORMALIZED_MAX - NORMALIZED_MIN;
-    if (normalizedSpan == 0) {
-      return min;
-    }
-    double ratio = (double) (clamped - NORMALIZED_MIN) / normalizedSpan;
+    double ratio = (double) (clamped - NORMALIZED_MIN) / (NORMALIZED_MAX - NORMALIZED_MIN);
     return (int) Math.round(min + ratio * (max - min));
   }
 
