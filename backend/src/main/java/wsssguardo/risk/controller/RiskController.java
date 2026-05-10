@@ -14,8 +14,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import wsssguardo.risk.Risk;
-import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
+import wsssguardo.risk.dto.requestdto.RiskUpdateRequestDTO;
+import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.service.RiskService;
 
 @Tag(name = "Risk", description = "Risk operations")
@@ -28,9 +28,9 @@ public class RiskController {
 
   @Operation(summary = "Update a risk")
   @PutMapping("/{id}")
-  public ResponseEntity<Risk> update(
+  public ResponseEntity<RiskResponseDTO> update(
       @PathVariable UUID id,
-      @RequestBody @Valid RiskCreateRequestDTO dto) {
+      @RequestBody @Valid RiskUpdateRequestDTO dto) {
 
     return ResponseEntity.ok(service.update(id, dto));
   }
