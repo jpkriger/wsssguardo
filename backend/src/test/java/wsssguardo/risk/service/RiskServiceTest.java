@@ -61,7 +61,7 @@ class RiskServiceTest {
         
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(riskPage);
-        when(riskMapper.toPageDTO(riskPage)).thenReturn(expectedDTO);
+        when(riskMapper.toPageDTO(eq(riskPage), any())).thenReturn(expectedDTO);
 
         // Act
         RiskPageResponseDTO result = riskService.findAllByProject(projectId, pageable);
@@ -72,7 +72,7 @@ class RiskServiceTest {
         
         verify(projectRepository).findById(projectId);
         verify(riskRepository).findAllByProjectId(projectId, pageable);
-        verify(riskMapper).toPageDTO(riskPage);
+        verify(riskMapper).toPageDTO(eq(riskPage), any());
     }
 
     @Test
@@ -113,7 +113,7 @@ class RiskServiceTest {
         
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(repositoryPage);
-        when(riskMapper.toPageDTO(repositoryPage)).thenReturn(expectedDTO);
+        when(riskMapper.toPageDTO(eq(repositoryPage), any())).thenReturn(expectedDTO);
 
         // Act
         RiskPageResponseDTO result = riskService.findAllByProject(projectId, pageable);
@@ -139,7 +139,7 @@ class RiskServiceTest {
         
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(riskRepository.findAllByProjectId(projectId, unpaged)).thenReturn(riskPage);
-        when(riskMapper.toPageDTO(riskPage)).thenReturn(expectedDTO);
+        when(riskMapper.toPageDTO(eq(riskPage), any())).thenReturn(expectedDTO);
 
         // Act
         RiskPageResponseDTO result = riskService.findAllByProject(projectId, unpaged);
@@ -165,7 +165,7 @@ class RiskServiceTest {
         
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(emptyPage);
-        when(riskMapper.toPageDTO(emptyPage)).thenReturn(expectedDTO);
+        when(riskMapper.toPageDTO(eq(emptyPage), any())).thenReturn(expectedDTO);
 
         // Act
         RiskPageResponseDTO result = riskService.findAllByProject(projectId, pageable);

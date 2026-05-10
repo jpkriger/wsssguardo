@@ -18,7 +18,7 @@ public record RiskResponseDTO(
     String damageIndividuals,
     String damageOtherOrgs,
     String recommendation,
-    Integer riskLevel,
+    RiskLevelDTO riskLevel,
     String createdBy,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
