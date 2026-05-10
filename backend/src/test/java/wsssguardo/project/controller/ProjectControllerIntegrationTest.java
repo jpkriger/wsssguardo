@@ -13,13 +13,9 @@ import java.util.UUID;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+import wsssguardo.AbstractIntegrationTest;
 import wsssguardo.customer.Customer;
 import wsssguardo.customer.repository.CustomerRepository;
 import wsssguardo.project.Project;
@@ -31,12 +27,7 @@ import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
 import wsssguardo.user.repository.UserRepository;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("dev")
-@TestPropertySource(properties = "security.auth.disabled=true")
-@Transactional
-class ProjectControllerIntegrationTest {
+class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
