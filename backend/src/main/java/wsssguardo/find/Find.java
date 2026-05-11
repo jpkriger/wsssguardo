@@ -6,6 +6,8 @@ import org.hibernate.annotations.SQLDelete;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
@@ -19,6 +21,7 @@ import lombok.Setter;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
 import wsssguardo.find.domain.FindCategory;
+import wsssguardo.find.domain.FindSeverity;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
 import wsssguardo.shared.domain.BaseEntity;
@@ -57,7 +60,17 @@ public class Find extends BaseEntity {
   @Column(name = "quantitative_criticality")
   private Integer quantitativeCriticality;
 
+  @Column(columnDefinition = "TEXT")
   private String description;
+
+  @Column(name = "numeric_severity")
+  private Integer numericSeverity;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "categorical_severity")
+  private FindSeverity categoricalSeverity;
+
+  private String category;
 
   @Column(name = "threat_event")
   private String threatEvent;

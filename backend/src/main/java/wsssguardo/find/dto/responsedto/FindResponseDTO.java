@@ -1,17 +1,17 @@
-package wsssguardo.finding.dto.responsedto;
+package wsssguardo.find.dto.responsedto;
 
-import wsssguardo.finding.domain.FindingSeverity;
+import wsssguardo.find.domain.FindSeverity;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record FindingResponseDTO(
+public record FindResponseDTO(
         UUID id,
         String name,
         String description,
         Integer numericSeverity,
-        FindingSeverity categoricalSeverity,
+        FindSeverity categoricalSeverity,
         String category,
         String reference,
         UUID projectId,

@@ -1,13 +1,15 @@
-package wsssguardo.finding.dto.requestdto;
+package wsssguardo.find.dto.requestdto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import wsssguardo.finding.domain.FindingSeverity;
+import wsssguardo.find.domain.FindSeverity;
 
 import java.util.List;
 import java.util.UUID;
 
-public record FindingUpdateRequestDTO(
+public record FindRequestDTO(
 
+        @NotBlank(message = "name must not be blank")
         @Size(max = 255, message = "name must be at most 255 characters")
         String name,
 
@@ -15,7 +17,7 @@ public record FindingUpdateRequestDTO(
 
         Integer numericSeverity,
 
-        FindingSeverity categoricalSeverity,
+        FindSeverity categoricalSeverity,
 
         @Size(max = 255, message = "category must be at most 255 characters")
         String category,
