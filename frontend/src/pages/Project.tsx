@@ -37,11 +37,6 @@ const DEMO_FINDINGS: RiskModalOption[] = [
   { id: "f-2", label: "Achado 02", description: "Política de acesso fraca" },
 ];
 
-const DEMO_ASSETS: RiskModalOption[] = [
-  { id: "a-1", label: "Servidor Web", description: "Ativo crítico" },
-  { id: "a-2", label: "Banco de Dados", description: "Informações sensíveis" },
-];
-
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Summary);
   const { id: projectId } = useParams<{ id: string }>();
@@ -216,7 +211,7 @@ export default function Project(): ReactElement {
         loading={false}
         mode="create"
         findings={DEMO_FINDINGS}
-        assets={DEMO_ASSETS}
+        projectId={projectId}
         onClose={() => setRiskModalOpen(false)}
         onSubmit={handleRiskModalSubmit}
       />

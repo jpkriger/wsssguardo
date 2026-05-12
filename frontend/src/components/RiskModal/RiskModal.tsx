@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { fetchAssetsByProject } from "@/api/asset";
 
 export interface RiskModalOption {
   id: string;
@@ -80,7 +81,7 @@ interface RiskModalProps {
   mode: "create" | "edit";
   risk?: RiskModalRisk | null;
   findings?: RiskModalOption[];
-  assets?: RiskModalOption[];
+  projectId?: string | null;
   onClose: () => void;
   onSubmit: (data: RiskModalSubmitData) => void;
 }
@@ -234,6 +235,8 @@ function LinkedOptionsSection({
   selectedIds,
   onToggle,
   emptyMessage,
+  loading,
+  errorMessage,
 }: {
   title: string;
   description: string;
@@ -241,9 +244,11 @@ function LinkedOptionsSection({
   selectedIds: string[];
   onToggle: (id: string) => void;
   emptyMessage: string;
+  loading: boolean;
+  errorMessage?: string | null;
 }): ReactElement {
   return (
-    <section className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+    <section className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 w-full lg:w-1/2 h-full min-w-0">
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-medium">{title}</h3>
@@ -252,10 +257,14 @@ function LinkedOptionsSection({
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
 
-      {options.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando opções...</p>
+      ) : errorMessage ? (
+        <p className="text-sm text-destructive">{errorMessage}</p>
+      ) : options.length === 0 ? (
         <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 justify-items-start">
           {options.map((option) => {
             const selected = selectedIds.includes(option.id);
 
@@ -265,7 +274,7 @@ function LinkedOptionsSection({
                 type="button"
                 variant={selected ? "default" : "outline"}
                 className={cn(
-                  "h-auto flex-col items-start gap-1 px-3 py-3 text-left",
+                  "h-auto w-full max-w-[18rem] flex-col items-start gap-1 px-3 py-3 text-left min-h-[64px]",
                   !selected && "bg-background",
                 )}
                 onClick={() => onToggle(option.id)}
@@ -312,13 +321,16 @@ export default function RiskModal({
   mode,
   risk = null,
   findings = [],
-  assets = [],
+  projectId = null,
   onClose,
   onSubmit,
 }: RiskModalProps): ReactElement {
   const [form, setForm] = useState<RiskModalFormState>(createEmptyFormState());
   const [findIds, setFindIds] = useState<string[]>([]);
   const [damageAssetIds, setDamageAssetIds] = useState<string[]>([]);
+  const [assetOptions, setAssetOptions] = useState<RiskModalOption[]>([]);
+  const [assetLoading, setAssetLoading] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [touchedFields, setTouchedFields] = useState<
     Record<RiskModalField, boolean>
@@ -384,6 +396,61 @@ export default function RiskModal({
       recommendation: false,
     });
   }, [open, mode, risk]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAssets(): Promise<void> {
+      if (!open) {
+        return;
+      }
+
+      if (!projectId) {
+        setAssetOptions([]);
+        setAssetError("Projeto inválido para carregar ativos.");
+        setAssetLoading(false);
+        return;
+      }
+
+      setAssetLoading(true);
+      setAssetError(null);
+
+      try {
+        const response = await fetchAssetsByProject(projectId, 0, 1000);
+
+        if (cancelled) {
+          return;
+        }
+
+        setAssetOptions(
+          response.content.map((asset) => ({
+            id: asset.id,
+            label: asset.name,
+            description: asset.description,
+          })),
+        );
+      } catch (err: unknown) {
+        if (cancelled) {
+          return;
+        }
+
+        const message =
+          err instanceof Error ? err.message : "Erro ao carregar ativos do projeto";
+        setAssetOptions([]);
+        setAssetError(message);
+      } finally {
+        if (!cancelled) {
+          setAssetLoading(false);
+        }
+      }
+    }
+
+    void loadAssets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, projectId]);
 
   const errors = validateRiskModalDraft(form);
   const showError = (field: RiskModalField): string | undefined =>
@@ -752,7 +819,7 @@ export default function RiskModal({
             </div>
           </section>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:flex lg:items-start lg:gap-4">
             <LinkedOptionsSection
               title="Vínculo com achados"
               description="Associe um ou mais achados que justificam este risco."
@@ -762,17 +829,20 @@ export default function RiskModal({
                 setFindIds((current) => toggleSelection(current, id))
               }
               emptyMessage="Nenhum achado disponível para vínculo."
+              loading={false}
             />
 
             <LinkedOptionsSection
               title="Vínculo com ativos"
               description="Associe os ativos impactados por este risco."
-              options={assets}
+              options={assetOptions}
               selectedIds={damageAssetIds}
               onToggle={(id) =>
                 setDamageAssetIds((current) => toggleSelection(current, id))
               }
               emptyMessage="Nenhum ativo disponível para vínculo."
+              loading={assetLoading}
+              errorMessage={assetError}
             />
           </div>
         </div>
