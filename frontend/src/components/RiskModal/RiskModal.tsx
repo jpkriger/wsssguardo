@@ -623,7 +623,7 @@ export default function RiskModal({
                   type="number"
                   min={PROBABILITY_MIN}
                   max={PROBABILITY_MAX}
-                  step="0.1"
+                  step="1"
                   inputMode="decimal"
                   placeholder="0 a 10"
                   value={form.occurrenceProbability}
@@ -657,7 +657,7 @@ export default function RiskModal({
                   type="number"
                   min={PROBABILITY_MIN}
                   max={PROBABILITY_MAX}
-                  step="0.1"
+                  step="1"
                   inputMode="decimal"
                   placeholder="0 a 10"
                   value={form.impactProbability}

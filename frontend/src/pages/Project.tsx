@@ -164,7 +164,7 @@ export default function Project(): ReactElement {
         )}
         {activeTab === ProjectTabs.Findings && (
           <div className="rounded-2xl border border-border/60 bg-card p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
               <div>
                 <h2 className="text-2xl font-normal text-foreground leading-tight">
                   Achados
@@ -173,13 +173,7 @@ export default function Project(): ReactElement {
                   Área reservada para os achados vinculados ao projeto.
                 </p>
               </div>
-              <Button type="button" variant="outline" onClick={() => setRiskModalOpen(true)}>
-                Abrir modal de risco
-              </Button>
             </div>
-            <p className="mt-6 text-sm text-muted-foreground">
-              Use a aba de riscos para visualizar o modal novo diretamente no localhost.
-            </p>
           </div>
         )}
         {activeTab === ProjectTabs.Risks && (
