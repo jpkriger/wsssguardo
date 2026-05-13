@@ -65,8 +65,10 @@ class RiskServiceImplTest {
     project.setId(projectId);
     Find find = new Find();
     find.setId(findId);
+    find.setProject(project);
     Asset asset = new Asset();
     asset.setId(assetId);
+    asset.setProject(project);
     Risk risk = new Risk();
     Risk savedRisk = new Risk();
     RiskResponseDTO expectedResponse = new RiskResponseDTO(

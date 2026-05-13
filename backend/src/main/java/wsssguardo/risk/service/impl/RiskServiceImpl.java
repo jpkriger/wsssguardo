@@ -44,8 +44,8 @@ public class RiskServiceImpl implements RiskService {
   public RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username) {
     Project project = projectRepository.findById(request.projectId())
         .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
-    List<Find> finds = findByIds(request.findIds(), findRepository, "Find");
-    List<Asset> damageAssets = findByIds(request.damageAssetIds(), assetRepository, "Asset");
+    List<Find> finds = findByIds(request.findIds(), findRepository, "Find", project.getId());
+    List<Asset> damageAssets = findByIds(request.damageAssetIds(), assetRepository, "Asset", project.getId());
 
     Risk risk = mapper.toEntity(request, project, finds, damageAssets, username);
     Risk savedRisk = repository.save(risk);
@@ -62,7 +62,7 @@ public class RiskServiceImpl implements RiskService {
   }
 
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,
-      org.springframework.data.jpa.repository.JpaRepository<T, UUID> repository, String resourceName) {
+      org.springframework.data.jpa.repository.JpaRepository<T, UUID> repository, String resourceName, UUID projectId) {
     if (ids == null || ids.isEmpty()) {
       return List.of();
     }
@@ -80,6 +80,16 @@ public class RiskServiceImpl implements RiskService {
 
     if (missingId != null) {
       throw new ResourceNotFoundException(resourceName, missingId);
+    }
+
+    // Validate that the entities belong to the project
+    for (T entity : entities) {
+      if (entity instanceof Find f && !f.getProject().getId().equals(projectId)) {
+        throw new wsssguardo.shared.exception.ApiException("Find " + f.getId() + " does not belong to Project " + projectId, org.springframework.http.HttpStatus.BAD_REQUEST);
+      }
+      if (entity instanceof Asset a && !a.getProject().getId().equals(projectId)) {
+        throw new wsssguardo.shared.exception.ApiException("Asset " + a.getId() + " does not belong to Project " + projectId, org.springframework.http.HttpStatus.BAD_REQUEST);
+      }
     }
 
     return uniqueIds.stream().map(entitiesById::get).toList();
