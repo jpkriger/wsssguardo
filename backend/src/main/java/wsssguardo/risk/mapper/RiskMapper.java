@@ -3,6 +3,7 @@ package wsssguardo.risk.mapper;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import wsssguardo.asset.Asset;
@@ -10,6 +11,7 @@ import wsssguardo.find.Find;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
+import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 
 @Component
@@ -55,6 +57,18 @@ public class RiskMapper {
         risk.getCreatedBy(),
         risk.getCreatedAt(),
         risk.getUpdatedAt());
+  }
+
+  public RiskPageResponseDTO toPageDTO(Page<Risk> page) {
+    return new RiskPageResponseDTO(
+        page.getContent().stream().map(this::toResponse).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.isFirst(),
+        page.isLast()
+    );
   }
 
   private List<UUID> idsFromFinds(List<Find> finds) {

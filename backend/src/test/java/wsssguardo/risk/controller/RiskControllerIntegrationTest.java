@@ -13,13 +13,9 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
+
+import wsssguardo.AbstractIntegrationTest;
 
 import wsssguardo.asset.Asset;
 import wsssguardo.asset.repository.AssetRepository;
@@ -31,15 +27,9 @@ import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.repository.ProjectRepository;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("dev")
-@TestPropertySource(properties = {
-    "security.auth.disabled=true",
-    "spring.sql.init.mode=never"
-})
-@Transactional
-class RiskControllerIntegrationTest {
+import org.springframework.http.MediaType;
+
+class RiskControllerIntegrationTest extends AbstractIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;

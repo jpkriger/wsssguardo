@@ -19,12 +19,15 @@ import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.Risk;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
+import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.mapper.RiskMapper;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.risk.service.RiskService;
 import wsssguardo.shared.domain.BaseEntity;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +50,15 @@ public class RiskServiceImpl implements RiskService {
     Risk risk = mapper.toEntity(request, project, finds, damageAssets, username);
     Risk savedRisk = repository.save(risk);
     return mapper.toResponse(savedRisk);
+  }
+
+  @Override
+  public RiskPageResponseDTO findAllByProject(UUID projectId, Pageable pageable) {
+    if (!projectRepository.existsById(projectId)) {
+      throw new ResourceNotFoundException("Project", projectId);
+    }
+    Page<Risk> riskPage = repository.findAllByProjectId(projectId, pageable);
+    return mapper.toPageDTO(riskPage);
   }
 
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,

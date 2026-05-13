@@ -52,7 +52,11 @@ Referência implementada: `entityobject`.
 - `GET /api/projects`
 - `GET /api/projects?ids=<uuid>&ids=<uuid>`
 - `GET /api/projects?userId=<uuid>`
+<<<<<<< HEAD
 - `POST /api/risks`
+=======
+- `GET /api/finds/getFindingNameByProjectId/{projectId}`
+>>>>>>> develop
 
 O endpoint de projetos aceita três modos de consulta no mesmo controller:
 
@@ -60,6 +64,7 @@ O endpoint de projetos aceita três modos de consulta no mesmo controller:
 - `ids` repetido retorna detalhes de projetos preservando a ordem solicitada.
 - `userId` retorna lista de IDs (UUID) dos projetos relacionados ao usuário.
 
+<<<<<<< HEAD
 ## Contrato: criar risco
 
 `POST /api/risks` cria um risco usando o contrato derivado da migration `risks`, incluindo relações com `project`, `finds` e `damageAssets`.
@@ -117,6 +122,17 @@ Teste local do endpoint:
 
 ```bash
 ./mvnw test -Dtest=RiskServiceImplTest,RiskControllerIntegrationTest
+=======
+O endpoint de achados por projeto retorna uma lista enxuta para seleção:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Nome do achado"
+  }
+]
+>>>>>>> develop
 ```
 
 ## Qualidade

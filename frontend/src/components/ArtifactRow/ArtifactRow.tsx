@@ -45,20 +45,29 @@ export default function ArtifactRow({
   const f = artifact.findings;
   const findingsCount = f ? f.high + f.medium + f.low : (findingsCountProp ?? 0);
 
+  function handleToggleExpand(): void {
+    onToggleExpand(artifact.id);
+  }
+
   return (
     <>
       <tr
         className={cn(
-          "transition-colors border-t-2 border-border",
+          "cursor-pointer transition-colors border-t-2 border-border",
           isExpanded ? "bg-accent/10" : "hover:bg-accent/20"
         )}
+        onClick={handleToggleExpand}
       >
         <td className="px-5 py-2.5 text-foreground text-lg font-normal align-middle">
           <div className="flex items-center gap-6">
             <button
               className="text-foreground hover:opacity-70 transition-opacity outline-none border-none bg-transparent cursor-pointer flex-shrink-0"
-              onClick={() => onToggleExpand(artifact.id)}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleToggleExpand();
+              }}
               title={isExpanded ? "Recolher" : "Expandir"}
+              aria-label={`${isExpanded ? "Recolher" : "Expandir"} artefato ${artifact.name}`}
             >
               {isExpanded
                 ? <ChevronUp className="h-6 w-6" />
