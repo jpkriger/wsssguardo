@@ -6,15 +6,15 @@ import java.util.UUID;
 
 public record RiskResponseDTO(
     UUID id,
-    String name,
     UUID projectId,
+    String name,
+    List<UUID> findIds,
     String description,
     String consequences,
     Float occurrenceProbability,
     Float impactProbability,
     String damageOperations,
-    List<UUID> findIds,
-    List<UUID> assetIds,
+    List<UUID> damageAssetIds,
     String damageIndividuals,
     String damageOtherOrgs,
     String recommendation,
@@ -22,4 +22,5 @@ public record RiskResponseDTO(
     String createdBy,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
-) {}
+) {
+}

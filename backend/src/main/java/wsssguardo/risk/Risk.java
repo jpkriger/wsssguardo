@@ -31,46 +31,40 @@ import wsssguardo.shared.domain.BaseEntity;
 @Builder
 @SQLDelete(sql = "UPDATE risks SET deleted_at = NOW() WHERE id = ?")
 public class Risk extends BaseEntity {
-  
-  @Column(nullable = false)
-  private String name;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "project_id", nullable = false)
-  private Project project;
+      @Column(nullable = false)
+      private String name;
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "risks_finds",
-      joinColumns = @jakarta.persistence.JoinColumn(name = "risk_id"),
-      inverseJoinColumns = @jakarta.persistence.JoinColumn(name = "finds_id"))
-  private List<Find> finds;
+      @ManyToOne(fetch = FetchType.LAZY)
+      @JoinColumn(name = "project_id", nullable = false)
+      private Project project;
 
-  private String description;
+      @ManyToMany(fetch = FetchType.LAZY)
+      @JoinTable(name = "risks_finds", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "finds_id"))
+      private List<Find> finds;
 
-  private String consequences;
+      private String description;
 
-  private Float occurrenceProbability;
+      private String consequences;
 
-  private Float impactProbability;
+      private Float occurrenceProbability;
 
-  private String damageOperations;
+      private Float impactProbability;
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "risks_damage_assets",
-      joinColumns = @jakarta.persistence.JoinColumn(name = "risk_id"),
-      inverseJoinColumns = @jakarta.persistence.JoinColumn(name = "damage_assets_id"))
-  private List<Asset> damageAssets;
+      private String damageOperations;
 
-  private String damageIndividuals;
+      @ManyToMany(fetch = FetchType.LAZY)
+      @JoinTable(name = "risks_damage_assets", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "damage_assets_id"))
+      private List<Asset> damageAssets;
 
-  private String damageOtherOrgs;
+      private String damageIndividuals;
 
-  private String recommendation;
+      private String damageOtherOrgs;
 
-  // Valor normalizado 0 - 10000 mapeia em runtime conforme configuração
-  @Column(name = "risk_level")
-  private Integer riskLevel;
+      private String recommendation;
+
+      // Valor normalizado 0 - 10000 mapeia em runtime conforme configuração
+      @Column(name = "risk_level")
+      private Integer riskLevel;
 
 }
