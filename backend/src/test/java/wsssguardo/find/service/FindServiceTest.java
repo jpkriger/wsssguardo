@@ -2,17 +2,20 @@ package wsssguardo.find.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -33,24 +36,30 @@ class FindServiceTest {
     @Mock
     private ProjectRepository projectRepository;
 
-    private FindService service;
+    @Mock
+    private FindMapper mapper;
 
-    @BeforeEach
-    void setUp() {
-        service = new FindServiceImpl(repository, projectRepository, new FindMapper());
-    }
+    @InjectMocks
+    private FindService service;
 
     @Test
     void getFindingNameByProjectIdShouldReturnMappedFindingNames() {
         UUID projectId = UUID.randomUUID();
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
+        Project project = new Project();
+        project.setId(projectId);
+        
+        Find olderFind = find(firstId, "Achado anterior");
+        Find newerFind = find(secondId, "Achado recente");
 
-        when(projectRepository.existsById(projectId)).thenReturn(true);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(repository.findAllByProjectIdOrderByCreatedAtDesc(projectId)).thenReturn(List.of(
-            find(secondId, "Achado recente"),
-            find(firstId, "Achado anterior")
+            newerFind,
+            olderFind
         ));
+        when(mapper.toNameResponse(newerFind)).thenReturn(new FindNameResponseDTO(secondId, "Achado recente"));
+        when(mapper.toNameResponse(olderFind)).thenReturn(new FindNameResponseDTO(firstId, "Achado anterior"));
 
         List<FindNameResponseDTO> response = service.getFindingNameByProjectId(projectId);
 
@@ -59,7 +68,7 @@ class FindServiceTest {
         assertEquals("Achado recente", response.get(0).name());
         assertEquals(firstId, response.get(1).id());
         assertEquals("Achado anterior", response.get(1).name());
-        verify(projectRepository).existsById(projectId);
+        verify(projectRepository).findById(projectId);
         verify(repository).findAllByProjectIdOrderByCreatedAtDesc(projectId);
     }
 
@@ -67,10 +76,10 @@ class FindServiceTest {
     void getFindingNameByProjectIdShouldThrowWhenProjectDoesNotExist() {
         UUID projectId = UUID.randomUUID();
 
-        when(projectRepository.existsById(projectId)).thenReturn(false);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> service.getFindingNameByProjectId(projectId));
-        verify(projectRepository).existsById(projectId);
+        verify(projectRepository).findById(projectId);
         verifyNoInteractions(repository);
     }
 

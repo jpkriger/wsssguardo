@@ -56,8 +56,8 @@ class FindControllerIntegrationTest {
         Find older = createFind(project, "Achado anterior", LocalDateTime.of(2026, 4, 20, 10, 0));
         Find newer = createFind(project, "Achado recente", LocalDateTime.of(2026, 4, 21, 10, 0));
 
-        // Rota atualizada conforme a sua modificação
-        mockMvc.perform(get("/api/finds/findingNameByProjectId/{projectId}", project.getId()))
+        // Rota atualizada para nova arquitetura
+        mockMvc.perform(get("/api/projects/{projectId}/findings/findingNameByProjectId", project.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[0].id", is(newer.getId().toString())))
@@ -70,8 +70,7 @@ class FindControllerIntegrationTest {
     void getFindingNameByProjectIdShouldReturnNotFoundWhenProjectDoesNotExist() throws Exception {
         UUID nonExistentProjectId = UUID.randomUUID();
 
-        // Rota atualizada também no teste de erro
-        mockMvc.perform(get("/api/finds/findingNameByProjectId/{projectId}", nonExistentProjectId))
+        mockMvc.perform(get("/api/projects/{projectId}/findings/findingNameByProjectId", nonExistentProjectId))
             .andExpect(status().isNotFound());
     }
 

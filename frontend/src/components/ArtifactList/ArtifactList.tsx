@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   listArtifacts,
   deleteArtifact,
   updateArtifact,
   createArtifact,
-  type ArtifactResponse,
-  type ArtifactUpdateRequest,
-  type ArtifactCreateRequest,
+  type ArtifactResponse
 } from "../../api/artifact";
 import ArtifactRow from "../ArtifactRow/ArtifactRow";
 import NewArtifactComposer from "../NewArtifactComposer/NewArtifactComposer";
 import NewNoteComposer from "../NewNoteComposer/NewNoteComposer";
+import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import { cn } from "../../lib/utils";
 import { type NoteCreateRequest } from "../../api/note";
 
@@ -21,7 +20,7 @@ interface ArtifactListProps {
   refreshKey?: number;
   projectId?: string;
   artifacts?: ArtifactResponse[];
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void | Promise<void>;
   onDownload?: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<ArtifactResponse>) => void;
 }
@@ -68,14 +67,11 @@ export default function ArtifactList({
   const [currentPage, setCurrentPage] = useState(1);
   const [composerOpen, setComposerOpen] = useState(false);
   const [noteComposerOpen, setNoteComposerOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [artifactToDelete, setArtifactToDelete] = useState<ArtifactResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (isControlled) return;
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
-
-  async function load(): Promise<void> {
+  const load = useCallback(async (): Promise<void> => {
     if (!projectId) return;
     setLoading(true);
     setError(null);
@@ -87,24 +83,74 @@ export default function ArtifactList({
     } finally {
       setLoading(false);
     }
-  }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (artifacts.length === 0) {
+      setCurrentPage(1);
+      return;
+    }
+
+    const nextTotalPages = Math.ceil(artifacts.length / PAGE_SIZE);
+    setCurrentPage((prev) => Math.min(prev, nextTotalPages));
+  }, [artifacts.length]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    void load();
+  }, [refreshKey, projectId, isControlled, load]);
 
   function toggleExpand(id: string): void {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  async function handleDelete(id: string): Promise<void> {
-    if (onDelete) {
-      onDelete(id);
+  function requestDelete(id: string): void {
+    const artifact = artifacts.find((item) => item.id === id);
+    if (!artifact) {
+      setError("Artefato não encontrado para exclusão");
       return;
     }
-    if (!projectId) return;
+
+    setArtifactToDelete(artifact);
+    setConfirmDeleteOpen(true);
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (!artifactToDelete) return;
+
+    if (onDelete) {
+      setDeleting(true);
+      setError(null);
+      try {
+        await Promise.resolve(onDelete(artifactToDelete.id));
+        setConfirmDeleteOpen(false);
+        setArtifactToDelete(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+      } finally {
+        setDeleting(false);
+      }
+      return;
+    }
+
+    if (!projectId) {
+      setConfirmDeleteOpen(false);
+      setArtifactToDelete(null);
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
     try {
-      await deleteArtifact(projectId, id);
-      setFetchedArtifacts((prev) => prev.filter((a) => a.id !== id));
-      if (expandedId === id) setExpandedId(null);
+      await deleteArtifact(projectId, artifactToDelete.id);
+      setFetchedArtifacts((prev) => prev.filter((a) => a.id !== artifactToDelete.id));
+      if (expandedId === artifactToDelete.id) setExpandedId(null);
+      setConfirmDeleteOpen(false);
+      setArtifactToDelete(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -121,7 +167,7 @@ export default function ArtifactList({
       const updated = await updateArtifact(
         projectId,
         id,
-        updates as ArtifactUpdateRequest,
+        updates
       );
       setFetchedArtifacts((prev) =>
         prev.map((a) => (a.id === id ? updated : a)),
@@ -150,7 +196,7 @@ export default function ArtifactList({
     try {
       const created = await createArtifact(
         projectId,
-        data as ArtifactCreateRequest,
+        data
       );
       setFetchedArtifacts((prev) => [...prev, created]);
     } catch (e) {
@@ -181,7 +227,6 @@ export default function ArtifactList({
 
   return (
     <div className="rounded-[20px] overflow-hidden bg-card">
-      {/* Title */}
       <div className="px-8 pt-6 pb-3 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-normal text-foreground leading-tight">
@@ -227,7 +272,6 @@ export default function ArtifactList({
         onSave={() => setNoteComposerOpen(false)}
       />
 
-      {/* Error / Loading / Empty states */}
       {error && <p className="text-destructive text-sm px-8 pb-4">{error}</p>}
       {loading && (
         <p className="text-muted-foreground text-sm px-8 pb-4">Carregando…</p>
@@ -241,7 +285,6 @@ export default function ArtifactList({
         </p>
       )}
 
-      {/* Table */}
       {artifacts.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
@@ -269,7 +312,7 @@ export default function ArtifactList({
                   isExpanded={expandedId === artifact.id}
                   onToggleExpand={toggleExpand}
                   onEdit={() => {}}
-                  onDelete={handleDelete}
+                  onDelete={requestDelete}
                   onDownload={handleDownload}
                   onUpdate={handleUpdate}
                 />
@@ -290,7 +333,6 @@ export default function ArtifactList({
         </div>
       )}
 
-      {/* Pagination */}
       {artifacts.length > 0 && (
         <div className="flex items-center justify-between px-8 py-5">
           <span className="text-base text-muted-foreground">
@@ -298,7 +340,6 @@ export default function ArtifactList({
           </span>
 
           <div className="flex items-center gap-2">
-            {/* Anterior */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
@@ -313,7 +354,6 @@ export default function ArtifactList({
               Anterior
             </button>
 
-            {/* Page numbers */}
             {getPageNumbers(currentPage, totalPages).map((page, idx) =>
               page === "..." ? (
                 <span
@@ -338,7 +378,6 @@ export default function ArtifactList({
               ),
             )}
 
-            {/* Próximo */}
             <button
               className={cn(
                 "flex items-center gap-1.5 px-4 h-9 rounded-lg text-sm font-medium outline-none border-none bg-transparent transition-opacity",
@@ -355,6 +394,23 @@ export default function ArtifactList({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Confirmar exclusão"
+        message={`Tem certeza que deseja excluir o artefato "${artifactToDelete?.name ?? ""}"?`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={() => {
+          void handleDelete();
+        }}
+        onCancel={() => {
+          if (deleting) return;
+          setConfirmDeleteOpen(false);
+          setArtifactToDelete(null);
+        }}
+        loading={deleting}
+      />
     </div>
   );
 }

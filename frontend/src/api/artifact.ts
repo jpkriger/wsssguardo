@@ -39,6 +39,7 @@ export interface ArtifactResponse {
   lastEditedBy?: string;
   lastEditedAt?: string;
   findings?: { high: number; medium: number; low: number };
+  risks?: { high: number; medium: number; low: number };
 }
 
 export interface ArtifactCreateRequest {
