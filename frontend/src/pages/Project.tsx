@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { Link } from "react-router";
 import { ChevronLeft, Settings } from "lucide-react";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
+import FindingList from "../components/FindingList/FindingList";
 import AssetTable from "../components/AssetTable/AssetTable";
 import RiskModal, {
   type RiskModalOption,
@@ -137,11 +138,10 @@ export default function Project(): ReactElement {
               <li key={tab}>
                 <button
                   type="button"
-                  className={`w-full rounded-full px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
+                  className={`w-full rounded-full px-3 py-2 text-sm font-medium transition-colors ${isActive
                       ? "bg-background text-foreground"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
+                    }`}
                   onClick={() => setActiveTab(tab)}
                 >
                   {tab}
@@ -161,6 +161,9 @@ export default function Project(): ReactElement {
         )}
         {activeTab === ProjectTabs.Artifacts && (
           <ArtifactList projectId={projectId} />
+        )}
+        {activeTab === ProjectTabs.Findings && projectId && (
+          <FindingList projectId={projectId} />
         )}
         {activeTab === ProjectTabs.Findings && (
           <div className="rounded-2xl border border-border/60 bg-card p-6">
