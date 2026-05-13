@@ -27,14 +27,14 @@ import wsssguardo.risk.service.RiskService;
 
 @Tag(name = "Risk", description = "Risk operations")
 @RestController
-@RequestMapping("/api/risks")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class RiskController {
 
   private final RiskService service;
 
   @Operation(summary = "Criar risco")
-  @PostMapping
+  @PostMapping("/risks")
   public ResponseEntity<RiskResponseDTO> createRisk(@Valid @RequestBody RiskCreateRequestDTO request) {
     var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
     RiskResponseDTO response = service.createRisk(request, username);
@@ -43,15 +43,15 @@ public class RiskController {
   }
 
   @Operation(summary = "Listar riscos por projeto")
-  @GetMapping("/project/{projectId}/risks")
+  @GetMapping("/project/{project-id}/risks")
   public ResponseEntity<RiskPageResponseDTO> findAllByProject(
-      @PathVariable UUID projectId,
+      @PathVariable("project-id") UUID projectId,
       @ParameterObject Pageable pageable) {
     return ResponseEntity.ok(service.findAllByProject(projectId, pageable));
   }
 
   @Operation(summary = "Update a risk")
-  @PutMapping("/{id}")
+  @PutMapping("/risks/{id}")
   public ResponseEntity<RiskResponseDTO> update(
       @PathVariable UUID id,
       @RequestBody @Valid RiskUpdateRequestDTO dto) {
@@ -59,7 +59,7 @@ public class RiskController {
   }
 
   @Operation(summary = "Delete a risk")
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/risks/{id}")
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
     service.delete(id);
     return ResponseEntity.noContent().build();

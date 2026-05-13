@@ -11,7 +11,10 @@ import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 
 public interface RiskService {
   RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username);
+
   RiskPageResponseDTO findAllByProject(UUID projectId, Pageable pageable);
+
   RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto);
+
   void delete(UUID id);
 }

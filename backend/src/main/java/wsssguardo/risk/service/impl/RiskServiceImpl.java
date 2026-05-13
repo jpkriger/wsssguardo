@@ -122,6 +122,8 @@ public class RiskServiceImpl implements RiskService {
       }
     }
 
+            
     return uniqueIds.stream().map(entitiesById::get).toList();
   }
 }
+            

@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -18,6 +19,7 @@ public record RiskCreateRequestDTO(
     @Size(max = 255, message = "name must not exceed 255 characters")
     String name,
 
+    @NotEmpty(message = "findIds must contain at least one element")
     List<UUID> findIds,
 
     @Size(max = 255, message = "description must not exceed 255 characters")
@@ -33,6 +35,7 @@ public record RiskCreateRequestDTO(
     @Size(max = 255, message = "damageOperations must not exceed 255 characters")
     String damageOperations,
 
+    @NotEmpty(message = "damageAssetIds must contain at least one element")
     List<UUID> damageAssetIds,
 
     @Size(max = 255, message = "damageIndividuals must not exceed 255 characters")
