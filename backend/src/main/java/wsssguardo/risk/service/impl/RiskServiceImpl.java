@@ -7,6 +7,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,15 +22,15 @@ import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.Risk;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
+import wsssguardo.risk.dto.requestdto.RiskUpdateRequestDTO;
 import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.mapper.RiskMapper;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.risk.service.RiskService;
 import wsssguardo.shared.domain.BaseEntity;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +64,33 @@ public class RiskServiceImpl implements RiskService {
     return mapper.toPageDTO(riskPage);
   }
 
+  @Override
+  @Transactional
+  public RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto) {
+    Risk risk = repository.findById(id)
+        .orElseThrow(() -> new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND));
+
+    List<Find> finds = dto.findIds() != null
+        ? findRepository.findAllById(dto.findIds())
+        : null;
+    List<Asset> assets = dto.assetIds() != null
+        ? assetRepository.findAllById(dto.assetIds())
+        : null;
+
+    risk = mapper.updateEntity(risk, dto, finds, assets, null);
+
+    return mapper.toResponse(repository.save(risk));
+  }
+
+  @Override
+  @Transactional
+  public void delete(UUID id) {
+    if (!repository.existsById(id)) {
+      throw new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND);
+    }
+    repository.deleteById(id); // soft delete automático
+  }
+
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,
       org.springframework.data.jpa.repository.JpaRepository<T, UUID> repository, String resourceName, UUID projectId) {
     if (ids == null || ids.isEmpty()) {
@@ -85,10 +115,10 @@ public class RiskServiceImpl implements RiskService {
     // Validate that the entities belong to the project
     for (T entity : entities) {
       if (entity instanceof Find f && !f.getProject().getId().equals(projectId)) {
-        throw new wsssguardo.shared.exception.ApiException("Find " + f.getId() + " does not belong to Project " + projectId, org.springframework.http.HttpStatus.BAD_REQUEST);
+        throw new ApiException("Find " + f.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
       }
       if (entity instanceof Asset a && !a.getProject().getId().equals(projectId)) {
-        throw new wsssguardo.shared.exception.ApiException("Asset " + a.getId() + " does not belong to Project " + projectId, org.springframework.http.HttpStatus.BAD_REQUEST);
+        throw new ApiException("Asset " + a.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
       }
     }
 
