@@ -11,6 +11,7 @@ import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.dto.requestdto.FindRequestDTO;
 import wsssguardo.find.dto.requestdto.FindUpdateRequestDTO;
+import wsssguardo.find.dto.responsedto.FindNameResponseDTO;
 import wsssguardo.find.dto.responsedto.FindResponseDTO;
 import wsssguardo.find.mapper.FindMapper;
 import wsssguardo.find.repository.FindRepository;
@@ -106,5 +107,14 @@ public class FindService {
             throw new ApiException("Artifacts not found or do not belong to project: " + missing, HttpStatus.BAD_REQUEST);
         }
         return found;
+    }
+
+    @Transactional(readOnly = true)
+    public List<FindNameResponseDTO> getFindingNameByProjectId(UUID projectId) {
+        requireProjectExists(projectId);
+
+        return repository.findAllByProjectIdOrderByCreatedAtDesc(projectId).stream()
+            .map(mapper::toNameResponse)
+            .toList();
     }
 }

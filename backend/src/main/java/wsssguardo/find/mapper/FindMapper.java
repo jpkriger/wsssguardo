@@ -1,9 +1,11 @@
 package wsssguardo.find.mapper;
 
 import org.springframework.stereotype.Component;
+
+import wsssguardo.find.Find;
+import wsssguardo.find.dto.responsedto.FindNameResponseDTO;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
-import wsssguardo.find.Find;
 import wsssguardo.find.domain.FindSeverity;
 import wsssguardo.find.dto.responsedto.FindResponseDTO;
 import wsssguardo.project.Project;
@@ -13,6 +15,10 @@ import java.util.UUID;
 
 @Component
 public class FindMapper {
+
+    public FindNameResponseDTO toNameResponse(Find find) {
+        return new FindNameResponseDTO(find.getId(), find.getName());
+    }
 
     public Find toEntity(String name, String description, Integer numericSeverity,
                          FindSeverity categoricalSeverity, String category, String reference,

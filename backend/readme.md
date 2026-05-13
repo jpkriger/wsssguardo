@@ -52,12 +52,24 @@ Referência implementada: `entityobject`.
 - `GET /api/projects`
 - `GET /api/projects?ids=<uuid>&ids=<uuid>`
 - `GET /api/projects?userId=<uuid>`
+- `GET /api/finds/getFindingNameByProjectId/{projectId}`
 
 O endpoint de projetos aceita três modos de consulta no mesmo controller:
 
 - Sem parâmetros retorna a lista completa de projetos (`id`, `name`, `customerId`, `startDate`, `endDate`, `status`).
 - `ids` repetido retorna detalhes de projetos preservando a ordem solicitada.
 - `userId` retorna lista de IDs (UUID) dos projetos relacionados ao usuário.
+
+O endpoint de achados por projeto retorna uma lista enxuta para seleção:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Nome do achado"
+  }
+]
+```
 
 ## Qualidade
 
