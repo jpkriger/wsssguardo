@@ -48,11 +48,13 @@ export default function AssetModal({
   const [urlError, setUrlError] = useState("");
 
   const isValidUrl = (value: string) => {
+
+    value = value.trim();
+
     try {
-      const normalized = /^https?:\/\//i.test(value)
-        ? value
-        : `https://${value}`;
-      const url = new URL(normalized);
+      if (!/^https?:\/\//i.test(value)) return false;
+
+      const url = new URL(value);
 
       const hostname = url.hostname;
       const parts = hostname.split(".");
@@ -75,7 +77,7 @@ export default function AssetModal({
     setContent(value);
 
     if (value && !isValidUrl(value)) {
-      setUrlError("Por favor, insira uma URL válida (ex: wss.business)");
+      setUrlError("Por favor, insira uma URL válida. (Ex: https://wsssguardo.com.br)");
     } else {
       setUrlError("");
     }
@@ -121,25 +123,19 @@ export default function AssetModal({
     !content.trim() ||
     !!urlError;
 
-  const getNormalizedUrl = (value: string) => {
-    return /^https?:\/\//i.test(value) ? value : `https://${value}`;
-  };
-
   function handleSubmit(): void {
     if (mode === "edit" && !asset?.id) return;
 
     if (!isValidUrl(content)) {
-      setUrlError("Por favor, insira uma URL válida.");
+      setUrlError("Por favor, insira uma URL válida. (Ex: https://wsssguardo.com.br)");
       return;
     }
-
-    const finalUrl = getNormalizedUrl(content);
 
     onSubmit({
       id: mode === "edit" ? asset?.id : undefined,
       name: name.trim(),
       description: description.trim(),
-      content: finalUrl,
+      content: content.trim(),
     });
   }
 
