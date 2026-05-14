@@ -182,7 +182,7 @@ export default function ProjectsHome(): ReactElement {
   return (
     <div className="flex flex-col gap-10">
       {/* Visão Geral */}
-      <section className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full">
+      <section className="w-full">
         <div className="flex flex-col gap-2">
           <h1 className="!text-[32px] !font-bold text-foreground">
             Visão Geral
@@ -215,7 +215,7 @@ export default function ProjectsHome(): ReactElement {
       </section>
 
       {/* Tabela de Projetos */}
-      <div className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full">
+      <div className="w-full">
         <ProjectsTable projects={projects} totalCount={projects.length} />
       </div>
     </div>
