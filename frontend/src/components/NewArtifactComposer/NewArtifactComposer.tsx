@@ -17,9 +17,10 @@ const TIPO_OPTIONS: { value: ArtifactContentType; label: string }[] = [
 ];
 
 function isGoogleDriveLink(url: string): boolean {
+  const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
   return (
-    url.startsWith("https://drive.google.com/") ||
-    url.startsWith("https://docs.google.com/")
+    normalized.startsWith("https://drive.google.com/") ||
+    normalized.startsWith("https://docs.google.com/")
   );
 }
 
