@@ -10,19 +10,21 @@ export default function App(): ReactElement {
   return (
     <ThemeProvider>
       <Toaster />
-      <nav>
-        <GlobalHeader />
-      </nav>
+      <div className="flex flex-col min-h-screen w-full">
+        <nav>
+          <GlobalHeader />
+        </nav>
 
-      <div className={styles.container}>
-        <main className={styles.main}>
-          <Outlet />
-        </main>
+        <div className={styles.container}>
+          <main className={styles.main}>
+            <Outlet />
+          </main>
+        </div>
+
+        <footer className="h-22 border-t border-border transition-colors duration-300 mt-auto">
+          <GlobalFooter />
+        </footer>
       </div>
-      <footer className="border-t border-border py-6 transition-colors duration-300">
-        <GlobalFooter />
-      </footer>
-
     </ThemeProvider>
   );
 }

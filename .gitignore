@@ -16,7 +16,6 @@ backend/.mvn/wrapper/maven-wrapper.jar
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-frontend/bun.lock
 
 
 infra/**/.terraform/
@@ -32,7 +31,14 @@ infra/**/*_override.tf.json
 
 .env
 .env.*
+!.env.example
 *.local
+
+terraform.tfstate
+terraform.tfstate.backup
 
 .gitlab-ci-local/
 .claude
+
+*.pem
+*.key

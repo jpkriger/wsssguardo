@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import wsssguardo.entityobject.dto.requestdto.EntityObjectRequestDTO;
+import wsssguardo.entityobject.dto.requestdto.EntityObjectUpdateRequestDTO;
 import wsssguardo.entityobject.dto.responsedto.EntityObjectResponseDTO;
 import wsssguardo.entityobject.mapper.EntityObjectMapper;
 import wsssguardo.entityobject.repository.EntityObjectRepository;
@@ -42,5 +43,16 @@ public class EntityObjectServiceImpl implements EntityObjectService {
         return repository.findAll().stream()
             .map(mapper::toResponse)
             .toList();
+    }
+
+    @Override
+    @Transactional
+    public EntityObjectResponseDTO update(UUID id, EntityObjectUpdateRequestDTO request) {
+        return repository.findById(id)
+            .map(entity -> {
+                mapper.applyUpdate(request, entity);
+                return mapper.toResponse(repository.saveAndFlush(entity));
+            })
+            .orElseThrow(() -> new ResourceNotFoundException("EntityObject", id));
     }
 }

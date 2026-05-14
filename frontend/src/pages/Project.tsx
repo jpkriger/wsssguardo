@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { Link } from "react-router";
 import { ChevronLeft, Settings } from "lucide-react";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
+import FindingList from "../components/FindingList/FindingList";
 import AssetTable from "../components/AssetTable/AssetTable";
 import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
@@ -147,6 +148,9 @@ export default function Project(): ReactElement {
         )}
         {activeTab === ProjectTabs.Artifacts && (
           <ArtifactList projectId={projectId} />
+        )}
+        {activeTab === ProjectTabs.Findings && projectId && (
+          <FindingList projectId={projectId} />
         )}
       </div>
     </section>
