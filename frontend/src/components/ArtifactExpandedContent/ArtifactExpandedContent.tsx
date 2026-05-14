@@ -128,8 +128,8 @@ export default function ArtifactExpandedContent({
       ? artifact.description
       : artifact.description.slice(0, SHORT_LIMIT) + "…";
 
-  function handleSave(): void {
-    void onUpdate?.(artifact.id, {
+  async function handleSave(): Promise<void> {
+    await onUpdate?.(artifact.id, {
       name: editName,
       category: editCategory,
       description: editDesc,
@@ -337,7 +337,7 @@ export default function ArtifactExpandedContent({
               <button
                 type="button"
                 className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 outline-none cursor-pointer border-none transition-opacity"
-                onClick={handleSave}
+                onClick={() => { void handleSave(); }}
               >
                 Salvar
               </button>

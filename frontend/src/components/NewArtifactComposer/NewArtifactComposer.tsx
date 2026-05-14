@@ -42,7 +42,7 @@ interface NewArtifactComposerProps {
       | "author"
       | "findings"
     >,
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 export default function NewArtifactComposer({
@@ -123,7 +123,7 @@ export default function NewArtifactComposer({
     setDriveLink("");
   }
 
-  function handleSave(): void {
+  async function handleSave(): Promise<void> {
     if (!name.trim()) {
       setFormError("O nome é obrigatório.");
       return;
@@ -157,8 +157,20 @@ export default function NewArtifactComposer({
       driveLink: driveLink.trim(),
     };
 
-    onSaveArtifact?.(artifact);
-    reset();
+    if (!onSaveArtifact) {
+      reset();
+      return;
+    }
+
+    try {
+      await onSaveArtifact(artifact);
+      reset();
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : "Erro ao salvar artefato.",
+      );
+      setSaving(false);
+    }
   }
 
   function handleBackdropMouseDown(e: React.MouseEvent<HTMLDivElement>): void {
@@ -312,7 +324,7 @@ export default function NewArtifactComposer({
             className="px-4 py-1.5 bg-primary text-primary-foreground border-none rounded-md text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed outline-none"
             type="button"
             disabled={saving || !name.trim() || !!linkError}
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
           >
             Salvar artefato
           </button>

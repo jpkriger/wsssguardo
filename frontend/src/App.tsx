@@ -4,10 +4,12 @@ import styles from "./App.module.css";
 import { ThemeProvider } from "./components/theme-provider";
 import GlobalHeader from "./components/GlobalHeader/GlobalHeader";
 import GlobalFooter from "./components/GlobalFooter/GlobalFooter";
+import { Toaster } from "./components/ui/sonner";
 
 export default function App(): ReactElement {
   return (
     <ThemeProvider>
+      <Toaster />
       <div className="flex flex-col min-h-screen w-full">
         <nav>
           <GlobalHeader />
