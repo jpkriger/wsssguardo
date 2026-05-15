@@ -92,7 +92,7 @@ const ALL_COLUMNS: RiskColumnDef[] = [
   },
   {
     id: "description",
-    label: "Descrição",
+    label: "Impacto direto ao negócio",
     headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
     cellClassName: "px-5 py-2.5 text-sm text-foreground",
     renderContent: (risk) => truncateText(risk.description, 28),
@@ -494,7 +494,7 @@ export default function RiskTable(): ReactElement {
                                 {/* Descrição + Consequências em 2 colunas */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   <div className="rounded-lg border border-border/50 bg-muted/10 px-4 py-2.5">
-                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Descrição</p>
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Impacto direto ao negócio</p>
                                     <p className="text-foreground text-sm leading-relaxed">{risk.description || "—"}</p>
                                   </div>
                                   <div className="rounded-lg border border-border/50 bg-muted/10 px-4 py-2.5">
@@ -525,7 +525,7 @@ export default function RiskTable(): ReactElement {
                                   <p className="text-foreground text-sm leading-relaxed">{risk.recommendation || "—"}</p>
                                 </div>
 
-                                {/* Bottom: Nível + vínculos — 3 stat mini-cards */}
+                                {/* Bottom: Nível de Risco + Achados vinculados */}
                                 <div className="grid grid-cols-3 gap-3">
                                   <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
                                     <span className="text-muted-foreground text-xs uppercase tracking-wider">Nível de Risco</span>
@@ -536,13 +536,23 @@ export default function RiskTable(): ReactElement {
                                       {risk.riskLevel != null && ` (${risk.riskLevel})`}
                                     </span>
                                   </div>
-                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
-                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Achados vinculados</span>
-                                    <span className="text-foreground text-base font-bold">{risk.findIds?.length ?? 0}</span>
-                                  </div>
-                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
-                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Ativos afetados</span>
-                                    <span className="text-foreground text-base font-bold">{risk.damageAssetIds?.length ?? 0}</span>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 col-span-2">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Achados vinculados</p>
+                                    {(risk.findIds?.length ?? 0) === 0 ? (
+                                      <p className="text-muted-foreground text-sm">Nenhum achado vinculado.</p>
+                                    ) : (
+                                      <ul className="flex flex-col gap-0.5">
+                                        {risk.findIds.map((fid) => {
+                                          const found = findings.find((f) => f.id === fid);
+                                          return (
+                                            <li key={fid} className="text-foreground text-sm flex items-center gap-1.5">
+                                              <span className="text-muted-foreground">•</span>
+                                              {found?.label ?? fid}
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    )}
                                   </div>
                                 </div>
 
@@ -655,7 +665,6 @@ export default function RiskTable(): ReactElement {
         mode={modalMode}
         risk={selectedRisk}
         findings={findings}
-        projectId={projectId}
         onClose={() => setModalOpen(false)}
         onSubmit={(data) => {
           void handleSubmit(data);

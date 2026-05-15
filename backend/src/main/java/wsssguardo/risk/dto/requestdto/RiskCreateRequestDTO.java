@@ -35,7 +35,6 @@ public record RiskCreateRequestDTO(
     @Size(max = 255, message = "damageOperations must not exceed 255 characters")
     String damageOperations,
 
-    @NotEmpty(message = "damageAssetIds must contain at least one element")
     List<UUID> damageAssetIds,
 
     @Size(max = 255, message = "damageIndividuals must not exceed 255 characters")
