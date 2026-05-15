@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { fetchAssetsByProject } from "@/api/asset";
 
 export interface RiskModalOption {
   id: string;
@@ -81,7 +80,6 @@ interface RiskModalProps {
   mode: "create" | "edit";
   risk?: RiskModalRisk | null;
   findings?: RiskModalOption[];
-  projectId?: string | null;
   onClose: () => void;
   onSubmit: (data: RiskModalSubmitData) => void;
 }
@@ -156,7 +154,7 @@ function validateProbability(value: string, label: string): string | undefined {
   return undefined;
 }
 
-export function validateRiskModalDraft(
+function validateRiskModalDraft(
   form: RiskModalFormState,
 ): RiskModalValidationErrors {
   return {
@@ -358,16 +356,11 @@ export default function RiskModal({
   mode,
   risk = null,
   findings = [],
-  projectId = null,
   onClose,
   onSubmit,
 }: RiskModalProps): ReactElement {
   const [form, setForm] = useState<RiskModalFormState>(createEmptyFormState());
   const [findIds, setFindIds] = useState<string[]>([]);
-  const [damageAssetIds, setDamageAssetIds] = useState<string[]>([]);
-  const [assetOptions, setAssetOptions] = useState<RiskModalOption[]>([]);
-  const [assetLoading, setAssetLoading] = useState(false);
-  const [assetError, setAssetError] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [touchedFields, setTouchedFields] = useState<
     Record<RiskModalField, boolean>
@@ -401,7 +394,6 @@ export default function RiskModal({
         recommendation: toInputValue(risk.recommendation),
       });
       setFindIds([...(risk.findIds ?? [])]);
-      setDamageAssetIds([...(risk.damageAssetIds ?? [])]);
       setSubmitAttempted(false);
       setTouchedFields({
         name: false,
@@ -419,7 +411,6 @@ export default function RiskModal({
 
     setForm(createEmptyFormState());
     setFindIds([]);
-    setDamageAssetIds([]);
     setSubmitAttempted(false);
     setTouchedFields({
       name: false,
@@ -433,61 +424,6 @@ export default function RiskModal({
       recommendation: false,
     });
   }, [open, mode, risk]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadAssets(): Promise<void> {
-      if (!open) {
-        return;
-      }
-
-      if (!projectId) {
-        setAssetOptions([]);
-        setAssetError("Projeto inválido para carregar ativos.");
-        setAssetLoading(false);
-        return;
-      }
-
-      setAssetLoading(true);
-      setAssetError(null);
-
-      try {
-        const response = await fetchAssetsByProject(projectId, 0, 1000);
-
-        if (cancelled) {
-          return;
-        }
-
-        setAssetOptions(
-          response.content.map((asset) => ({
-            id: asset.id,
-            label: asset.name,
-            description: asset.description,
-          })),
-        );
-      } catch (err: unknown) {
-        if (cancelled) {
-          return;
-        }
-
-        const message =
-          err instanceof Error ? err.message : "Erro ao carregar ativos do projeto";
-        setAssetOptions([]);
-        setAssetError(message);
-      } finally {
-        if (!cancelled) {
-          setAssetLoading(false);
-        }
-      }
-    }
-
-    void loadAssets();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, projectId]);
 
   const errors = validateRiskModalDraft(form);
   const showError = (field: RiskModalField): string | undefined =>
@@ -550,7 +486,7 @@ export default function RiskModal({
       damageOtherOrgs: form.damageOtherOrgs.trim(),
       recommendation: form.recommendation.trim(),
       findIds: [...findIds],
-      damageAssetIds: [...damageAssetIds],
+      damageAssetIds: [],
     });
   }
 
@@ -856,7 +792,7 @@ export default function RiskModal({
             </div>
           </section>
 
-          <div className="grid gap-4 lg:flex lg:items-start lg:gap-4">
+          <div className="grid gap-4">
             <LinkedOptionsSection
               title="Vínculo com achados"
               description="Associe um ou mais achados que justificam este risco."
@@ -867,19 +803,6 @@ export default function RiskModal({
               }
               emptyMessage="Nenhum achado disponível para vínculo."
               loading={false}
-            />
-
-            <LinkedOptionsSection
-              title="Vínculo com ativos"
-              description="Associe os ativos impactados por este risco."
-              options={assetOptions}
-              selectedIds={damageAssetIds}
-              onToggle={(id) =>
-                setDamageAssetIds((current) => toggleSelection(current, id))
-              }
-              emptyMessage="Nenhum ativo disponível para vínculo."
-              loading={assetLoading}
-              errorMessage={assetError}
             />
           </div>
         </div>
