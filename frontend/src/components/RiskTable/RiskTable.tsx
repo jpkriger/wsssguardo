@@ -31,6 +31,10 @@ import {
   type RiskResponse,
 } from "@/api/risk";
 import { listFindings, type FindingResponse } from "@/api/finding";
+import {
+  getProjectConfiguration,
+  type RiskCategoryDTO,
+} from "@/api/projectConfiguration";
 import RiskModal, {
   type RiskModalSubmitData,
   type RiskModalRisk,
@@ -59,22 +63,36 @@ interface RiskLevelConfig {
   className: string;
 }
 
-function getRiskLevelConfig(riskLevel: number | null | undefined): RiskLevelConfig {
-  if (riskLevel == null) {
-    return { label: "Baixa", className: "bg-green-600 text-white" };
-  }
-  if (riskLevel >= 66) {
-    return { label: "Alta", className: "bg-red-600 text-white" };
-  }
-  if (riskLevel >= 33) {
-    return { label: "Média", className: "bg-yellow-500 text-white" };
-  }
-  return { label: "Baixa", className: "bg-green-600 text-white" };
+const CATEGORY_STYLES: Record<string, string> = {
+  default: "bg-green-600 text-white",
+};
+
+const RISK_LEVEL_FALLBACK: RiskLevelConfig = { label: "Baixa", className: "bg-green-600 text-white" };
+
+function categoryClassName(index: number, total: number): string {
+  if (index === total - 1) return "bg-red-600 text-white";
+  if (index === total - 2) return "bg-yellow-500 text-white";
+  return CATEGORY_STYLES.default;
 }
 
-function formatProbability(value: number | null | undefined): string {
+function buildGetRiskLevelConfig(
+  categories: RiskCategoryDTO[],
+): (riskLevel: number | null | undefined) => RiskLevelConfig {
+  const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
+  return (riskLevel) => {
+    if (riskLevel == null) return RISK_LEVEL_FALLBACK;
+    const idx = sorted.findIndex((c) => riskLevel >= c.minRange && riskLevel <= c.maxRange);
+    if (idx === -1) return RISK_LEVEL_FALLBACK;
+    return {
+      label: sorted[idx].label as RiskLevelLabel,
+      className: categoryClassName(idx, sorted.length),
+    };
+  };
+}
+
+function formatProbability(value: number | null | undefined, max = 100): string {
   if (value == null) return "—";
-  return `${Math.round(value * 100)}%`;
+  return `${Math.round((value / max) * 100)}%`;
 }
 
 function truncateText(text: string | null | undefined, maxLen: number): string {
@@ -186,6 +204,12 @@ export default function RiskTable(): ReactElement {
   const [modalLoading, setModalLoading] = useState(false);
 
   const [findings, setFindings] = useState<RiskModalOption[]>([]);
+  const [riskCategories, setRiskCategories] = useState<RiskCategoryDTO[]>([
+    { label: "Baixo", minRange: 0, maxRange: 32 },
+    { label: "Médio", minRange: 33, maxRange: 65 },
+    { label: "Alto", minRange: 66, maxRange: 100 },
+  ]);
+  const [probabilityRange, setProbabilityRange] = useState({ min: 0, max: 100 });
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [riskToDelete, setRiskToDelete] = useState<RiskResponse | null>(null);
@@ -199,8 +223,23 @@ export default function RiskTable(): ReactElement {
 
   /** Only render columns that are toggled on. */
   const activeColumns = useMemo(
-    () => ALL_COLUMNS.filter((col) => visibleColumns[col.id]),
-    [visibleColumns],
+    () =>
+      ALL_COLUMNS.filter((col) => visibleColumns[col.id]).map((col) => {
+        if (col.id === "occurrenceProbability" || col.id === "impactProbability") {
+          return {
+            ...col,
+            renderContent: (risk: RiskResponse, _levelConfig: RiskLevelConfig) => {
+              const value =
+                col.id === "occurrenceProbability"
+                  ? risk.occurrenceProbability
+                  : risk.impactProbability;
+              return formatProbability(value, probabilityRange.max);
+            },
+          };
+        }
+        return col;
+      }),
+    [visibleColumns, probabilityRange.max],
   );
 
   const loadRisks = useCallback(
@@ -239,15 +278,35 @@ export default function RiskTable(): ReactElement {
         })),
       );
     } catch {
-      // Non-blocking: findings are optional for the table
       setFindings([]);
     }
   }, [projectId]);
 
+  const loadConfiguration = useCallback(async () => {
+    try {
+      const config = await getProjectConfiguration(projectId);
+      if (config.riskConfig.categories.length > 0) {
+        setRiskCategories(config.riskConfig.categories);
+      }
+      setProbabilityRange({
+        min: config.riskConfig.minRange,
+        max: config.riskConfig.maxRange,
+      });
+    } catch {
+      // fallback mantido no estado inicial
+    }
+  }, [projectId]);
+
+  const getRiskLevelConfig = useMemo(
+    () => buildGetRiskLevelConfig(riskCategories),
+    [riskCategories],
+  );
+
   useEffect(() => {
     void loadRisks(0);
     void loadFindings();
-  }, [loadRisks, loadFindings]);
+    void loadConfiguration();
+  }, [loadRisks, loadFindings, loadConfiguration]);
 
   async function handleDelete(id: string): Promise<void> {
     setDeleting(true);
@@ -304,7 +363,7 @@ export default function RiskTable(): ReactElement {
       if (modalMode === "create") {
         const occurrenceP = data.occurrenceProbability;
         const impactP = data.impactProbability;
-        const riskLevel = Math.round(occurrenceP * impactP * 100);
+        const riskLevel = Math.round(occurrenceP * impactP / probabilityRange.max);
 
         await createRisk({
           projectId,
@@ -324,7 +383,7 @@ export default function RiskTable(): ReactElement {
       } else if (modalMode === "edit" && data.id) {
         const occurrenceP = data.occurrenceProbability;
         const impactP = data.impactProbability;
-        const riskLevel = Math.round(occurrenceP * impactP * 100);
+        const riskLevel = Math.round(occurrenceP * impactP / probabilityRange.max);
 
         await updateRisk(data.id, {
           name: data.name,
@@ -474,7 +533,7 @@ export default function RiskTable(): ReactElement {
                                   <div className="rounded-lg border border-border bg-muted/20 px-4 py-2.5 flex items-center justify-between">
                                     <div>
                                       <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Prob. Ocorrência</p>
-                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.occurrenceProbability)}</p>
+                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.occurrenceProbability, probabilityRange.max)}</p>
                                     </div>
                                     <div className="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-center">
                                       <span className="text-yellow-500 text-sm font-bold">⚡</span>
@@ -483,7 +542,7 @@ export default function RiskTable(): ReactElement {
                                   <div className="rounded-lg border border-border bg-muted/20 px-4 py-2.5 flex items-center justify-between">
                                     <div>
                                       <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Prob. Impacto</p>
-                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.impactProbability)}</p>
+                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.impactProbability, probabilityRange.max)}</p>
                                     </div>
                                     <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center">
                                       <span className="text-red-500 text-sm font-bold">🎯</span>
@@ -665,6 +724,7 @@ export default function RiskTable(): ReactElement {
         mode={modalMode}
         risk={selectedRisk}
         findings={findings}
+        probabilityRange={probabilityRange}
         onClose={() => setModalOpen(false)}
         onSubmit={(data) => {
           void handleSubmit(data);

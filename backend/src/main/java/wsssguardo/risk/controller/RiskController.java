@@ -27,14 +27,14 @@ import wsssguardo.risk.service.RiskService;
 
 @Tag(name = "Risk", description = "Risk operations")
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/risks")
 @RequiredArgsConstructor
 public class RiskController {
 
   private final RiskService service;
 
   @Operation(summary = "Criar risco")
-  @PostMapping("/risks")
+  @PostMapping
   public ResponseEntity<RiskResponseDTO> createRisk(@Valid @RequestBody RiskCreateRequestDTO request) {
     var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
     RiskResponseDTO response = service.createRisk(request, username);
@@ -43,7 +43,7 @@ public class RiskController {
   }
 
   @Operation(summary = "Listar riscos por projeto")
-  @GetMapping("/project/{project-id}/risks")
+  @GetMapping("/project/{project-id}")
   public ResponseEntity<RiskPageResponseDTO> findAllByProject(
       @PathVariable("project-id") UUID projectId,
       @ParameterObject Pageable pageable) {
@@ -51,7 +51,7 @@ public class RiskController {
   }
 
   @Operation(summary = "Update a risk")
-  @PutMapping("/risks/{id}")
+  @PutMapping("/{id}")
   public ResponseEntity<RiskResponseDTO> update(
       @PathVariable UUID id,
       @RequestBody @Valid RiskUpdateRequestDTO dto) {
@@ -59,7 +59,7 @@ public class RiskController {
   }
 
   @Operation(summary = "Delete a risk")
-  @DeleteMapping("/risks/{id}")
+  @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
     service.delete(id);
     return ResponseEntity.noContent().build();

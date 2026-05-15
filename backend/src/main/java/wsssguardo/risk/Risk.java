@@ -1,5 +1,6 @@
 package wsssguardo.risk;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.SQLDelete;
@@ -41,7 +42,7 @@ public class Risk extends BaseEntity {
 
       @ManyToMany(fetch = FetchType.LAZY)
       @JoinTable(name = "risks_finds", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "finds_id"))
-      private List<Find> finds;
+      private List<Find> finds = new ArrayList<>();
 
       private String description;
 
@@ -55,7 +56,7 @@ public class Risk extends BaseEntity {
 
       @ManyToMany(fetch = FetchType.LAZY)
       @JoinTable(name = "risks_damage_assets", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "damage_assets_id"))
-      private List<Asset> damageAssets;
+      private List<Asset> damageAssets = new ArrayList<>();
 
       private String damageIndividuals;
 

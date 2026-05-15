@@ -111,7 +111,6 @@ function Pagination({
 
 interface CompaniesTableProps {
   companies: Company[];
-  totalCount: number;
   search: string;
   onSearchChange: (v: string) => void;
   onEditCompany?: (id: string) => void;
@@ -125,7 +124,6 @@ interface CompaniesTableProps {
 
 export function CompaniesTable({
   companies,
-  totalCount,
   search,
   onEditCompany,
   onDeleteCompany,

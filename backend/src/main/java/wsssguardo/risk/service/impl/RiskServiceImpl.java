@@ -1,5 +1,6 @@
 package wsssguardo.risk.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,13 +69,15 @@ public class RiskServiceImpl implements RiskService {
   @Transactional
   public RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto) {
     Risk risk = repository.findById(id)
-        .orElseThrow(() -> new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new ResourceNotFoundException("Risk", id));
+
+    UUID projectId = risk.getProject().getId();
 
     List<Find> finds = dto.findIds() != null
-        ? findRepository.findAllById(dto.findIds())
+        ? findByIds(dto.findIds(), findRepository, "Find", projectId)
         : null;
     List<Asset> assets = dto.assetIds() != null
-        ? assetRepository.findAllById(dto.assetIds())
+        ? findByIds(dto.assetIds(), assetRepository, "Asset", projectId)
         : null;
 
     risk = mapper.updateEntity(risk, dto, finds, assets, null);
@@ -94,7 +97,7 @@ public class RiskServiceImpl implements RiskService {
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,
       org.springframework.data.jpa.repository.JpaRepository<T, UUID> repository, String resourceName, UUID projectId) {
     if (ids == null || ids.isEmpty()) {
-      return List.of();
+      return new ArrayList<>();
     }
 
     List<UUID> uniqueIds = ids.stream().distinct().toList();
@@ -123,7 +126,7 @@ public class RiskServiceImpl implements RiskService {
     }
 
             
-    return uniqueIds.stream().map(entitiesById::get).toList();
+    return new ArrayList<>(uniqueIds.stream().map(entitiesById::get).toList());
   }
 }
             

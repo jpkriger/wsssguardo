@@ -47,7 +47,7 @@ public record RiskCreateRequestDTO(
     String recommendation,
 
     @Min(value = 0, message = "riskLevel must be greater than or equal to 0")
-    @Max(value = 10000, message = "riskLevel must be less than or equal to 10000")
+    @Max(value = 100, message = "riskLevel must be less than or equal to 100")
     Integer riskLevel
 ) {
 }

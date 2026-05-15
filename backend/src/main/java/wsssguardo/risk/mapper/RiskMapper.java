@@ -124,8 +124,19 @@ public class RiskMapper {
   boolean applyOccurrenceProbability(Risk r, Float v)        { if (v == null) return false; r.setOccurrenceProbability(v); return true; }
   boolean applyImpactProbability(Risk r, Float v)            { if (v == null) return false; r.setImpactProbability(v); return true; }
   boolean applyDamageOperations(Risk r, String v)            { if (v == null) return false; r.setDamageOperations(v); return true; }
-  boolean applyFinds(Risk r, List<Find> v)                   { if (v == null) return false; r.setFinds(v); return true; }
-  boolean applyDamageAssets(Risk r, List<Asset> v)           { if (v == null) return false; r.setDamageAssets(v); return true; }
+  boolean applyFinds(Risk r, List<Find> v) {
+    if (v == null) return false;
+    r.getFinds().clear();
+    r.getFinds().addAll(v);
+    return true;
+  }
+
+  boolean applyDamageAssets(Risk r, List<Asset> v) {
+    if (v == null) return false;
+    r.getDamageAssets().clear();
+    r.getDamageAssets().addAll(v);
+    return true;
+  }
   boolean applyDamageIndividuals(Risk r, String v)           { if (v == null) return false; r.setDamageIndividuals(v); return true; }
   boolean applyDamageOtherOrgs(Risk r, String v)             { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
   boolean applyRecommendation(Risk r, String v)              { if (v == null) return false; r.setRecommendation(v); return true; }

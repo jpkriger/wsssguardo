@@ -125,7 +125,6 @@ export default function Companies(): ReactElement {
           {/* Tabela */}
           <CompaniesTable
             companies={companies}
-            totalCount={companies.length}
             search={search}
             onSearchChange={setSearch}
             onEditCompany={(id) => console.log("editar empresa", id)}

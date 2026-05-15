@@ -80,6 +80,7 @@ interface RiskModalProps {
   mode: "create" | "edit";
   risk?: RiskModalRisk | null;
   findings?: RiskModalOption[];
+  probabilityRange?: { min: number; max: number };
   onClose: () => void;
   onSubmit: (data: RiskModalSubmitData) => void;
 }
@@ -96,8 +97,8 @@ export interface RiskModalValidationErrors {
   recommendation?: string;
 }
 
-const PROBABILITY_MIN = 0;
-const PROBABILITY_MAX = 10;
+const PROBABILITY_MIN_DEFAULT = 0;
+const PROBABILITY_MAX_DEFAULT = 100;
 
 function createEmptyFormState(): RiskModalFormState {
   return {
@@ -140,15 +141,20 @@ function validateRequiredText(
   return undefined;
 }
 
-function validateProbability(value: string, label: string): string | undefined {
+function validateProbability(
+  value: string,
+  label: string,
+  min: number,
+  max: number,
+): string | undefined {
   const parsed = parseProbability(value);
 
   if (parsed === null) {
-    return `${label} deve ser um número entre ${PROBABILITY_MIN} e ${PROBABILITY_MAX}.`;
+    return `${label} deve ser um número entre ${min} e ${max}.`;
   }
 
-  if (parsed < PROBABILITY_MIN || parsed > PROBABILITY_MAX) {
-    return `${label} deve ficar entre ${PROBABILITY_MIN} e ${PROBABILITY_MAX}.`;
+  if (parsed < min || parsed > max) {
+    return `${label} deve ficar entre ${min} e ${max}.`;
   }
 
   return undefined;
@@ -156,6 +162,8 @@ function validateProbability(value: string, label: string): string | undefined {
 
 function validateRiskModalDraft(
   form: RiskModalFormState,
+  probMin: number,
+  probMax: number,
 ): RiskModalValidationErrors {
   return {
     name: validateRequiredText(form.name, "Informe o nome do risco."),
@@ -170,10 +178,14 @@ function validateRiskModalDraft(
     occurrenceProbability: validateProbability(
       form.occurrenceProbability,
       "Probabilidade de ocorrência",
+      probMin,
+      probMax,
     ),
     impactProbability: validateProbability(
       form.impactProbability,
       "Probabilidade de impacto",
+      probMin,
+      probMax,
     ),
     damageOperations: validateRequiredText(
       form.damageOperations,
@@ -356,9 +368,12 @@ export default function RiskModal({
   mode,
   risk = null,
   findings = [],
+  probabilityRange,
   onClose,
   onSubmit,
 }: RiskModalProps): ReactElement {
+  const probMin = probabilityRange?.min ?? PROBABILITY_MIN_DEFAULT;
+  const probMax = probabilityRange?.max ?? PROBABILITY_MAX_DEFAULT;
   const [form, setForm] = useState<RiskModalFormState>(createEmptyFormState());
   const [findIds, setFindIds] = useState<string[]>([]);
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -425,7 +440,7 @@ export default function RiskModal({
     });
   }, [open, mode, risk]);
 
-  const errors = validateRiskModalDraft(form);
+  const errors = validateRiskModalDraft(form, probMin, probMax);
   const showError = (field: RiskModalField): string | undefined =>
     submitAttempted || touchedFields[field] ? errors[field] : undefined;
 
@@ -461,7 +476,7 @@ export default function RiskModal({
   function handleSubmit(): void {
     setSubmitAttempted(true);
 
-    const validationErrors = validateRiskModalDraft(form);
+    const validationErrors = validateRiskModalDraft(form, probMin, probMax);
 
     if (hasValidationErrors(validationErrors)) {
       return;
@@ -486,7 +501,7 @@ export default function RiskModal({
       damageOtherOrgs: form.damageOtherOrgs.trim(),
       recommendation: form.recommendation.trim(),
       findIds: [...findIds],
-      damageAssetIds: [],
+      damageAssetIds: [] as string[],
     });
   }
 
@@ -583,7 +598,7 @@ export default function RiskModal({
           <section className="grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-medium">Probabilidades</h3>
-              <Badge variant="secondary">Escala de 0 a 10</Badge>
+              <Badge variant="secondary">Escala de {probMin} a {probMax}</Badge>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -594,11 +609,11 @@ export default function RiskModal({
                 <Input
                   id={makeFieldId("occurrenceProbability")}
                   type="number"
-                  min={PROBABILITY_MIN}
-                  max={PROBABILITY_MAX}
+                  min={probMin}
+                  max={probMax}
                   step="1"
                   inputMode="decimal"
-                  placeholder="0 a 10"
+                  placeholder={`${probMin} a ${probMax}`}
                   value={form.occurrenceProbability}
                   onChange={(event) =>
                     handleFieldChange(
@@ -628,11 +643,11 @@ export default function RiskModal({
                 <Input
                   id={makeFieldId("impactProbability")}
                   type="number"
-                  min={PROBABILITY_MIN}
-                  max={PROBABILITY_MAX}
+                  min={probMin}
+                  max={probMax}
                   step="1"
                   inputMode="decimal"
-                  placeholder="0 a 10"
+                  placeholder={`${probMin} a ${probMax}`}
                   value={form.impactProbability}
                   onChange={(event) =>
                     handleFieldChange("impactProbability", event.target.value)

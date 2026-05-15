@@ -61,7 +61,7 @@ export interface RiskUpdateRequest {
     riskLevel?: number;
 }
 
-const BASE = "/api";
+const BASE = "/api/risks";
 
 export async function fetchRisksByProject(
     projectId: string,
@@ -73,7 +73,7 @@ export async function fetchRisksByProject(
         size: String(size),
     });
 
-    const url = `${BASE}/project/${projectId}/risks?${params.toString()}`;
+    const url = `${BASE}/project/${projectId}?${params.toString()}`;
     const res = await fetch(url);
 
     if (!res.ok) throw await parseApiErrorResponse(res, url);
@@ -82,20 +82,19 @@ export async function fetchRisksByProject(
 }
 
 export async function createRisk(data: RiskCreateRequest): Promise<RiskResponse> {
-    const url = `${BASE}/risks`;
-    const res = await fetch(url, {
+    const res = await fetch(BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
 
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
+    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
 
     return res.json() as Promise<RiskResponse>;
 }
 
 export async function updateRisk(id: string, data: RiskUpdateRequest): Promise<RiskResponse> {
-    const url = `${BASE}/risks/${id}`;
+    const url = `${BASE}/${id}`;
     const res = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +107,7 @@ export async function updateRisk(id: string, data: RiskUpdateRequest): Promise<R
 }
 
 export async function deleteRisk(id: string): Promise<void> {
-    const url = `${BASE}/risks/${id}`;
+    const url = `${BASE}/${id}`;
     const res = await fetch(url, { method: "DELETE" });
 
     if (!res.ok) throw await parseApiErrorResponse(res, url);
