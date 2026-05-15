@@ -16,10 +16,8 @@ import {
 } from "@/components/ui/table";
 
 import {
-  TrashIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
-  PencilIcon,
   LoaderCircleIcon,
   PlusIcon,
 } from "lucide-react";
@@ -86,6 +84,13 @@ function truncateText(text: string | null | undefined, maxLen: number): string {
 
 const ALL_COLUMNS: RiskColumnDef[] = [
   {
+    id: "name",
+    label: "Nome",
+    headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
+    cellClassName: "px-5 py-2.5 text-sm text-foreground font-medium",
+    renderContent: (risk) => truncateText(risk.name, 28),
+  },
+  {
     id: "description",
     label: "Descrição",
     headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
@@ -114,33 +119,6 @@ const ALL_COLUMNS: RiskColumnDef[] = [
     renderContent: (risk) => formatProbability(risk.impactProbability),
   },
   {
-    id: "recommendation",
-    label: "Recomendação",
-    headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
-    cellClassName: "px-5 py-2.5 text-sm text-muted-foreground",
-    renderContent: (risk) => truncateText(risk.recommendation, 28),
-  },
-  {
-    id: "riskLevel",
-    label: "Nível de Risco",
-    headClassName: "px-5 py-3 text-center text-lg font-normal text-foreground",
-    cellClassName: "px-5 py-2.5 text-center",
-    renderContent: (_risk, levelConfig) => (
-      <span
-        className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${levelConfig.className}`}
-      >
-        {levelConfig.label}
-      </span>
-    ),
-  },
-  {
-    id: "name",
-    label: "Nome",
-    headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
-    cellClassName: "px-5 py-2.5 text-sm text-foreground font-medium",
-    renderContent: (risk) => truncateText(risk.name, 28),
-  },
-  {
     id: "damageOperations",
     label: "Danos Operações",
     headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
@@ -161,11 +139,31 @@ const ALL_COLUMNS: RiskColumnDef[] = [
     cellClassName: "px-5 py-2.5 text-sm text-muted-foreground",
     renderContent: (risk) => truncateText(risk.damageOtherOrgs, 28),
   },
+  {
+    id: "recommendation",
+    label: "Recomendação",
+    headClassName: "px-5 py-3 text-left text-lg font-normal text-foreground",
+    cellClassName: "px-5 py-2.5 text-sm text-muted-foreground",
+    renderContent: (risk) => truncateText(risk.recommendation, 28),
+  },
+  {
+    id: "riskLevel",
+    label: "Nível de Risco",
+    headClassName: "px-5 py-3 text-center text-lg font-normal text-foreground",
+    cellClassName: "px-5 py-2.5 text-center",
+    renderContent: (_risk, levelConfig) => (
+      <span
+        className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${levelConfig.className}`}
+      >
+        {levelConfig.label}
+      </span>
+    ),
+  },
 ];
 
 const COLUMN_MENU_ITEMS = ALL_COLUMNS.map((c) => ({ id: c.id, label: c.label }));
 
-/** First 6 columns are visible by default (matches the screenshot layout). */
+/** First 6 columns are visible by default. */
 const DEFAULT_COLUMN_CONFIG: ColumnConfig = Object.fromEntries(
   ALL_COLUMNS.map((col, idx) => [col.id, idx < 6]),
 );
@@ -422,37 +420,29 @@ export default function RiskTable(): ReactElement {
                         {col.label}
                       </TableHead>
                     ))}
-                    <TableHead className="w-[4%]"></TableHead>
-                    <TableHead className="w-[4%]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {risks.map((risk) => {
                     const levelConfig = getRiskLevelConfig(risk.riskLevel);
                     const isExpanded = expandedId === risk.id;
-                    const totalColSpan = activeColumns.length + 3;
+                    const totalColSpan = activeColumns.length + 1;
                     return (
                       <Fragment key={risk.id}>
                         <TableRow
-                          className={`border-t-2 border-border transition-colors ${
+                          className={`border-t-2 border-border transition-colors cursor-pointer ${
                             isExpanded ? "bg-muted/30" : "hover:bg-muted/20"
                           }`}
+                          onClick={() =>
+                            setExpandedId((prev) =>
+                              prev === risk.id ? null : risk.id,
+                            )
+                          }
                         >
                           <TableCell className="px-4 py-2.5 text-center">
-                            <button
-                              type="button"
-                              className="text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer text-sm leading-none p-1"
-                              onClick={() =>
-                                setExpandedId((prev) =>
-                                  prev === risk.id ? null : risk.id,
-                                )
-                              }
-                              aria-label={
-                                isExpanded ? "Recolher" : "Expandir"
-                              }
-                            >
+                            <span className="text-muted-foreground text-sm leading-none">
                               {isExpanded ? "▴" : "▾"}
-                            </button>
+                            </span>
                           </TableCell>
                           {activeColumns.map((col) => (
                             <TableCell
@@ -462,113 +452,112 @@ export default function RiskTable(): ReactElement {
                               {col.renderContent(risk, levelConfig)}
                             </TableCell>
                           ))}
-                          <TableCell className="px-3 py-2.5 text-center">
-                            <button
-                              className="bg-transparent border-none cursor-pointer text-sm p-1 opacity-80 hover:opacity-100 transition-opacity inline-flex items-center justify-center"
-                              onClick={() => handleEdit(risk)}
-                            >
-                              <PencilIcon className="h-3.5 w-3.5" />
-                            </button>
-                          </TableCell>
-                          <TableCell className="px-3 py-2.5 text-center">
-                            <button
-                              className="bg-transparent border-none cursor-pointer text-sm p-1 opacity-80 hover:opacity-100 transition-opacity inline-flex items-center justify-center"
-                              onClick={() => {
-                                setRiskToDelete(risk);
-                                setConfirmDeleteOpen(true);
-                              }}
-                            >
-                              <TrashIcon className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </TableCell>
                         </TableRow>
 
                         {isExpanded && (
                           <TableRow className="border-t border-border bg-muted/10">
                             <TableCell colSpan={totalColSpan} className="px-8 py-4">
-                              <div className="flex flex-col gap-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                                  {risk.name && (
-                                    <div className="col-span-1 md:col-span-2">
-                                      <span className="text-muted-foreground">Nome: </span>
-                                      <span className="text-foreground font-medium">{risk.name}</span>
-                                    </div>
-                                  )}
-                                  {risk.description && (
-                                    <div className="col-span-1 md:col-span-2">
-                                      <span className="text-muted-foreground">Descrição: </span>
-                                      <span className="text-foreground">{risk.description}</span>
-                                    </div>
-                                  )}
-                                  {risk.consequences && (
-                                    <div className="col-span-1 md:col-span-2">
-                                      <span className="text-muted-foreground">Consequências: </span>
-                                      <span className="text-foreground">{risk.consequences}</span>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <span className="text-muted-foreground">Prob. Ocorrência: </span>
-                                    <span className="text-foreground">{formatProbability(risk.occurrenceProbability)}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Prob. Impacto: </span>
-                                    <span className="text-foreground">{formatProbability(risk.impactProbability)}</span>
-                                  </div>
-                                  {risk.damageOperations && (
+                              <div className="flex flex-col gap-4">
+                                {/* Header: Nome + badge */}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground text-xs">Nome:</span>
+                                  <span className="text-foreground font-bold text-base">{risk.name || "—"}</span>
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${levelConfig.className}`}
+                                  >
+                                    {levelConfig.label}
+                                  </span>
+                                </div>
+
+                                {/* Probabilidades — stat cards */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="rounded-lg border border-border bg-muted/20 px-4 py-2.5 flex items-center justify-between">
                                     <div>
-                                      <span className="text-muted-foreground">Danos Operações: </span>
-                                      <span className="text-foreground">{risk.damageOperations}</span>
+                                      <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Prob. Ocorrência</p>
+                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.occurrenceProbability)}</p>
                                     </div>
-                                  )}
-                                  {risk.damageIndividuals && (
-                                    <div>
-                                      <span className="text-muted-foreground">Danos Indivíduos: </span>
-                                      <span className="text-foreground">{risk.damageIndividuals}</span>
+                                    <div className="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-center">
+                                      <span className="text-yellow-500 text-sm font-bold">⚡</span>
                                     </div>
-                                  )}
-                                  {risk.damageOtherOrgs && (
-                                    <div>
-                                      <span className="text-muted-foreground">Danos Outras Orgs: </span>
-                                      <span className="text-foreground">{risk.damageOtherOrgs}</span>
-                                    </div>
-                                  )}
-                                  {risk.recommendation && (
-                                    <div className="col-span-1 md:col-span-2">
-                                      <span className="text-muted-foreground">Recomendação: </span>
-                                      <span className="text-foreground">{risk.recommendation}</span>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <span className="text-muted-foreground">Nível de Risco: </span>
-                                    <span
-                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${levelConfig.className}`}
-                                    >
-                                      {levelConfig.label}
-                                    </span>
-                                    {risk.riskLevel != null && (
-                                      <span className="text-muted-foreground ml-1">({risk.riskLevel})</span>
-                                    )}
                                   </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Achados vinculados: </span>
-                                    <span className="text-foreground">{risk.findIds?.length ?? 0}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Ativos afetados: </span>
-                                    <span className="text-foreground">{risk.damageAssetIds?.length ?? 0}</span>
+                                  <div className="rounded-lg border border-border bg-muted/20 px-4 py-2.5 flex items-center justify-between">
+                                    <div>
+                                      <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Prob. Impacto</p>
+                                      <p className="text-foreground text-2xl font-bold tracking-tight">{formatProbability(risk.impactProbability)}</p>
+                                    </div>
+                                    <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center">
+                                      <span className="text-red-500 text-sm font-bold">🎯</span>
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex gap-2 pt-1">
+
+                                {/* Descrição + Consequências em 2 colunas */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-4 py-2.5">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Descrição</p>
+                                    <p className="text-foreground text-sm leading-relaxed">{risk.description || "—"}</p>
+                                  </div>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-4 py-2.5">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Consequências</p>
+                                    <p className="text-foreground text-sm leading-relaxed">{risk.consequences || "—"}</p>
+                                  </div>
+                                </div>
+
+                                {/* Danos — 3 mini-cards */}
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Danos Operações</p>
+                                    <p className="text-foreground text-sm font-semibold">{risk.damageOperations || "—"}</p>
+                                  </div>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Danos Indivíduos</p>
+                                    <p className="text-foreground text-sm font-semibold">{risk.damageIndividuals || "—"}</p>
+                                  </div>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
+                                    <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">Danos Outras Orgs</p>
+                                    <p className="text-foreground text-sm font-semibold">{risk.damageOtherOrgs || "—"}</p>
+                                  </div>
+                                </div>
+
+                                {/* Recomendação */}
+                                <div className="rounded-lg border border-border/50 bg-muted/10 px-4 py-2.5">
+                                  <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Recomendação</p>
+                                  <p className="text-foreground text-sm leading-relaxed">{risk.recommendation || "—"}</p>
+                                </div>
+
+                                {/* Bottom: Nível + vínculos — 3 stat mini-cards */}
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
+                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Nível de Risco</span>
+                                    <span
+                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${levelConfig.className}`}
+                                    >
+                                      {levelConfig.label}
+                                      {risk.riskLevel != null && ` (${risk.riskLevel})`}
+                                    </span>
+                                  </div>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
+                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Achados vinculados</span>
+                                    <span className="text-foreground text-base font-bold">{risk.findIds?.length ?? 0}</span>
+                                  </div>
+                                  <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
+                                    <span className="text-muted-foreground text-xs uppercase tracking-wider">Ativos afetados</span>
+                                    <span className="text-foreground text-base font-bold">{risk.damageAssetIds?.length ?? 0}</span>
+                                  </div>
+                                </div>
+
+                                {/* Ações */}
+                                <div className="flex gap-2">
                                   <button
                                     type="button"
-                                    className="px-3 py-1 text-sm rounded border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer"
+                                    className="px-4 py-1.5 text-sm rounded-md border border-border text-foreground hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer font-medium"
                                     onClick={() => handleEdit(risk)}
                                   >
                                     Editar
                                   </button>
                                   <button
                                     type="button"
-                                    className="px-3 py-1 text-sm rounded border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors bg-transparent cursor-pointer"
+                                    className="px-4 py-1.5 text-sm rounded-md border border-border text-foreground hover:border-destructive hover:text-destructive transition-colors bg-transparent cursor-pointer font-medium"
                                     onClick={() => {
                                       setRiskToDelete(risk);
                                       setConfirmDeleteOpen(true);

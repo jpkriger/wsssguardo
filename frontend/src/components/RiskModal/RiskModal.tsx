@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import {
   Dialog,
   DialogContent,
@@ -247,6 +247,24 @@ function LinkedOptionsSection({
   loading: boolean;
   errorMessage?: string | null;
 }): ReactElement {
+  const [search, setSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent): void {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 w-full lg:w-1/2 h-full min-w-0">
       <div className="space-y-1">
@@ -264,30 +282,49 @@ function LinkedOptionsSection({
       ) : options.length === 0 ? (
         <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
-        <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 justify-items-start">
-          {options.map((option) => {
-            const selected = selectedIds.includes(option.id);
+        <div className="relative" ref={containerRef}>
+          <Input
+            placeholder="Pesquisar pelo nome..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setDropdownOpen(true);
+            }}
+            onFocus={() => setDropdownOpen(true)}
+            className="w-full"
+          />
 
-            return (
-              <Button
-                key={option.id}
-                type="button"
-                variant={selected ? "default" : "outline"}
-                className={cn(
-                  "h-auto w-full max-w-[18rem] flex-col items-start gap-1 px-3 py-3 text-left min-h-[64px]",
-                  !selected && "bg-background",
-                )}
-                onClick={() => onToggle(option.id)}
-              >
-                <span className="text-sm font-medium">{option.label}</span>
-                {option.description ? (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {option.description}
-                  </span>
-                ) : null}
-              </Button>
-            );
-          })}
+          {dropdownOpen && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 max-h-48 overflow-y-auto rounded-md border border-border bg-background shadow-lg">
+              {filteredOptions.length === 0 ? (
+                <p className="px-3 py-2 text-sm text-muted-foreground">
+                  Nenhum resultado encontrado.
+                </p>
+              ) : (
+                filteredOptions.map((option) => {
+                  const isSelected = selectedIds.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2",
+                        isSelected
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted/50 text-foreground",
+                      )}
+                      onClick={() => onToggle(option.id)}
+                    >
+                      <span>{option.label}</span>
+                      {isSelected && (
+                        <span className="text-xs text-primary font-medium">✓</span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       )}
 
