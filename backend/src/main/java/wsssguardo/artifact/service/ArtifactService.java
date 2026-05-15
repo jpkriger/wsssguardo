@@ -1,5 +1,8 @@
 package wsssguardo.artifact.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,6 +22,7 @@ import wsssguardo.artifact.dto.responsedto.ArtifactResponseDTO.RisksSummary;
 import wsssguardo.artifact.mapper.ArtifactMapper;
 import wsssguardo.artifact.repository.ArtifactRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.projectConfiguration.RiskCategory;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
@@ -32,7 +36,7 @@ public class ArtifactService {
 
     @Transactional(readOnly = true)
     public List<ArtifactResponseDTO> listByProject(UUID projectId, ArtifactType type) {
-        requireProjectExists(projectId);
+        Project project = requireProjectExists(projectId);
 
         List<Artifact> results = (type != null)
                 ? repository.findAllByProjectIdAndTypeOrderByCreatedAtDesc(projectId, type)
@@ -42,8 +46,9 @@ public class ArtifactService {
             return List.of();
         }
 
-        Map<UUID, long[]> findingsMap = toMap(repository.findFindingsSummaryByProjectId(projectId));
-        Map<UUID, long[]> risksMap = toMap(repository.findRisksSummaryByProjectId(projectId));
+        List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
+        Map<UUID, long[]> findingsMap = toFindingsMap(repository.findFindingsSummaryByProjectId(projectId));
+        Map<UUID, long[]> risksMap = buildRisksMap(repository.findRiskLevelsByArtifactAndProjectId(projectId), categories);
 
         return results.stream()
                 .map(artifact -> {
@@ -67,10 +72,12 @@ public class ArtifactService {
 
     @Transactional(readOnly = true)
     public ArtifactResponseDTO getById(UUID projectId, UUID id) {
+        Project project = requireProjectExists(projectId);
         Artifact artifact = requireArtifactExists(projectId, id);
 
+        List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
         long[] f = resolveSingleFindingsSummary(projectId, id);
-        long[] r = resolveSingleRisksSummary(projectId, id);
+        long[] r = resolveSingleRisksSummary(projectId, id, categories);
 
         return mapper.toResponse(
                 artifact,
@@ -106,8 +113,9 @@ public class ArtifactService {
 
         Artifact saved = repository.saveAndFlush(artifact);
 
+        List<RiskCategory> categories = saved.getProject().getConfiguration().getRiskConfig().getCategories();
         long[] f = resolveSingleFindingsSummary(projectId, id);
-        long[] r = resolveSingleRisksSummary(projectId, id);
+        long[] r = resolveSingleRisksSummary(projectId, id, categories);
 
         return mapper.toResponse(
                 saved,
@@ -122,11 +130,7 @@ public class ArtifactService {
         repository.delete(artifact);
     }
 
-    /**
-     * Converte o resultado de uma query de agregação (List<Object[]>) em um
-     * Map<UUID, long[]> onde cada long[] = [high, medium, low].
-     */
-    private Map<UUID, long[]> toMap(List<Object[]> raw) {
+    private Map<UUID, long[]> toFindingsMap(List<Object[]> raw) {
         return raw.stream()
                 .collect(Collectors.toMap(
                         row -> (UUID) row[0],
@@ -138,10 +142,23 @@ public class ArtifactService {
                 ));
     }
 
-    /**
-     * Resolve o findings summary para um único artifact usando as mesmas queries
-     * de agregação, filtrando pelo artifact específico.
-     */
+    private Map<UUID, long[]> buildRisksMap(List<Object[]> raw, List<RiskCategory> categories) {
+        Map<UUID, List<Integer>> levelsByArtifact = new HashMap<>();
+        for (Object[] row : raw) {
+            UUID artifactId = (UUID) row[0];
+            Integer level = row[1] != null ? ((Number) row[1]).intValue() : null;
+            if (level != null) {
+                levelsByArtifact.computeIfAbsent(artifactId, k -> new ArrayList<>()).add(level);
+            }
+        }
+        Map<UUID, long[]> result = new HashMap<>();
+        levelsByArtifact.forEach((artifactId, levels) -> {
+            long[] counts = classifyRisks(levels, categories);
+            result.put(artifactId, new long[]{counts[2], counts[1], counts[0]});
+        });
+        return result;
+    }
+
     private long[] resolveSingleFindingsSummary(UUID projectId, UUID artifactId) {
         return repository.findFindingsSummaryByProjectId(projectId)
                 .stream()
@@ -155,21 +172,38 @@ public class ArtifactService {
                 .orElse(new long[]{0L, 0L, 0L});
     }
 
-    /**
-     * Resolve o risks summary para um único artifact usando as mesmas queries
-     * de agregação, filtrando pelo artifact específico.
-     */
-    private long[] resolveSingleRisksSummary(UUID projectId, UUID artifactId) {
-        return repository.findRisksSummaryByProjectId(projectId)
-                .stream()
+    private long[] resolveSingleRisksSummary(UUID projectId, UUID artifactId, List<RiskCategory> categories) {
+        List<Object[]> raw = repository.findRiskLevelsByArtifactAndProjectId(projectId);
+        List<Integer> levels = raw.stream()
                 .filter(row -> ((UUID) row[0]).equals(artifactId))
-                .findFirst()
-                .map(row -> new long[]{
-                        row[1] != null ? ((Number) row[1]).longValue() : 0L,
-                        row[2] != null ? ((Number) row[2]).longValue() : 0L,
-                        row[3] != null ? ((Number) row[3]).longValue() : 0L
-                })
-                .orElse(new long[]{0L, 0L, 0L});
+                .map(row -> row[1] != null ? ((Number) row[1]).intValue() : null)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        if (levels.isEmpty()) return new long[]{0L, 0L, 0L};
+        long[] counts = classifyRisks(levels, categories);
+        return new long[]{counts[2], counts[1], counts[0]};
+    }
+
+    private long[] classifyRisks(List<Integer> riskLevels, List<RiskCategory> categories) {
+        if (categories.isEmpty() || riskLevels.isEmpty()) return new long[]{0, 0, 0};
+        List<RiskCategory> sorted = categories.stream()
+                .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
+                .toList();
+        long low = 0, medium = 0, high = 0;
+        for (Integer level : riskLevels) {
+            int idx = -1;
+            for (int i = 0; i < sorted.size(); i++) {
+                RiskCategory cat = sorted.get(i);
+                if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx == 0) low++;
+            else if (idx == sorted.size() - 1) high++;
+            else if (idx > 0) medium++;
+        }
+        return new long[]{low, medium, high};
     }
 
     private Project requireProjectExists(UUID projectId) {
