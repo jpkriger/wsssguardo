@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "wsssguardo-tfstate-prod"
+    bucket       = "wsssguardo-tf-prod"
     key          = "terraform.tfstate"
     region       = "us-east-2"
     use_lockfile = true
@@ -19,4 +19,10 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+}
+
+# ACM para CloudFront obrigatoriamente em us-east-1
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
 }

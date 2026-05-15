@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="1777077804783-sprint2-seed" author="Francisco" context="seed">
+        <sql>
+            -- 1. Find Categories (Categorias de Achados)
+            INSERT INTO find_categories (id, created_at, created_by, name) VALUES
+            ('77777777-7777-7777-7777-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Vulnerabilidades'),
+            ('77777777-7777-7777-7777-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Controle de Acesso'),
+            ('77777777-7777-7777-7777-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Redes');
+
+            -- 2. Finds (Achados de cada Projeto)
+            INSERT INTO finds (id, created_at, created_by, name, project_id, sector, quantitative_criticality, description, threat_event, reference, recommendation) VALUES
+            -- Projeto 1 (Alpha)
+            ('88888888-8888-8888-8888-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Ausência de MFA', '33333333-3333-3333-3333-000000000001', 'TI', 8, 'Acesso aos sistemas sem autenticação multifator.', 'Ataque de Força Bruta', 'ISO 27001', 'Implementar MFA em todas as contas administrativas.'),
+            ('88888888-8888-8888-8888-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Regras Permissivas WAF', '33333333-3333-3333-3333-000000000001', 'Segurança', 5, 'WAF operando apenas em modo de aprendizado.', 'Injeção de SQL', 'OWASP Top 10', 'Habilitar modo de bloqueio para regras conhecidas.'),
+
+            -- Projeto 2 (Beta)
+            ('88888888-8888-8888-8888-000000000003', CURRENT_TIMESTAMP, 'system_seed', 'Contas Admin Excessivas', '33333333-3333-3333-3333-000000000002', 'Infraestrutura', 9, 'Excesso de usuários no grupo Domain Admins.', 'Escalonamento de Privilégios', 'NIST CSF', 'Revisar acessos e implementar princípio do menor privilégio.'),
+
+            -- Projeto 3 (Gamma)
+            ('88888888-8888-8888-8888-000000000004', CURRENT_TIMESTAMP, 'system_seed', 'Certificados VPN Genéricos', '33333333-3333-3333-3333-000000000003', 'Redes', 7, 'Uso de certificados compartilhados para acessos VPN.', 'Interceptação de Sessão', 'CIS Controls', 'Emitir certificados individuais por usuário.');
+
+            -- 3. Finds x Categories
+            INSERT INTO finds_categories (find_id, categories_id) VALUES
+            ('88888888-8888-8888-8888-000000000001', '77777777-7777-7777-7777-000000000002'),
+            ('88888888-8888-8888-8888-000000000002', '77777777-7777-7777-7777-000000000001'),
+            ('88888888-8888-8888-8888-000000000003', '77777777-7777-7777-7777-000000000002'),
+            ('88888888-8888-8888-8888-000000000004', '77777777-7777-7777-7777-000000000003');
+
+            -- 4. Finds x Artifacts
+            INSERT INTO finds_artifacts (find_id, artifacts_id) VALUES
+            ('88888888-8888-8888-8888-000000000001', '66666666-6666-6666-6666-000000000001'),
+            ('88888888-8888-8888-8888-000000000003', '66666666-6666-6666-6666-000000000008');
+
+            -- 5. Finds x Assets
+            INSERT INTO finds_assets (find_id, assets_id) VALUES
+            ('88888888-8888-8888-8888-000000000002', '55555555-5555-5555-5555-000000000003'),
+            ('88888888-8888-8888-8888-000000000003', '55555555-5555-5555-5555-000000000009'),
+            ('88888888-8888-8888-8888-000000000004', '55555555-5555-5555-5555-000000000011');
+
+            -- 6. Risks
+            INSERT INTO risks (id, created_at, created_by, name, project_id, description, consequences, occurrence_probability, impact_probability, damage_operations, damage_individuals, damage_other_orgs, recommendation, risk_level) VALUES
+            ('99999999-9999-9999-9999-000000000001', CURRENT_TIMESTAMP, 'system_seed', 'Risco de Exfiltração de Dados', '33333333-3333-3333-3333-000000000001', 'Dados da API expostos a ataques de injeção', 'Vazamento de dados, multa regulatória', 0.6, 0.8, 'Alta', 'Alta', 'Média', 'Melhorar bloqueios no WAF e validar input', 4),
+            ('99999999-9999-9999-9999-000000000002', CURRENT_TIMESTAMP, 'system_seed', 'Comprometimento da Infraestrutura', '33333333-3333-3333-3333-000000000002', 'Se uma credencial admin vazar, controle total da rede será comprometido', 'Interrupção das operações', 0.4, 0.9, 'Alta', 'Baixa', 'Baixa', 'MFA global e redução do grupo admin', 4);
+
+            -- 7. Risks x Finds
+            INSERT INTO risks_finds (risk_id, finds_id) VALUES
+            ('99999999-9999-9999-9999-000000000001', '88888888-8888-8888-8888-000000000002'),
+            ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000003');
+
+            -- 8. Risks x Damage Assets
+            INSERT INTO risks_damage_assets (risk_id, damage_assets_id) VALUES
+            ('99999999-9999-9999-9999-000000000001', '55555555-5555-5555-5555-000000000002');
+        </sql>
+    </changeSet>
+</databaseChangeLog>

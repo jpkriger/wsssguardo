@@ -33,14 +33,18 @@ describe("entityObject api", () => {
         new Response(JSON.stringify(payload), { status: 201 }),
       );
 
-    await expect(createEntityObject({ name: "Second" })).resolves.toEqual(
-      payload,
-    );
+    const request: Parameters<typeof createEntityObject>[0] = {
+      name: "Second",
+      description: "desc",
+      reference: "ref",
+    };
+
+    await expect(createEntityObject(request)).resolves.toEqual(payload);
 
     expect(fetchSpy).toHaveBeenCalledWith("/api/entity-objects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Second" }),
+      body: JSON.stringify(request),
     });
   });
 
@@ -77,7 +81,7 @@ describe("entityObject api", () => {
       }),
     );
 
-    const request = createEntityObject({ name: "Second" });
+    const request = createEntityObject({ name: "Second", description: "desc", reference: "ref" });
 
     await expect(request).rejects.toBeInstanceOf(ApiErrorResponse);
     await expect(request).rejects.toMatchObject({

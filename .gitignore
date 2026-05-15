@@ -17,6 +17,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
+
 infra/**/.terraform/
 infra/**/.terraform.lock.hcl
 infra/**/*.tfstate
@@ -30,6 +31,14 @@ infra/**/*_override.tf.json
 
 .env
 .env.*
+!.env.example
 *.local
 
+terraform.tfstate
+terraform.tfstate.backup
+
 .gitlab-ci-local/
+.claude
+
+*.pem
+*.key

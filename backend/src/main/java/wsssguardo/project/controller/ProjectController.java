@@ -1,0 +1,82 @@
+package wsssguardo.project.controller;
+
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import wsssguardo.project.dto.ProjectCreateRequest;
+import wsssguardo.project.dto.ProjectResponse;
+import wsssguardo.project.dto.ProjectSummaryDTO;
+import wsssguardo.project.dto.ProjectUpdateRequest;
+import wsssguardo.project.service.ProjectService;
+import wsssguardo.shared.openapi.ApiListAll;
+
+@Tag(name = "Project", description = "Project operations")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/projects")
+public class ProjectController {
+
+    private final ProjectService service;
+
+    @ApiListAll
+    @Operation(summary = "List all projects")
+    @GetMapping(params = {"!ids", "!userId"})
+    public ResponseEntity<List<ProjectResponse>> listAllProjects() {
+        return ResponseEntity.ok(service.listAllProjects());
+    }
+
+    @Operation(summary = "Find projects by IDs")
+    @GetMapping(params = {"ids", "!userId"})
+    public List<ProjectResponse> projectsById(@RequestParam List<UUID> ids) {
+        return service.projectsById(ids);
+    }
+
+    @GetMapping(params = "userId")
+    public ResponseEntity<List<UUID>> projectsByUserId(@RequestParam UUID userId) {
+        return ResponseEntity.ok(service.projectsByUserId(userId));
+    }
+
+    @Operation(summary = "Resumo do projeto")
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<ProjectSummaryDTO> getSummary(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getSummary(id));
+    }
+
+    @Operation(summary = "Criar projeto")
+    @PostMapping
+    public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
+        ProjectResponse response = service.createProject(request);
+        URI location = URI.create("/api/projects/" + response.id());
+        return ResponseEntity.created(location).body(response);
+    }
+
+    @Operation(summary = "Atualizar projeto")
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProjectResponse> updateProject(@PathVariable UUID id,
+            @Valid @RequestBody ProjectUpdateRequest request) {
+        return ResponseEntity.ok(service.updateProject(id, request));
+    }
+
+    @Operation(summary = "Deletar projeto")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
+        service.deleteProject(id);
+        return ResponseEntity.noContent().build();
+    }
+}

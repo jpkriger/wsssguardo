@@ -49,6 +49,91 @@ Referência implementada: `entityobject`.
 - `POST /api/entity-objects`
 - `GET /api/entity-objects/{id}`
 - `GET /api/entity-objects`
+- `GET /api/projects`
+- `GET /api/projects?ids=<uuid>&ids=<uuid>`
+- `GET /api/projects?userId=<uuid>`
+<<<<<<< HEAD
+- `POST /api/risks`
+=======
+- `GET /api/finds/getFindingNameByProjectId/{projectId}`
+>>>>>>> develop
+
+O endpoint de projetos aceita três modos de consulta no mesmo controller:
+
+- Sem parâmetros retorna a lista completa de projetos (`id`, `name`, `customerId`, `startDate`, `endDate`, `status`).
+- `ids` repetido retorna detalhes de projetos preservando a ordem solicitada.
+- `userId` retorna lista de IDs (UUID) dos projetos relacionados ao usuário.
+
+<<<<<<< HEAD
+## Contrato: criar risco
+
+`POST /api/risks` cria um risco usando o contrato derivado da migration `risks`, incluindo relações com `project`, `finds` e `damageAssets`.
+
+Request:
+
+```json
+{
+  "projectId": "00000000-0000-0000-0000-000000000001",
+  "name": "Unauthorized data exposure",
+  "findIds": ["00000000-0000-0000-0000-000000000002"],
+  "description": "Personal data exposed in public endpoint",
+  "consequences": "Privacy incident",
+  "occurrenceProbability": 0.7,
+  "impactProbability": 0.9,
+  "damageOperations": "Incident response required",
+  "damageAssetIds": ["00000000-0000-0000-0000-000000000003"],
+  "damageIndividuals": "Personal data exposure",
+  "damageOtherOrgs": "Partner notification",
+  "recommendation": "Restrict endpoint and add tests",
+  "riskLevel": 9000
+}
+```
+
+Response `201 Created`:
+
+```json
+{
+  "id": "00000000-0000-0000-0000-000000000010",
+  "projectId": "00000000-0000-0000-0000-000000000001",
+  "name": "Unauthorized data exposure",
+  "findIds": ["00000000-0000-0000-0000-000000000002"],
+  "description": "Personal data exposed in public endpoint",
+  "consequences": "Privacy incident",
+  "occurrenceProbability": 0.7,
+  "impactProbability": 0.9,
+  "damageOperations": "Incident response required",
+  "damageAssetIds": ["00000000-0000-0000-0000-000000000003"],
+  "damageIndividuals": "Personal data exposure",
+  "damageOtherOrgs": "Partner notification",
+  "recommendation": "Restrict endpoint and add tests",
+  "riskLevel": 9000,
+  "createdBy": "authenticatedUser",
+  "createdAt": "2026-04-30T10:00:00",
+  "updatedAt": null
+}
+```
+
+Erros padronizados pelo `GlobalExceptionHandler`:
+
+- `400 Bad Request`: validação de body, como `projectId` ausente, `name` vazio ou `riskLevel` fora de `0..10000`.
+- `404 Not Found`: `Project`, `Find` ou `Asset` informado por UUID não existe.
+
+Teste local do endpoint:
+
+```bash
+./mvnw test -Dtest=RiskServiceImplTest,RiskControllerIntegrationTest
+=======
+O endpoint de achados por projeto retorna uma lista enxuta para seleção:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Nome do achado"
+  }
+]
+>>>>>>> develop
+```
 
 ## Qualidade
 

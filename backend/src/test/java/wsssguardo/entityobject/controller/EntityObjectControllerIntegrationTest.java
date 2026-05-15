@@ -9,18 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("dev")
-@TestPropertySource(properties = "security.auth.disabled=true")
-class EntityObjectControllerIntegrationTest {
+import wsssguardo.AbstractIntegrationTest;
+
+class EntityObjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,11 +25,11 @@ class EntityObjectControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                      \"name\": \"Starter Item\"
+                      "name": "Starter Item"
                     }
                     """))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").isNumber())
+            .andExpect(jsonPath("$.id").isString())
             .andExpect(jsonPath("$.name", is("Starter Item")))
             .andExpect(jsonPath("$.createdAt").isString());
 
@@ -51,7 +45,7 @@ class EntityObjectControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {
-                      \"name\": \"   \"
+                      "name": "   "
                     }
                     """))
             .andExpect(status().isBadRequest())
