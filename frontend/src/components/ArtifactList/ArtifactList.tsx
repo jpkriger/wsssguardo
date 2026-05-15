@@ -13,6 +13,7 @@ import NewNoteComposer from "../NewNoteComposer/NewNoteComposer";
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import { cn } from "../../lib/utils";
 import { type NoteCreateRequest } from "../../api/note";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
 
@@ -147,8 +148,11 @@ export default function ArtifactList({
       if (expandedId === artifactToDelete.id) setExpandedId(null);
       setConfirmDeleteOpen(false);
       setArtifactToDelete(null);
+      setError(null);
+      toast.success("Artefato excluído com sucesso.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao excluir artefato");
+      toast.error("Falha ao excluir artefato.");
     } finally {
       setDeleting(false);
     }
@@ -172,8 +176,11 @@ export default function ArtifactList({
       setFetchedArtifacts((prev) =>
         prev.map((a) => (a.id === id ? updated : a)),
       );
+      setError(null);
+      toast.success("Artefato atualizado com sucesso.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao atualizar artefato");
+      toast.error("Falha ao editar artefato.");
+      throw e;
     }
   }
 
@@ -199,8 +206,12 @@ export default function ArtifactList({
         data
       );
       setFetchedArtifacts((prev) => [...prev, created]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao criar artefato");
+      setComposerOpen(false);
+      setError(null);
+      toast.success("Artefato criado com sucesso.");
+    } catch (error) {
+      toast.error("Falha ao criar artefato.");
+      throw error;
     }
   }
 
@@ -212,6 +223,8 @@ export default function ArtifactList({
       contentType: "note",
     });
     setFetchedArtifacts((prev) => [...prev, created]);
+    setNoteComposerOpen(false);
+    setError(null);
   }
 
   const totalPages = Math.ceil(artifacts.length / PAGE_SIZE);

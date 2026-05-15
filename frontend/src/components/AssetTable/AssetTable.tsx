@@ -39,6 +39,7 @@ import AssetModal, {
   type AssetModalAsset,
 } from "../AssetModal/AssetModal";
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 5;
 
@@ -108,10 +109,10 @@ export default function AssetTable(): ReactElement {
       } else {
         await loadAssets(page);
       }
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro ao excluir ativo";
-      setError(message);
+      setError(null);
+      toast.success("Ativo excluido com sucesso.");
+    } catch {
+      toast.error("Falha ao excluir ativo.");
     } finally {
       setDeleting(false);
     }
@@ -154,10 +155,18 @@ export default function AssetTable(): ReactElement {
       }
       setModalOpen(false);
       await loadAssets(page);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro ao salvar ativo";
-      setError(message);
+      setError(null);
+      toast.success(
+        modalMode === "create"
+          ? "Ativo criado com sucesso."
+          : "Ativo atualizado com sucesso.",
+      );
+    } catch {
+      toast.error(
+        modalMode === "create"
+          ? "Falha ao criar ativo."
+          : "Falha ao atualizar ativo.",
+      );
     } finally {
       setModalLoading(false);
     }
