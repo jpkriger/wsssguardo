@@ -9,6 +9,7 @@ export interface AssetResponse {
     createdBy: string;
     createdAt: string;
     updatedAt: string;
+    findingsCount: number;
 }
 
 export interface AssetPageResponse {
