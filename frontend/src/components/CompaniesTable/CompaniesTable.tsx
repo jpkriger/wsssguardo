@@ -114,10 +114,10 @@ interface CompaniesTableProps {
   search: string;
   onSearchChange: (v: string) => void;
   onEditCompany?: (id: string) => void;
-  onDeleteCompany?: (id: string) => void;
-  onCreateProject?: (companyId: string) => void;
+  onDeleteCompany?: (id: string, name: string) => void;
+  onCreateProject?: (companyId: string, companyName: string) => void;
   onEditProject?: (projectId: string) => void;
-  onDeleteProject?: (projectId: string) => void;
+  onDeleteProject?: (projectId: string, projectName: string) => void;
 }
 
 // Component 
@@ -247,7 +247,7 @@ export function CompaniesTable({
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                          onClick={() => onDeleteCompany?.(company.id)}
+                          onClick={() => onDeleteCompany?.(company.id, company.name)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -263,7 +263,7 @@ export function CompaniesTable({
                       <TableCell colSpan={5} className="p-0">
                         <CompanyProjectsTable
                           projects={company.projects}
-                          onCreateProject={() => onCreateProject?.(company.id)}
+                          onCreateProject={() => onCreateProject?.(company.id, company.name)}
                           onEditProject={onEditProject}
                           onDeleteProject={onDeleteProject}
                         />

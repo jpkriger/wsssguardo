@@ -1,10 +1,12 @@
 package wsssguardo.customer.controller;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,16 +23,27 @@ import lombok.RequiredArgsConstructor;
 import wsssguardo.customer.dto.requestdto.CustomerRequestDTO;
 import wsssguardo.customer.dto.requestdto.CustomerUpdateRequestDTO;
 import wsssguardo.customer.dto.responsedto.CustomerResponseDTO;
+import wsssguardo.customer.dto.responsedto.CustomerWithProjectsDTO;
 import wsssguardo.customer.service.CustomerService;
 import wsssguardo.shared.openapi.ApiCreate;
 
-@Tag(name = "Customer", description = "Endpoints for create, update and delete customers")
+@Tag(name = "Customer", description = "Endpoints for customer management")
 @RestController
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
 public class CustomerController {
 
     private final CustomerService service;
+
+    @Operation(summary = "List all customers with their projects")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Customers with projects retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping
+    public ResponseEntity<List<CustomerWithProjectsDTO>> list() {
+        return ResponseEntity.ok(service.listWithProjects());
+    }
 
     @ApiCreate
     @PostMapping

@@ -37,7 +37,7 @@ interface CompanyProjectsTableProps {
   projects: CompanyProject[];
   onCreateProject?: () => void;
   onEditProject?: (id: string) => void;
-  onDeleteProject?: (id: string) => void;
+  onDeleteProject?: (id: string, name: string) => void;
 }
 
 export function CompanyProjectsTable({
@@ -135,7 +135,7 @@ export function CompanyProjectsTable({
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                        onClick={() => onDeleteProject?.(project.id)}
+                        onClick={() => onDeleteProject?.(project.id, project.name)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

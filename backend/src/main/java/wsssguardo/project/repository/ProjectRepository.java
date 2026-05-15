@@ -11,6 +11,8 @@ import wsssguardo.project.Project;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
+    List<Project> findByCustomerId(UUID customerId);
+
     @Query("""
             select p.id
             from Project p

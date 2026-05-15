@@ -47,7 +47,7 @@ export default function AssetModal({
   const [content, setContent] = useState("");
   const [urlError, setUrlError] = useState("");
 
-  const isValidUrl = (value: string) => {
+  const isValidUrl = (value: string) : boolean => {
 
     value = value.trim();
 
@@ -72,7 +72,7 @@ export default function AssetModal({
     }
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) : void => {
     const value = e.target.value;
     setContent(value);
 

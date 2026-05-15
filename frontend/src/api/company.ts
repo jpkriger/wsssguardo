@@ -1,4 +1,6 @@
-import { listProjects, type ProjectResponse as ApiProjectResponse } from "./project";
+import type { ProjectResponse as ApiProjectResponse } from "./project";
+
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:8080";
 
 export type ProjectStatus = ApiProjectResponse["status"];
 
@@ -18,87 +20,53 @@ export interface CompanyResponse {
   projects: ProjectResponse[];
 }
 
-const MOCK_COMPANIES: CompanyResponse[] = [
-  {
-    id: "22222222-2222-2222-2222-000000000001",
-    name: "Cliente Alpha (Fintech)",
-    createdAt: "2026-01-14",
-    projects: [],
-  },
-  {
-    id: "22222222-2222-2222-2222-000000000002",
-    name: "Cliente Beta (Varejo)",
-    createdAt: "2026-02-09",
-    projects: [],
-  },
-  {
-    id: "22222222-2222-2222-2222-000000000003",
-    name: "Cliente Gamma (Saúde)",
-    createdAt: "2026-03-04",
-    projects: [],
-  },
-  {
-    id: "22222222-2222-2222-2222-000000000004",
-    name: "Cliente Delta (Logística)",
-    createdAt: "2026-04-15",
-    projects: [],
-  },
-];
-
-// Mock de projetos para teste
-const MOCK_PROJECTS: ProjectResponse[] = [
-  {
-    id: "33333333-3333-3333-3333-000000000001",
-    name: "App Mobile - Delta Express",
-    customerId: "22222222-2222-2222-2222-000000000004",
-    startDate: "2026-04-20",
-    endDate: "2026-08-15",
-    status: "IN_PROGRESS",
-  },
-  {
-    id: "33333333-3333-3333-3333-000000000002",
-    name: "Sistema de Rastreamento - Delta Log",
-    customerId: "22222222-2222-2222-2222-000000000004",
-    startDate: "2026-05-01",
-    endDate: null,
-    status: "PLANNING",
-  },
-];
-
-async function fetchProjects(): Promise<ProjectResponse[]> {
-  const apiProjects = await listProjects();
-
-  const mappedApiProjects = apiProjects.map((project) => ({
-    id: project.id,
-    name: project.name,
-    customerId: project.customerId,
-    startDate: project.startDate,
-    endDate: project.endDate,
-    status: project.status,
-  }));
-
-  return [...mappedApiProjects, ...MOCK_PROJECTS];
+export interface CreateCompanyRequest {
+  name: string;
 }
 
-function createEmptyCompanies(): CompanyResponse[] {
-  return MOCK_COMPANIES.map((company) => ({
-    ...company,
-    projects: [],
-  }));
+export interface UpdateCompanyRequest {
+  name: string;
+}
+
+interface CustomerDTO {
+  id: string;
+  name: string;
+  createdAt: string;
+  projects: ProjectResponse[];
 }
 
 export async function listCompanies(): Promise<CompanyResponse[]> {
-  const companies = createEmptyCompanies();
-  const projects = await fetchProjects();
+  const res = await fetch(`${API_BASE}/api/customers`);
+  if (!res.ok) throw new Error("Failed to fetch companies");
+  const data = (await res.json()) as CustomerDTO[];
+  return data;
+}
 
-  const companyById = new Map(companies.map((company) => [company.id, company]));
-
-  projects.forEach((project) => {
-    const company = companyById.get(project.customerId);
-    if (!company) return;
-
-    company.projects.push(project);
+export async function createCompany(request: CreateCompanyRequest): Promise<CompanyResponse> {
+  const res = await fetch(`${API_BASE}/api/customers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
   });
+  if (!res.ok) throw new Error("Failed to create company");
+  const data = (await res.json()) as { id: string; name: string; createdAt: string };
+  return { ...data, projects: [] };
+}
 
-  return companies;
+export async function updateCompany(id: string, request: UpdateCompanyRequest): Promise<CompanyResponse> {
+  const res = await fetch(`${API_BASE}/api/customers/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) throw new Error("Failed to update company");
+  const data = (await res.json()) as { id: string; name: string; createdAt: string };
+  return { ...data, projects: [] };
+}
+
+export async function deleteCompany(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/customers/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete company");
 }
