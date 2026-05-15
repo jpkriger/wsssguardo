@@ -1,4 +1,5 @@
-import { Plus, FolderOpen, Pencil, Trash2 } from "lucide-react";
+import { Plus, FolderOpen, Pencil, Trash2, CheckCheck, XCircle } from "lucide-react";
+import type { ProjectStatus as ApiProjectStatus } from "@/api/project";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export type ProjectStatus = "Planejado" | "Em andamento" | "Atrasado";
+export type ProjectStatus = "Em andamento" | "Atrasado" | "Concluído" | "Em espera" | "Cancelado";
 
 export interface CompanyProject {
   id: string;
@@ -19,17 +20,24 @@ export interface CompanyProject {
   startDate: string;
   endDate: string;
   status: ProjectStatus;
+  rawStatus: ApiProjectStatus;
 }
 
 const statusConfig: Record<ProjectStatus, { className: string }> = {
-  Planejado: {
-    className: "bg-blue-500/10 text-blue-400 border border-blue-500/50 px-2.5 py-0.5 rounded-sm font-medium",
-  },
   "Em andamento": {
-    className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/60 px-2.5 py-0.5 rounded-sm font-medium",
+    className: "bg-blue-500/10 text-blue-400 border border-blue-500/50 px-2.5 py-0.5 rounded-sm font-medium",
   },
   Atrasado: {
     className: "bg-red-500/10 text-red-400 border border-red-500/50 px-2.5 py-0.5 rounded-sm font-medium",
+  },
+  "Concluído": {
+    className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/60 px-2.5 py-0.5 rounded-sm font-medium",
+  },
+  "Em espera": {
+    className: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/50 px-2.5 py-0.5 rounded-sm font-medium",
+  },
+  "Cancelado": {
+    className: "bg-muted/50 text-muted-foreground border border-border px-2.5 py-0.5 rounded-sm font-medium",
   },
 };
 
@@ -38,6 +46,8 @@ interface CompanyProjectsTableProps {
   onCreateProject?: () => void;
   onEditProject?: (id: string) => void;
   onDeleteProject?: (id: string, name: string) => void;
+  onCompleteProject?: (id: string) => void;
+  onCancelProject?: (id: string) => void;
 }
 
 export function CompanyProjectsTable({
@@ -45,6 +55,8 @@ export function CompanyProjectsTable({
   onCreateProject,
   onEditProject,
   onDeleteProject,
+  onCompleteProject,
+  onCancelProject,
 }: CompanyProjectsTableProps): React.JSX.Element {
   return (
     <div className="mx-5 mt-4 mb-4 ml-16">
@@ -123,6 +135,28 @@ export function CompanyProjectsTable({
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {project.rawStatus !== "COMPLETED" && project.rawStatus !== "CANCELLED" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10"
+                            title="Concluir projeto"
+                            onClick={() => onCompleteProject?.(project.id)}
+                          >
+                            <CheckCheck className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                            title="Cancelar projeto"
+                            onClick={() => onCancelProject?.(project.id)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

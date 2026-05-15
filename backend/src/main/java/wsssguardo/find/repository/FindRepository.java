@@ -14,4 +14,5 @@ public interface FindRepository extends JpaRepository<Find, UUID> {
 
     Optional<Find> findByIdAndProjectId(UUID id, UUID projectId);
 
+    long countByProjectId(UUID projectId);
 }

@@ -1,6 +1,7 @@
 package wsssguardo.risk.service.impl;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,10 +23,12 @@ import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.Risk;
+import wsssguardo.project.domain.projectConfiguration.RiskCategory;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
 import wsssguardo.risk.dto.requestdto.RiskUpdateRequestDTO;
 import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
+import wsssguardo.risk.dto.responsedto.RiskSummaryDTO;
 import wsssguardo.risk.mapper.RiskMapper;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.risk.service.RiskService;
@@ -63,6 +66,38 @@ public class RiskServiceImpl implements RiskService {
     }
     Page<Risk> riskPage = repository.findAllByProjectId(projectId, pageable);
     return mapper.toPageDTO(riskPage);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public RiskSummaryDTO getRiskSummary(UUID projectId) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+
+    List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
+    List<Integer> riskLevels = repository.findRiskLevelsByProjectId(projectId);
+    long total = repository.countByProjectId(projectId);
+
+    List<RiskCategory> sorted = categories.stream()
+        .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
+        .toList();
+
+    long low = 0, medium = 0, high = 0;
+    for (Integer level : riskLevels) {
+      int idx = -1;
+      for (int i = 0; i < sorted.size(); i++) {
+        RiskCategory cat = sorted.get(i);
+        if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx == 0) low++;
+      else if (idx == sorted.size() - 1) high++;
+      else if (idx > 0) medium++;
+    }
+
+    return new RiskSummaryDTO(total, high, medium, low);
   }
 
   @Override

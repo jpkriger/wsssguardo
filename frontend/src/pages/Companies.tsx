@@ -20,6 +20,7 @@ import {
   updateProject,
   deleteProject,
   type ProjectResponse,
+  type ProjectStatus,
 } from "../api/project";
 
 function formatDate(iso: string | null): string {
@@ -29,15 +30,13 @@ function formatDate(iso: string | null): string {
 }
 
 function deriveStatus(
-  startDate: string | null,
+  apiStatus: CompanyProjectResponse["status"],
   endDate: string | null,
 ): CompanyProject["status"] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = startDate ? new Date(startDate) : null;
-  const end = endDate ? new Date(endDate) : null;
-  if (end && today > end) return "Atrasado";
-  if (start && today < start) return "Planejado";
+  if (apiStatus === "COMPLETED") return "Concluído";
+  if (apiStatus === "CANCELLED") return "Cancelado";
+  if (apiStatus === "ON_HOLD") return "Em espera";
+  if (endDate && new Date(endDate) < new Date()) return "Atrasado";
   return "Em andamento";
 }
 
@@ -47,7 +46,8 @@ function mapProject(project: CompanyProjectResponse): CompanyProject {
     name: project.name,
     startDate: formatDate(project.startDate),
     endDate: formatDate(project.endDate),
-    status: deriveStatus(project.startDate, project.endDate),
+    status: deriveStatus(project.status, project.endDate),
+    rawStatus: project.status,
   };
 }
 
@@ -173,6 +173,15 @@ export default function Companies(): ReactElement {
     setDeleteTarget({ id: projectId, name: projectName, type: "project" });
   };
 
+  const handleUpdateProjectStatus = async (projectId: string, status: ProjectStatus): Promise<void> => {
+    try {
+      await updateProject(projectId, { status });
+      await loadCompanies();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao atualizar status do projeto");
+    }
+  };
+
   // --- Shared delete confirm ---
 
   const confirmDelete = async (): Promise<void> => {
@@ -244,6 +253,8 @@ export default function Companies(): ReactElement {
             onCreateProject={handleCreateProject}
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
+            onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
+            onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
           />
         </div>
       )}

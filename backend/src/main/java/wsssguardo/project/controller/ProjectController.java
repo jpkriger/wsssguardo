@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import wsssguardo.project.dto.ProjectCreateRequest;
 import wsssguardo.project.dto.ProjectResponse;
+import wsssguardo.project.dto.ProjectSummaryDTO;
 import wsssguardo.project.dto.ProjectUpdateRequest;
 import wsssguardo.project.service.ProjectService;
 import wsssguardo.shared.openapi.ApiListAll;
@@ -49,6 +50,12 @@ public class ProjectController {
     @GetMapping(params = "userId")
     public ResponseEntity<List<UUID>> projectsByUserId(@RequestParam UUID userId) {
         return ResponseEntity.ok(service.projectsByUserId(userId));
+    }
+
+    @Operation(summary = "Resumo do projeto")
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<ProjectSummaryDTO> getSummary(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getSummary(id));
     }
 
     @Operation(summary = "Criar projeto")

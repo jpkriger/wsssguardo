@@ -22,6 +22,8 @@ public interface ArtifactRepository extends JpaRepository<Artifact, UUID> {
 
     List<Artifact> findAllByIdInAndProjectId(Collection<UUID> ids, UUID projectId);
 
+    long countByProjectId(UUID projectId);
+
     /**
      * Agrega contagem de findings vinculados a cada artifact do projeto,
      * agrupados por criticidade baseada em categorical_severity:

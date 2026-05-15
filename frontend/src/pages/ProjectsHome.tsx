@@ -4,26 +4,20 @@ import { ProjectsTable } from "@/components/ProjectsTable/ProjectsTable";
 import type { Project } from "@/components/ProjectsTable/ProjectsTable";
 import type { CriticalWindowItem } from "@/components/CriticalWindowCard/CriticalWindowCard";
 import { listProjects, type ProjectResponse } from "@/api/project";
+import { getRiskSummary, type RiskSummaryResponse } from "@/api/risk";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const FALLBACK_RISK_PROFILES: Project["risks"][] = [
-  [
-    { level: "alto", count: 5 },
-    { level: "medio", count: 3 },
-    { level: "baixo", count: 1 },
-  ],
-  [
-    { level: "alto", count: 2 },
-    { level: "medio", count: 5 },
-  ],
-  [
-    { level: "medio", count: 4 },
-    { level: "baixo", count: 3 },
-  ],
-];
-
 const FALLBACK_CONSULTANT_NAMES = ["Avaliador Um", "Avaliador Dois"];
+
+function summaryToRisks(summary: RiskSummaryResponse | null): Project["risks"] {
+  if (!summary) return [];
+  const entries: Project["risks"] = [];
+  if (summary.highRisks > 0)   entries.push({ level: "alto",  count: summary.highRisks });
+  if (summary.mediumRisks > 0) entries.push({ level: "medio", count: summary.mediumRisks });
+  if (summary.lowRisks > 0)    entries.push({ level: "baixo", count: summary.lowRisks });
+  return entries;
+}
 
 const FALLBACK_SCHEDULE_BY_STATUS: Record<
   string,
@@ -78,7 +72,11 @@ function buildSchedule(project: ProjectResponse): {
   };
 }
 
-function mapProjectToTable(project: ProjectResponse, index: number): Project {
+function mapProjectToTable(
+  project: ProjectResponse,
+  index: number,
+  summary: RiskSummaryResponse | null,
+): Project {
   const schedule = buildSchedule(project);
   const consultantName =
     FALLBACK_CONSULTANT_NAMES[index % FALLBACK_CONSULTANT_NAMES.length];
@@ -87,15 +85,18 @@ function mapProjectToTable(project: ProjectResponse, index: number): Project {
     id: project.id,
     name: project.name,
     code: `PRJ-${String(index + 1).padStart(3, "0")}`,
+    status: project.status,
+    endDate: project.endDate,
     daysRemaining: Math.min(schedule.daysRemaining, schedule.totalDays),
     totalDays: schedule.totalDays,
     consultant: { name: consultantName },
-    risks: FALLBACK_RISK_PROFILES[index % FALLBACK_RISK_PROFILES.length],
+    risks: summaryToRisks(summary),
   };
 }
 
 export default function ProjectsHome(): ReactElement {
   const [apiProjects, setApiProjects] = useState<ProjectResponse[]>([]);
+  const [riskSummaries, setRiskSummaries] = useState<Map<string, RiskSummaryResponse>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,8 +110,18 @@ export default function ProjectsHome(): ReactElement {
       try {
         const projects = await listProjects();
         if (cancelled) return;
-
         setApiProjects(projects);
+
+        const summaries = await Promise.all(
+          projects.map((p) => getRiskSummary(p.id).catch(() => null)),
+        );
+        if (cancelled) return;
+        const summaryMap = new Map<string, RiskSummaryResponse>();
+        projects.forEach((p, i) => {
+          const s = summaries[i];
+          if (s) summaryMap.set(p.id, s);
+        });
+        setRiskSummaries(summaryMap);
       } catch (err: unknown) {
         if (cancelled) return;
 
@@ -133,8 +144,10 @@ export default function ProjectsHome(): ReactElement {
 
   const projects = useMemo(
     () =>
-      apiProjects.map((project, index) => mapProjectToTable(project, index)),
-    [apiProjects],
+      apiProjects.map((project, index) =>
+        mapProjectToTable(project, index, riskSummaries.get(project.id) ?? null),
+      ),
+    [apiProjects, riskSummaries],
   );
 
   const criticalWindows = useMemo<CriticalWindowItem[]>(() => {

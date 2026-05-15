@@ -118,6 +118,8 @@ interface CompaniesTableProps {
   onCreateProject?: (companyId: string, companyName: string) => void;
   onEditProject?: (projectId: string) => void;
   onDeleteProject?: (projectId: string, projectName: string) => void;
+  onCompleteProject?: (projectId: string) => void;
+  onCancelProject?: (projectId: string) => void;
 }
 
 // Component 
@@ -130,6 +132,8 @@ export function CompaniesTable({
   onCreateProject,
   onEditProject,
   onDeleteProject,
+  onCompleteProject,
+  onCancelProject,
 }: CompaniesTableProps): React.JSX.Element {
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -266,6 +270,8 @@ export function CompaniesTable({
                           onCreateProject={() => onCreateProject?.(company.id, company.name)}
                           onEditProject={onEditProject}
                           onDeleteProject={onDeleteProject}
+                          onCompleteProject={onCompleteProject}
+                          onCancelProject={onCancelProject}
                         />
                       </TableCell>
                     </TableRow>

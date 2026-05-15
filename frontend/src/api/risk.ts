@@ -112,3 +112,17 @@ export async function deleteRisk(id: string): Promise<void> {
 
     if (!res.ok) throw await parseApiErrorResponse(res, url);
 }
+
+export interface RiskSummaryResponse {
+    total: number;
+    highRisks: number;
+    mediumRisks: number;
+    lowRisks: number;
+}
+
+export async function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
+    const url = `${BASE}/project/${projectId}/summary`;
+    const res = await fetch(url);
+    if (!res.ok) throw await parseApiErrorResponse(res, url);
+    return res.json() as Promise<RiskSummaryResponse>;
+}

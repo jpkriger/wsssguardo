@@ -10,7 +10,27 @@ import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { projectsById, type ProjectResponse } from "../api/project";
+import { projectsById, type ProjectResponse, type ProjectStatus } from "../api/project";
+import { cn } from "../lib/utils";
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; className: string }> = {
+  IN_PROGRESS: {
+    label: "Em andamento",
+    className: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
+  },
+  ON_HOLD: {
+    label: "Em espera",
+    className: "bg-warning/15 text-yellow-600 border-yellow-500/30 dark:text-yellow-400",
+  },
+  COMPLETED: {
+    label: "Concluído",
+    className: "bg-success/15 text-green-600 border-green-500/30 dark:text-green-400",
+  },
+  CANCELLED: {
+    label: "Cancelado",
+    className: "bg-destructive/15 text-red-600 border-red-500/30 dark:text-red-400",
+  },
+};
 
 export const ProjectTabs = {
   Summary: "Resumo",
@@ -100,19 +120,36 @@ export default function Project(): ReactElement {
             <Settings className="size-5" />
           </button>
         </div>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          {loadingProject
-            ? "Carregando dados do projeto..."
-            : projectError
-              ? projectError
-              : `Status: ${project?.status ?? "-"}`}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          {loadingProject ? (
+            <span className="text-sm text-muted-foreground">Carregando dados do projeto...</span>
+          ) : projectError ? (
+            <span className="text-sm text-destructive">{projectError}</span>
+          ) : project?.status ? (
+            <Badge
+              variant="outline"
+              className={cn("text-xs font-medium px-2.5 py-0.5", STATUS_CONFIG[project.status]?.className)}
+            >
+              {STATUS_CONFIG[project.status]?.label ?? project.status}
+            </Badge>
+          ) : null}
+        </div>
       </header>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">Fase atual: Fase 3</Badge>
-          <Badge variant="outline">Entrega em 10 dias</Badge>
+          {(() => {
+            if (!project?.endDate) return <Badge variant="outline">Sem prazo definido</Badge>;
+            const days = Math.ceil(
+              (new Date(project.endDate).getTime() - Date.now()) / 86_400_000,
+            );
+            return (
+              <Badge variant="outline">
+                {days > 0 ? `Entrega em ${days} dia${days === 1 ? "" : "s"}` : "Prazo encerrado"}
+              </Badge>
+            );
+          })()}
         </div>
         <Button>Gerar relatório</Button>
       </div>
@@ -140,7 +177,7 @@ export default function Project(): ReactElement {
       </nav>
 
       <div className="mt-6 min-h-[420px]">
-        {activeTab === ProjectTabs.Summary && <ProjectSummary />}
+        {activeTab === ProjectTabs.Summary && <ProjectSummary projectId={projectId} />}
         {activeTab === ProjectTabs.Assets && (
           <ProjectProvider projectId={projectId}>
             <AssetTable />
@@ -151,20 +188,6 @@ export default function Project(): ReactElement {
         )}
         {activeTab === ProjectTabs.Findings && projectId && (
           <FindingList projectId={projectId} />
-        )}
-        {activeTab === ProjectTabs.Findings && (
-          <div className="rounded-2xl border border-border/60 bg-card p-6">
-            <div>
-              <div>
-                <h2 className="text-2xl font-normal text-foreground leading-tight">
-                  Achados
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Área reservada para os achados vinculados ao projeto.
-                </p>
-              </div>
-            </div>
-          </div>
         )}
         {activeTab === ProjectTabs.Risks && (
           <ProjectProvider projectId={projectId}>

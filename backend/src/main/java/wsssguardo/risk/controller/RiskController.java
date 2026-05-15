@@ -23,6 +23,7 @@ import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
 import wsssguardo.risk.dto.requestdto.RiskUpdateRequestDTO;
 import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
+import wsssguardo.risk.dto.responsedto.RiskSummaryDTO;
 import wsssguardo.risk.service.RiskService;
 
 @Tag(name = "Risk", description = "Risk operations")
@@ -40,6 +41,12 @@ public class RiskController {
     RiskResponseDTO response = service.createRisk(request, username);
     URI location = URI.create("/api/risks/" + response.id());
     return ResponseEntity.created(location).body(response);
+  }
+
+  @Operation(summary = "Resumo de riscos por projeto")
+  @GetMapping("/project/{project-id}/summary")
+  public ResponseEntity<RiskSummaryDTO> getRiskSummary(@PathVariable("project-id") UUID projectId) {
+    return ResponseEntity.ok(service.getRiskSummary(projectId));
   }
 
   @Operation(summary = "Listar riscos por projeto")

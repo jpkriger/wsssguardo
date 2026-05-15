@@ -1,6 +1,7 @@
+import { parseApiErrorResponse } from "./errors";
 import type { ProjectResponse as ApiProjectResponse } from "./project";
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:8080";
+const BASE = "/api/customers";
 
 export type ProjectStatus = ApiProjectResponse["status"];
 
@@ -28,45 +29,35 @@ export interface UpdateCompanyRequest {
   name: string;
 }
 
-interface CustomerDTO {
-  id: string;
-  name: string;
-  createdAt: string;
-  projects: ProjectResponse[];
-}
-
 export async function listCompanies(): Promise<CompanyResponse[]> {
-  const res = await fetch(`${API_BASE}/api/customers`);
-  if (!res.ok) throw new Error("Failed to fetch companies");
-  const data = (await res.json()) as CustomerDTO[];
-  return data;
+  const res = await fetch(BASE);
+  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
+  return res.json() as Promise<CompanyResponse[]>;
 }
 
 export async function createCompany(request: CreateCompanyRequest): Promise<CompanyResponse> {
-  const res = await fetch(`${API_BASE}/api/customers`, {
+  const res = await fetch(BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
-  if (!res.ok) throw new Error("Failed to create company");
-  const data = (await res.json()) as { id: string; name: string; createdAt: string };
-  return { ...data, projects: [] };
+  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
+  return res.json() as Promise<CompanyResponse>;
 }
 
 export async function updateCompany(id: string, request: UpdateCompanyRequest): Promise<CompanyResponse> {
-  const res = await fetch(`${API_BASE}/api/customers/${id}`, {
+  const url = `${BASE}/${id}`;
+  const res = await fetch(url, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
-  if (!res.ok) throw new Error("Failed to update company");
-  const data = (await res.json()) as { id: string; name: string; createdAt: string };
-  return { ...data, projects: [] };
+  if (!res.ok) throw await parseApiErrorResponse(res, url);
+  return res.json() as Promise<CompanyResponse>;
 }
 
 export async function deleteCompany(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/customers/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Failed to delete company");
+  const url = `${BASE}/${id}`;
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) throw await parseApiErrorResponse(res, url);
 }

@@ -36,10 +36,29 @@ export interface ProjectRisk {
   count: number;
 }
 
+export type ProjectApiStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
+
+const STATUS_LABEL: Record<Exclude<ProjectApiStatus, "IN_PROGRESS">, { label: string; className: string }> = {
+  COMPLETED: {
+    label: "Concluído",
+    className: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
+  },
+  ON_HOLD: {
+    label: "Em espera",
+    className: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30 dark:text-yellow-400",
+  },
+  CANCELLED: {
+    label: "Cancelado",
+    className: "bg-muted/60 text-muted-foreground border-border",
+  },
+};
+
 export interface Project {
   id: string;
   name: string;
   code: string;
+  status: ProjectApiStatus;
+  endDate: string | null;
   daysRemaining: number;
   totalDays: number;
   consultant: {
@@ -449,10 +468,28 @@ export function ProjectsTable({
                   </p>
                 </TableCell>
                 <TableCell className="px-5 py-4">
-                  <ProgressBar
-                    value={project.daysRemaining}
-                    total={project.totalDays}
-                  />
+                  {project.status !== "IN_PROGRESS" ? (
+                    <Badge
+                      variant="outline"
+                      className={cn("text-xs font-medium", STATUS_LABEL[project.status].className)}
+                    >
+                      {STATUS_LABEL[project.status].label}
+                    </Badge>
+                  ) : project.endDate === null ? (
+                    <span className="!text-[14px] text-muted-foreground">Sem prazo definido</span>
+                  ) : project.daysRemaining === 0 ? (
+                    <div className="flex flex-col gap-1 w-40">
+                      <div className={styles["progress-track"]}>
+                        <div className={styles["progress-bar"]} style={{ width: "100%" }} />
+                      </div>
+                      <span className="!text-[14px] text-muted-foreground">Prazo encerrado</span>
+                    </div>
+                  ) : (
+                    <ProgressBar
+                      value={project.daysRemaining}
+                      total={project.totalDays}
+                    />
+                  )}
                 </TableCell>
                 <TableCell className="px-5 py-4">
                   <div className="flex items-center gap-2">
