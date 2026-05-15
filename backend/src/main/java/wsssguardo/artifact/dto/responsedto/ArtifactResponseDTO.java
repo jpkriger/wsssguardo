@@ -18,5 +18,13 @@ public record ArtifactResponseDTO(
     String createdBy,
     String lastModifiedBy,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
-) {}
+    LocalDateTime updatedAt,
+    FindingsSummary findingsSummary,
+    RisksSummary risksSummary
+) {
+
+    public record FindingsSummary(int high, int medium, int low) {}
+
+    public record RisksSummary(int high, int medium, int low) {}
+
+}

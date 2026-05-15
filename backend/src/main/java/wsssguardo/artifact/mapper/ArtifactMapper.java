@@ -23,6 +23,15 @@ public class ArtifactMapper {
     }
 
     public ArtifactResponseDTO toResponse(Artifact artifact) {
+        return toResponse(artifact,
+                new ArtifactResponseDTO.FindingsSummary(0, 0, 0),
+                new ArtifactResponseDTO.RisksSummary(0, 0, 0));
+    }
+
+    public ArtifactResponseDTO toResponse(
+            Artifact artifact,
+            ArtifactResponseDTO.FindingsSummary findingsSummary,
+            ArtifactResponseDTO.RisksSummary risksSummary) {
         return new ArtifactResponseDTO(
                 artifact.getId(),
                 artifact.getName(),
@@ -36,7 +45,9 @@ public class ArtifactMapper {
                 artifact.getCreatedBy(),
                 artifact.getLastModifiedBy(),
                 artifact.getCreatedAt(),
-                artifact.getUpdatedAt()
+                artifact.getUpdatedAt(),
+                findingsSummary,
+                risksSummary
         );
     }
 }

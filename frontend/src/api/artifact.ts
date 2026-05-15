@@ -98,6 +98,8 @@ interface BackendArtifactResponse {
   lastModifiedBy: string | null;
   createdAt: string;
   updatedAt: string | null;
+  findingsSummary: { high: number; medium: number; low: number } | null;
+  risksSummary: { high: number; medium: number; low: number } | null;
 }
 
 function toFrontend(dto: BackendArtifactResponse): ArtifactResponse {
@@ -125,6 +127,8 @@ function toFrontend(dto: BackendArtifactResponse): ArtifactResponse {
     driveLink: dto.driveLink ?? undefined,
     lastEditedBy: dto.lastModifiedBy ?? undefined,
     lastEditedAt: dto.updatedAt ?? undefined,
+    findings: dto.findingsSummary ?? undefined,
+    risks: dto.risksSummary ?? undefined,
   };
 }
 

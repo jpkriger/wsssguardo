@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+
+    <changeSet id="0009-1" author="wsssguardo" context="seed">
+        <comment>Set categorical_severity and numeric_severity on seed finds so artifact findings/risks side panels show correct counts</comment>
+        <sql>
+            UPDATE finds SET categorical_severity = 'HIGH',    numeric_severity = 8  WHERE name = 'Ausência de MFA'             AND categorical_severity IS NULL;
+            UPDATE finds SET categorical_severity = 'MEDIUM',  numeric_severity = 5  WHERE name = 'Regras Permissivas WAF'      AND categorical_severity IS NULL;
+            UPDATE finds SET categorical_severity = 'CRITICAL', numeric_severity = 10 WHERE name = 'Contas Admin Excessivas'    AND categorical_severity IS NULL;
+            UPDATE finds SET categorical_severity = 'LOW',     numeric_severity = 2  WHERE name = 'Certificados VPN Genéricos' AND categorical_severity IS NULL;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -14,5 +14,6 @@
     <include file="db/changelog/migrations/0006-add-default-configuration.xml"/>
     <include file="db/changelog/migrations/0007-add-sprint2-seed-data.xml"/>
     <include file="db/changelog/migrations/0008-add-find-columns.xml"/>
+    <include file="db/changelog/migrations/0009-add-seed-severity.xml"/>
 
 </databaseChangeLog>
