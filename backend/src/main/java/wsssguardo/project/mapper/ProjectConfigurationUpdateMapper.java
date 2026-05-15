@@ -36,9 +36,9 @@ public class ProjectConfigurationUpdateMapper {
 
     private RiskCategory toRiskCategory(RiskCategoryDTO dto) {
         return RiskCategory.builder()
-                .label(dto.name())
-                .minRange(dto.minValue())
-                .maxRange(dto.maxValue())
+                .label(dto.label())
+                .minRange(dto.minRange())
+                .maxRange(dto.maxRange())
                 .build();
     }
 }

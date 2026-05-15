@@ -29,6 +29,7 @@ import wsssguardo.risk.Risk;
 import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.mapper.RiskMapper;
 import wsssguardo.risk.repository.RiskRepository;
+import wsssguardo.risk.service.impl.RiskServiceImpl;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +45,7 @@ class RiskServiceTest {
     private RiskMapper riskMapper;
 
     @InjectMocks
-    private RiskService riskService;
+    private RiskServiceImpl riskService;
 
     @Test
     @DisplayName("Should return a page of risks when project exists")
@@ -59,7 +60,7 @@ class RiskServiceTest {
         Page<Risk> riskPage = new PageImpl<>(List.of(new Risk()));
         RiskPageResponseDTO expectedDTO = new RiskPageResponseDTO(List.of(), 0, 10, 1, 1, true, true);
         
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectRepository.existsById(projectId)).thenReturn(true);
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(riskPage);
         when(riskMapper.toPageDTO(riskPage)).thenReturn(expectedDTO);
 
@@ -70,7 +71,7 @@ class RiskServiceTest {
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(expectedDTO);
         
-        verify(projectRepository).findById(projectId);
+        verify(projectRepository).existsById(projectId);
         verify(riskRepository).findAllByProjectId(projectId, pageable);
         verify(riskMapper).toPageDTO(riskPage);
     }
@@ -82,14 +83,14 @@ class RiskServiceTest {
         UUID projectId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(0, 10);
         
-        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+        when(projectRepository.existsById(projectId)).thenReturn(false);
 
         // Act & Assert
         assertThatThrownBy(() -> riskService.findAllByProject(projectId, pageable))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Project");
                 
-        verify(projectRepository).findById(projectId);
+        verify(projectRepository).existsById(projectId);
         verifyNoInteractions(riskRepository);
         verifyNoInteractions(riskMapper);
     }
@@ -111,7 +112,7 @@ class RiskServiceTest {
         Page<Risk> repositoryPage = new PageImpl<>(List.of(activeRisk));
         RiskPageResponseDTO expectedDTO = new RiskPageResponseDTO(List.of(), 0, 10, 1, 1, true, true);
         
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectRepository.existsById(projectId)).thenReturn(true);
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(repositoryPage);
         when(riskMapper.toPageDTO(repositoryPage)).thenReturn(expectedDTO);
 
@@ -137,7 +138,7 @@ class RiskServiceTest {
         Page<Risk> riskPage = new PageImpl<>(List.of(new Risk(), new Risk()));
         RiskPageResponseDTO expectedDTO = new RiskPageResponseDTO(List.of(), 0, 2, 2, 1, true, true);
         
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectRepository.existsById(projectId)).thenReturn(true);
         when(riskRepository.findAllByProjectId(projectId, unpaged)).thenReturn(riskPage);
         when(riskMapper.toPageDTO(riskPage)).thenReturn(expectedDTO);
 
@@ -163,7 +164,7 @@ class RiskServiceTest {
         Page<Risk> emptyPage = new PageImpl<>(List.of(), pageable, 10); // total 10, page 5 is empty
         RiskPageResponseDTO expectedDTO = new RiskPageResponseDTO(List.of(), 5, 10, 10, 1, false, true);
         
-        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectRepository.existsById(projectId)).thenReturn(true);
         when(riskRepository.findAllByProjectId(projectId, pageable)).thenReturn(emptyPage);
         when(riskMapper.toPageDTO(emptyPage)).thenReturn(expectedDTO);
 

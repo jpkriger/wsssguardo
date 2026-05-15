@@ -26,9 +26,9 @@ public class ProjectConfigurationMapper {
             return null;
         }
         return RiskCategoryDTO.builder()
-               .name(riskCategory.getLabel())
-               .minValue(riskCategory.getMinRange())
-               .maxValue(riskCategory.getMaxRange())
+               .label(riskCategory.getLabel())
+               .minRange(riskCategory.getMinRange())
+               .maxRange(riskCategory.getMaxRange())
                .build();
     }
 
