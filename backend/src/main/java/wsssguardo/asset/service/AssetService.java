@@ -1,19 +1,23 @@
 package wsssguardo.asset.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import wsssguardo.asset.Asset;
+import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
+import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.mapper.AssetMapper;
-import java.util.UUID;
-import jakarta.transaction.Transactional;
-import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
-import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ApiException;
@@ -31,7 +35,15 @@ public class AssetService {
         projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         Page<Asset> page = repository.findAllByProjectId(projectId, pageable);
-        return assetMapper.toPageDTO(page);
+        Map<UUID, Long> findingCounts = buildFindingCountsMap(repository.findFindingsCountByProjectId(projectId));
+        return assetMapper.toPageDTO(page, findingCounts);
+    }
+
+    private Map<UUID, Long> buildFindingCountsMap(List<Object[]> raw) {
+        return raw.stream().collect(Collectors.toMap(
+                row -> (UUID) row[0],
+                row -> row[1] != null ? ((Number) row[1]).longValue() : 0L
+        ));
     }
 
     @Transactional

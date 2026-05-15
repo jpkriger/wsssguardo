@@ -11,5 +11,6 @@ public record AssetResponseDTO(
                 UUID projectId,
                 String createdBy,
                 LocalDateTime createdAt,
-                LocalDateTime updatedAt) {
+                LocalDateTime updatedAt,
+                long findingsCount) {
 }

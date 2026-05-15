@@ -30,4 +30,14 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
             """, nativeQuery = true)
     boolean existsActiveFindLink(@Param("assetId") UUID assetId);
 
+    @Query(value = """
+            SELECT fa.assets_id, COUNT(fa.find_id)
+            FROM finds_assets fa
+            JOIN finds f ON f.id = fa.find_id
+            JOIN assets a ON a.id = fa.assets_id
+            WHERE a.project_id = :projectId
+              AND f.deleted_at IS NULL
+            GROUP BY fa.assets_id
+            """, nativeQuery = true)
+    List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
 }
