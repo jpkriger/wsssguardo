@@ -9,6 +9,7 @@ public record UserResponse(
         UUID id,
         String fullName,
         String username,
+        String authSub,
         UserRole role,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
