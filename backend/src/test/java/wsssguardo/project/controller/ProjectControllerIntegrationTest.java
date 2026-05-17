@@ -21,7 +21,6 @@ import wsssguardo.customer.repository.CustomerRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
-import wsssguardo.project.domain.UserProjectLevel;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
@@ -100,8 +99,8 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
         Project older = createProject("Legacy", customer, LocalDateTime.of(2026, 3, 20, 8, 0));
         Project newer = createProject("Modern", customer, LocalDateTime.of(2026, 3, 21, 8, 0));
 
-        linkUserToProject(user, older, UserProjectLevel.VIEWER);
-        linkUserToProject(user, newer, UserProjectLevel.EDITOR);
+        linkUserToProject(user, older);
+        linkUserToProject(user, newer);
 
         mockMvc.perform(get("/api/projects")
                 .queryParam("userId", user.getId().toString()))
@@ -159,11 +158,10 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
         return projectRepository.saveAndFlush(project);
     }
 
-    private void linkUserToProject(User user, Project project, UserProjectLevel level) {
+    private void linkUserToProject(User user, Project project) {
         ProjectUser link = new ProjectUser();
         link.setUser(user);
         link.setProject(project);
-        link.setAccessLevel(level);
         link.setCreatedAt(LocalDateTime.now());
         entityManager.persist(link);
         entityManager.flush();
