@@ -16,4 +16,12 @@
     <changeSet id="0010-drop-risks-damage-assets-table" author="matheuskur">
         <dropTable tableName="risks_damage_assets"/>
     </changeSet>
+    <changeSet id="0010-add-users-auth-sub" author="matheuskur">
+        <addColumn tableName="users">
+            <column name="auth_sub" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="0010-drop-project-users-access-level" author="matheuskur">
+        <dropColumn tableName="project_users" columnName="access_level"/>
+    </changeSet>
 </databaseChangeLog>

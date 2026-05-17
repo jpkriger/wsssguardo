@@ -25,7 +25,6 @@ import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
-import wsssguardo.project.domain.UserProjectLevel;
 import wsssguardo.project.domain.projectConfiguration.RiskCategory;
 import wsssguardo.project.dto.ProjectCreateRequest;
 import wsssguardo.project.dto.ProjectResponse;
