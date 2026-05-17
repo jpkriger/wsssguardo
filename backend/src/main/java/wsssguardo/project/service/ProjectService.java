@@ -238,7 +238,6 @@ public class ProjectService {
         return uniqueConsultantIds.stream()
             .map(userId -> ProjectUser.builder()
                 .user(usersById.get(userId))
-                .accessLevel(UserProjectLevel.EDITOR)
                 .build())
             .toList();
     }
