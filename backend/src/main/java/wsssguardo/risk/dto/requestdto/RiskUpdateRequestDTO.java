@@ -11,7 +11,6 @@ public record RiskUpdateRequestDTO(
     Float impactProbability,
     String damageOperations,
     List<UUID> findIds,
-    List<UUID> assetIds,
     String damageIndividuals,
     String damageOtherOrgs,
     String recommendation,

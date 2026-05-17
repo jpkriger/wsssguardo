@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import wsssguardo.AbstractIntegrationTest;
 
-import wsssguardo.asset.Asset;
-import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.customer.Customer;
 import wsssguardo.customer.repository.CustomerRepository;
 import wsssguardo.find.Find;
@@ -43,15 +40,11 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
   @Autowired
   private FindRepository findRepository;
 
-  @Autowired
-  private AssetRepository assetRepository;
-
   @Test
   void createRiskShouldReturnCreatedResponse() throws Exception {
     Customer customer = createCustomer();
     Project project = createProject(customer);
     Find find = createFind(project);
-    Asset asset = createAsset(project);
 
     String body = """
         {
@@ -63,13 +56,12 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
           "occurrenceProbability": 0.7,
           "impactProbability": 0.9,
           "damageOperations": "Incident response required",
-          "damageAssetIds": ["%s"],
           "damageIndividuals": "Personal data exposure",
           "damageOtherOrgs": "Partner notification",
           "recommendation": "Restrict endpoint and add tests",
           "riskLevel": 9000
         }
-        """.formatted(project.getId(), find.getId(), asset.getId());
+        """.formatted(project.getId(), find.getId());
 
     mockMvc.perform(post("/api/risks")
             .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +72,6 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.projectId", is(project.getId().toString())))
         .andExpect(jsonPath("$.name", is("Unauthorized data exposure")))
         .andExpect(jsonPath("$.findIds[0]", is(find.getId().toString())))
-        .andExpect(jsonPath("$.damageAssetIds[0]", is(asset.getId().toString())))
         .andExpect(jsonPath("$.riskLevel", is(9000)));
   }
 
@@ -117,13 +108,5 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
     find.setProject(project);
     find.setCreatedAt(LocalDateTime.now());
     return findRepository.saveAndFlush(find);
-  }
-
-  private Asset createAsset(Project project) {
-    Asset asset = new Asset();
-    asset.setName("Customer API");
-    asset.setProject(project);
-    asset.setCreatedAt(LocalDateTime.now());
-    return assetRepository.saveAndFlush(asset);
   }
 }

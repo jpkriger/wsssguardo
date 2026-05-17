@@ -18,7 +18,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import wsssguardo.asset.Asset;
 import wsssguardo.find.Find;
 import wsssguardo.project.Project;
 import wsssguardo.shared.domain.BaseEntity;
@@ -53,10 +52,6 @@ public class Risk extends BaseEntity {
       private Float impactProbability;
 
       private String damageOperations;
-
-      @ManyToMany(fetch = FetchType.LAZY)
-      @JoinTable(name = "risks_damage_assets", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "damage_assets_id"))
-      private List<Asset> damageAssets = new ArrayList<>();
 
       private String damageIndividuals;
 

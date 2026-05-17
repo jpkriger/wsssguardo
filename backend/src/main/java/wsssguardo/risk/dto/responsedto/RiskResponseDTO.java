@@ -14,7 +14,6 @@ public record RiskResponseDTO(
     Float occurrenceProbability,
     Float impactProbability,
     String damageOperations,
-    List<UUID> damageAssetIds,
     String damageIndividuals,
     String damageOtherOrgs,
     String recommendation,
