@@ -18,8 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import wsssguardo.asset.Asset;
-import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
@@ -44,9 +42,6 @@ class RiskServiceImplTest {
   @Mock
   private FindRepository findRepository;
 
-  @Mock
-  private AssetRepository assetRepository;
-
   @Spy
   private RiskMapper mapper;
 
@@ -57,29 +52,24 @@ class RiskServiceImplTest {
   void createRiskShouldPersistAndReturnResponse() {
     UUID projectId = UUID.randomUUID();
     UUID findId = UUID.randomUUID();
-    UUID assetId = UUID.randomUUID();
     String username = "testUser";
-    RiskCreateRequestDTO request = request(projectId, List.of(findId), List.of(assetId));
+    RiskCreateRequestDTO request = request(projectId, List.of(findId));
 
     Project project = new Project();
     project.setId(projectId);
     Find find = new Find();
     find.setId(findId);
     find.setProject(project);
-    Asset asset = new Asset();
-    asset.setId(assetId);
-    asset.setProject(project);
     Risk risk = new Risk();
     Risk savedRisk = new Risk();
     RiskResponseDTO expectedResponse = new RiskResponseDTO(
         UUID.randomUUID(), projectId, "Risk name", List.of(findId), "Description", "Consequences",
-        0.25F, 0.5F, "Operations", List.of(assetId), "Individuals", "Other orgs",
+        0.25F, 0.5F, "Operations", "Individuals", "Other orgs",
         "Recommendation", 5000, username, null, null);
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of(find));
-    when(assetRepository.findAllById(List.of(assetId))).thenReturn(List.of(asset));
-    doReturn(risk).when(mapper).toEntity(request, project, List.of(find), List.of(asset), username);
+    doReturn(risk).when(mapper).toEntity(request, project, List.of(find), username);
     when(repository.save(risk)).thenReturn(savedRisk);
     doReturn(expectedResponse).when(mapper).toResponse(savedRisk);
 
@@ -88,21 +78,19 @@ class RiskServiceImplTest {
     assertEquals(expectedResponse, actualResponse);
     verify(projectRepository).findById(projectId);
     verify(findRepository).findAllById(List.of(findId));
-    verify(assetRepository).findAllById(List.of(assetId));
     verify(repository).save(risk);
   }
 
   @Test
   void createRiskShouldThrowWhenProjectDoesNotExist() {
     UUID projectId = UUID.randomUUID();
-    RiskCreateRequestDTO request = request(projectId, List.of(), List.of());
+    RiskCreateRequestDTO request = request(projectId, List.of());
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
     assertThrows(ResourceNotFoundException.class, () -> service.createRisk(request, "testUser"));
     verify(projectRepository).findById(projectId);
     verifyNoInteractions(findRepository);
-    verifyNoInteractions(assetRepository);
     verifyNoInteractions(repository);
   }
 
@@ -110,7 +98,7 @@ class RiskServiceImplTest {
   void createRiskShouldThrowWhenFindDoesNotExist() {
     UUID projectId = UUID.randomUUID();
     UUID findId = UUID.randomUUID();
-    RiskCreateRequestDTO request = request(projectId, List.of(findId), List.of());
+    RiskCreateRequestDTO request = request(projectId, List.of(findId));
 
     Project project = new Project();
     project.setId(projectId);
@@ -119,11 +107,10 @@ class RiskServiceImplTest {
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of());
 
     assertThrows(ResourceNotFoundException.class, () -> service.createRisk(request, "testUser"));
-    verifyNoInteractions(assetRepository);
     verifyNoInteractions(repository);
   }
 
-  private RiskCreateRequestDTO request(UUID projectId, List<UUID> findIds, List<UUID> damageAssetIds) {
+  private RiskCreateRequestDTO request(UUID projectId, List<UUID> findIds) {
     return new RiskCreateRequestDTO(
         projectId,
         "Risk name",
@@ -133,7 +120,6 @@ class RiskServiceImplTest {
         0.25F,
         0.5F,
         "Operations",
-        damageAssetIds,
         "Individuals",
         "Other orgs",
         "Recommendation",

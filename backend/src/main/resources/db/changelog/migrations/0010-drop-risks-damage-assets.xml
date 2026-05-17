@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="0010-drop-risks-damage-assets-fk-asset" author="matheuskur">
+        <dropForeignKeyConstraint baseTableName="risks_damage_assets"
+                                  constraintName="fk_risdamass_on_asset"/>
+    </changeSet>
+    <changeSet id="0010-drop-risks-damage-assets-fk-risk" author="matheuskur">
+        <dropForeignKeyConstraint baseTableName="risks_damage_assets"
+                                  constraintName="fk_risdamass_on_risk"/>
+    </changeSet>
+    <changeSet id="0010-drop-risks-damage-assets-table" author="matheuskur">
+        <dropTable tableName="risks_damage_assets"/>
+    </changeSet>
+</databaseChangeLog>
