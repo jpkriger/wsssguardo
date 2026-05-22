@@ -56,6 +56,9 @@ aws sts get-caller-identity --profile "$AWS_PROFILE" --output table --no-cli-pag
 if [[ "$SKIP_INFRA" == false ]]; then
   log "[1/5] Infraestrutura — terraform apply..."
   cd "$INFRA_DIR"
+  
+  export TF_VAR_db_password="$DB_PASSWORD"
+  export TF_VAR_grafana_password="$GRAFANA_PASSWORD"
   AWS_PROFILE=$AWS_PROFILE terraform init -reconfigure -input=false
 
   # Primeiro apply: cria só o certificado ACM
@@ -101,6 +104,8 @@ if [[ "$SKIP_INFRA" == false ]]; then
 else
   log "[1/5] Infraestrutura — pulando (--skip-infra)"
   cd "$INFRA_DIR"
+  export TF_VAR_db_password="$DB_PASSWORD"
+  export TF_VAR_grafana_password="$GRAFANA_PASSWORD"
   AWS_PROFILE=$AWS_PROFILE terraform init -reconfigure -input=false
   AWS_PROFILE=$AWS_PROFILE terraform apply -auto-approve -input=false -refresh-only
 fi
@@ -229,8 +234,15 @@ mkdir -p /opt/${PROJECT}
 echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
 echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
 echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
-printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\n' \
-  > /opt/${PROJECT}/.env
+DB_PASSWORD=\$(aws ssm get-parameter --name /wsssguardo/db-password --with-decryption --query Parameter.Value --output text || echo "")
+cat > /opt/${PROJECT}/.env <<EOF
+ECR_URL=${ECR_URL}
+IMAGE_TAG=${IMAGE_TAG}
+CORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}
+DB_NAME=${DB_NAME}
+DB_USERNAME=${DB_USERNAME}
+DB_PASSWORD=\$DB_PASSWORD
+EOF
 
 aws ecr get-login-password --region ${REGION} | \
   docker login --username AWS --password-stdin ${ECR_URL}
@@ -446,7 +458,11 @@ mkdir -p /opt/${PROJECT}-obs/grafana/provisioning/datasources
 echo '${PROMETHEUS_B64}' | base64 -d > /opt/${PROJECT}-obs/prometheus.yml
 echo '${COMPOSE_OBS_B64}' | base64 -d > /opt/${PROJECT}-obs/docker-compose.yml
 echo '${DATASOURCE_B64}' | base64 -d > /opt/${PROJECT}-obs/grafana/provisioning/datasources/prometheus.yml
-printf 'GRAFANA_PASSWORD=${GRAFANA_PASSWORD}\nBACKEND_DOMAIN=${BACKEND_DOMAIN}\n' > /opt/${PROJECT}-obs/.env
+GRAFANA_PASSWORD=\$(aws ssm get-parameter --name /wsssguardo/grafana-password --with-decryption --query Parameter.Value --output text || echo "")
+cat > /opt/${PROJECT}-obs/.env <<EOF
+GRAFANA_PASSWORD=\$GRAFANA_PASSWORD
+BACKEND_DOMAIN=${BACKEND_DOMAIN}
+EOF
 
 cd /opt/${PROJECT}-obs
 docker-compose pull

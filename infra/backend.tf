@@ -10,6 +10,24 @@ locals {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+resource "aws_ssm_parameter" "db_password" {
+  name  = "/wsssguardo/db-password"
+  type  = "SecureString"
+  value = var.db_password
+  key_id = "alias/aws/ssm"
+  tags  = local.tags
+}
+
+resource "aws_ssm_parameter" "grafana_password" {
+  name  = "/wsssguardo/grafana-password"
+  type  = "SecureString"
+  value = var.grafana_password
+  key_id = "alias/aws/ssm"
+  tags  = local.tags
+}
+
 # ---------------------------------------------------------------------------
 # ECR - Repositório de imagens de container
 # ---------------------------------------------------------------------------
@@ -74,6 +92,31 @@ resource "aws_iam_role_policy_attachment" "backend_ecr" {
 resource "aws_iam_role_policy_attachment" "backend_ssm" {
   role       = aws_iam_role.backend.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_policy" "backend_ssm_params" {
+  name        = "${var.project}-backend-ssm-params"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameter","ssm:GetParameters"]
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/wsssguardo/*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["kms:Decrypt"]
+        Resource = "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alias/aws/ssm"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "backend_ssm_params_attach" {
+  role       = aws_iam_role.backend.name
+  policy_arn = aws_iam_policy.backend_ssm_params.arn
 }
 
 resource "aws_iam_instance_profile" "backend" {

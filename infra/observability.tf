@@ -117,6 +117,35 @@ resource "aws_iam_instance_profile" "obs" {
   role = aws_iam_role.obs.name
 }
 
+# Allow observability EC2 to read specific SSM parameter(s) and decrypt using the AWS-managed key
+data "aws_caller_identity" "obs_current" {}
+
+resource "aws_iam_policy" "obs_ssm_grafana" {
+  name        = "${var.project}-obs-ssm-grafana"
+  description = "Allow observability EC2 to read Grafana password from SSM"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameter","ssm:GetParameters"]
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.obs_current.account_id}:parameter/wsssguardo/grafana-password"
+      },
+      {
+        Effect = "Allow"
+        Action = ["kms:Decrypt"]
+        Resource = "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.obs_current.account_id}:alias/aws/ssm"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "obs_ssm_grafana_attach" {
+  role       = aws_iam_role.obs.name
+  policy_arn = aws_iam_policy.obs_ssm_grafana.arn
+}
+
 # ---------------------------------------------------------------------------
 # EC2 t4g.small (ARM) — Grafana + Prometheus, sem IP público
 # ---------------------------------------------------------------------------

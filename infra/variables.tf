@@ -27,3 +27,17 @@ variable "frontend_domain" {
   type        = string
   default     = "ages-app.kriger.dev"
 }
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "grafana_password" {
+  description = "Grafana admin password"
+  type        = string
+  sensitive   = true
+  default     = null
+}
