@@ -13,7 +13,7 @@ describe("project api", () => {
       {
         id: "018f2f32-ff0a-7c30-9dfa-a9f765432101",
         name: "Mobile App",
-        customerId: "018f2f32-ff0a-7c30-9dfa-a9f765432103",
+        companyId: "018f2f32-ff0a-7c30-9dfa-a9f765432103",
         startDate: "2026-03-22",
         endDate: "2026-12-22",
         status: "IN_PROGRESS",
@@ -40,13 +40,13 @@ describe("project api", () => {
   it("projectsById sends repeated ids and returns parsed payload", async () => {
     const secondId = "018f2f32-ff0a-7c30-9dfa-a9f765432101";
     const firstId = "018f2f32-ff0a-7c30-9dfa-a9f765432102";
-    const customerId = "018f2f32-ff0a-7c30-9dfa-a9f765432103";
+    const companyId = "018f2f32-ff0a-7c30-9dfa-a9f765432103";
 
     const payload = [
       {
         id: secondId,
         name: "Mobile App",
-        customerId,
+        companyId,
         startDate: "2026-03-22",
         endDate: "2026-12-22",
         status: "IN_PROGRESS",
@@ -54,7 +54,7 @@ describe("project api", () => {
       {
         id: firstId,
         name: "Alpha Platform",
-        customerId,
+        companyId,
         startDate: "2026-03-21",
         endDate: "2026-12-21",
         status: "COMPLETED",
