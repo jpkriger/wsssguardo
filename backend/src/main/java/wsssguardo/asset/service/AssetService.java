@@ -3,6 +3,7 @@ package wsssguardo.asset.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import wsssguardo.asset.Asset;
@@ -15,6 +16,7 @@ import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -57,6 +59,10 @@ public class AssetService {
     public void deleteAsset(UUID id, String username) {
         var asset = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+
+        if (repository.existsActiveFindLink(id)) {
+            throw new ApiException("Asset has linked findings and cannot be deleted", HttpStatus.CONFLICT);
+        }
 
         assetMapper.deleteEntity(asset, username);
     }
