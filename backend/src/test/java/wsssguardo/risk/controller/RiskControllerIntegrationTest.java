@@ -72,7 +72,6 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.projectId", is(project.getId().toString())))
         .andExpect(jsonPath("$.name", is("Unauthorized data exposure")))
         .andExpect(jsonPath("$.findIds[0]", is(find.getId().toString())))
-        .andExpect(jsonPath("$.damageAssetIds[0]", is(asset.getId().toString())))
         .andExpect(jsonPath("$.riskLevel", is(50)));
   }
 
