@@ -74,6 +74,9 @@ public class FindService {
     @Transactional
     public void delete(UUID projectId, UUID id) {
         Find find = requireFindExists(projectId, id);
+        if (repository.existsActiveRiskLink(id)) {
+            throw new ApiException("Find has linked risks and cannot be deleted", HttpStatus.CONFLICT);
+        }
         repository.delete(find);
     }
 
@@ -114,7 +117,7 @@ public class FindService {
         requireProjectExists(projectId);
 
         return repository.findAllByProjectIdOrderByCreatedAtDesc(projectId).stream()
-            .map(mapper::toNameResponse)
-            .toList();
+                .map(mapper::toNameResponse)
+                .toList();
     }
 }
