@@ -16,8 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import wsssguardo.AbstractIntegrationTest;
 
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
@@ -32,7 +32,7 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private CustomerRepository customerRepository;
+  private CompanyRepository companyRepository;
 
   @Autowired
   private ProjectRepository projectRepository;
@@ -42,8 +42,8 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   void createRiskShouldReturnCreatedResponse() throws Exception {
-    Customer customer = createCustomer();
-    Project project = createProject(customer);
+    Company company = createCompany();
+    Project project = createProject(company);
     Find find = createFind(project);
 
     String body = """
@@ -85,17 +85,17 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.status", is(400)));
   }
 
-  private Customer createCustomer() {
-    Customer customer = new Customer();
-    customer.setName("Acme Corp");
-    customer.setCreatedAt(LocalDateTime.now());
-    return customerRepository.saveAndFlush(customer);
+  private Company createCompany() {
+    Company company = new Company();
+    company.setName("Acme Corp");
+    company.setCreatedAt(LocalDateTime.now());
+    return companyRepository.saveAndFlush(company);
   }
 
-  private Project createProject(Customer customer) {
+  private Project createProject(Company company) {
     Project project = new Project();
     project.setName("Privacy Review");
-    project.setCustomer(customer);
+    project.setCompany(company);
     project.setStartDate(LocalDate.of(2026, 3, 1));
     project.setEndDate(LocalDate.of(2026, 12, 1));
     project.setStatus(ProjectStatus.IN_PROGRESS);

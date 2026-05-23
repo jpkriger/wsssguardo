@@ -13,8 +13,8 @@ public record ProjectCreateRequest(
     @Size(max = 255, message = "name must not exceed 255 characters")
     String name,
 
-    @NotNull(message = "customerId must not be null")
-    UUID customerId,
+    @NotNull(message = "companyId must not be null")
+    UUID companyId,
 
     LocalDate startDate,
     LocalDate endDate,

@@ -161,7 +161,7 @@ export default function Companies(): ReactElement {
     } else {
       await createProject({
         name: data.name,
-        customerId: targetCompanyId,
+        companyId: targetCompanyId,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
       });

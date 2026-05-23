@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import wsssguardo.artifact.repository.ArtifactRepository;
 import wsssguardo.asset.repository.AssetRepository;
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
@@ -43,7 +43,7 @@ import wsssguardo.user.repository.UserRepository;
 public class ProjectService {
 
     private final ProjectRepository repository;
-    private final CustomerRepository customerRepository;
+    private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
     private final ArtifactRepository artifactRepository;
@@ -87,13 +87,13 @@ public class ProjectService {
     public ProjectResponse createProject(ProjectCreateRequest request) {
         validateDateRange(request.startDate(), request.endDate());
 
-        Customer customer = customerRepository.findById(request.customerId())
-            .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
+        Company company = companyRepository.findById(request.companyId())
+            .orElseThrow(() -> new ResourceNotFoundException("Company", request.companyId()));
         List<ProjectUser> projectUsers = buildProjectUsers(request.consultantIds());
 
         Project project = Project.builder()
             .name(request.name().trim())
-            .customer(customer)
+            .company(company)
             .startDate(request.startDate())
             .endDate(request.endDate())
             .status(ProjectStatus.IN_PROGRESS)
@@ -123,10 +123,10 @@ public class ProjectService {
             project.setName(normalizedName);
         }
 
-        if (request.customerId() != null) {
-            Customer customer = customerRepository.findById(request.customerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
-            project.setCustomer(customer);
+        if (request.companyId() != null) {
+            Company company = companyRepository.findById(request.companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company", request.companyId()));
+            project.setCompany(company);
         }
 
         if (request.startDate() != null) {

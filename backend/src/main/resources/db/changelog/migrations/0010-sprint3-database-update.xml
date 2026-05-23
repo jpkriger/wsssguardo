@@ -24,4 +24,19 @@
     <changeSet id="0010-drop-project-users-access-level" author="matheuskur">
         <dropColumn tableName="project_users" columnName="access_level"/>
     </changeSet>
+    <changeSet id="0010-rename-projects-customer-id-to-company-id" author="matheuskur">
+        <renameColumn tableName="projects"
+                      oldColumnName="customer_id"
+                      newColumnName="company_id"
+                      columnDataType="UUID"/>
+    </changeSet>
+    <changeSet id="0010-rename-customers-table-to-companies" author="matheuskur">
+        <renameTable oldTableName="customers" newTableName="companies"/>
+    </changeSet>
+    <changeSet id="0010-rename-customers-pk-to-companies" author="matheuskur">
+        <sql>ALTER TABLE companies RENAME CONSTRAINT pk_customers TO pk_companies</sql>
+    </changeSet>
+    <changeSet id="0010-rename-projects-customer-fk-to-company" author="matheuskur">
+        <sql>ALTER TABLE projects RENAME CONSTRAINT fk_projects_on_customer TO fk_projects_on_company</sql>
+    </changeSet>
 </databaseChangeLog>
