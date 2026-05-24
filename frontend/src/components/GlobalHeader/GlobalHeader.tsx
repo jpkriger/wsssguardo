@@ -9,14 +9,20 @@ export default function GlobalHeader(): ReactElement {
   const navigate = useNavigate();
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+  function handleClickOutside(e: MouseEvent): void {
+    if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      setOpen(false);
     }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }
+
+  if (open) {
+    document.addEventListener("mousedown", handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [open]);
 
   return (
     <div className="w-full h-22 px-40 border-b flex items-center justify-between">
@@ -84,7 +90,7 @@ export default function GlobalHeader(): ReactElement {
               </div>
 
               <button
-                onClick={() => { setOpen(false); navigate("/profile"); }}
+                onClick={() => { setOpen(false); void navigate("/profile"); }}
                 className="w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-foreground/5 cursor-pointer"
               >
                 Meu Perfil
