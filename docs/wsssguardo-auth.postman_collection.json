@@ -17,12 +17,12 @@
     },
     {
       "key": "password",
-      "value": "SenhaTemporaria123!",
+      "value": "",
       "description": "Senha temporária gerada pelo admin ao criar o usuário."
     },
     {
       "key": "newPassword",
-      "value": "NovaSenhaForte456@",
+      "value": "",
       "description": "Nova senha permanente (mín. 12 chars, maiúscula, minúscula, número, símbolo)."
     },
     {
