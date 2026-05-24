@@ -13,19 +13,21 @@ locals {
 data "aws_caller_identity" "current" {}
 
 resource "aws_ssm_parameter" "db_password" {
-  name  = "/wsssguardo/db-password"
-  type  = "SecureString"
-  value = var.db_password
-  key_id = "alias/aws/ssm"
-  tags  = local.tags
+  name             = "/wsssguardo/db-password"
+  type             = "SecureString"
+  value_wo         = var.db_password
+  value_wo_version = 1
+  key_id           = "alias/aws/ssm"
+  tags             = local.tags
 }
 
 resource "aws_ssm_parameter" "grafana_password" {
-  name  = "/wsssguardo/grafana-password"
-  type  = "SecureString"
-  value = var.grafana_password
-  key_id = "alias/aws/ssm"
-  tags  = local.tags
+  name             = "/wsssguardo/grafana-password"
+  type             = "SecureString"
+  value_wo         = var.grafana_password
+  value_wo_version = 1
+  key_id           = "alias/aws/ssm"
+  tags             = local.tags
 }
 
 # ---------------------------------------------------------------------------
@@ -102,8 +104,13 @@ resource "aws_iam_policy" "backend_ssm_params" {
     Statement = [
       {
         Effect = "Allow"
-        Action = ["ssm:GetParameter","ssm:GetParameters"]
-        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/wsssguardo/*"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/wsssguardo/db-password"
+        ]
       },
       {
         Effect = "Allow"

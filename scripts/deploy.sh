@@ -234,14 +234,25 @@ mkdir -p /opt/${PROJECT}
 echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
 echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
 echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
-DB_PASSWORD=\$(aws ssm get-parameter --name /wsssguardo/db-password --with-decryption --query Parameter.Value --output text || echo "")
+DB_PASSWORD=$(aws ssm get-parameter \
+  --region "${AWS_REGION}" \
+  --name "/wsssguardo/db-password" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text)
+
+if [ -z "$DB_PASSWORD" ]; then
+  echo "Erro: não foi possível obter o parâmetro /wsssguardo/db-password do SSM"
+  exit 1
+fi
+
 cat > /opt/${PROJECT}/.env <<EOF
 ECR_URL=${ECR_URL}
 IMAGE_TAG=${IMAGE_TAG}
 CORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}
 DB_NAME=${DB_NAME}
 DB_USERNAME=${DB_USERNAME}
-DB_PASSWORD=\$DB_PASSWORD
+DB_PASSWORD=${DB_PASSWORD}
 EOF
 
 aws ecr get-login-password --region ${REGION} | \
@@ -458,9 +469,20 @@ mkdir -p /opt/${PROJECT}-obs/grafana/provisioning/datasources
 echo '${PROMETHEUS_B64}' | base64 -d > /opt/${PROJECT}-obs/prometheus.yml
 echo '${COMPOSE_OBS_B64}' | base64 -d > /opt/${PROJECT}-obs/docker-compose.yml
 echo '${DATASOURCE_B64}' | base64 -d > /opt/${PROJECT}-obs/grafana/provisioning/datasources/prometheus.yml
-GRAFANA_PASSWORD=\$(aws ssm get-parameter --name /wsssguardo/grafana-password --with-decryption --query Parameter.Value --output text || echo "")
+GRAFANA_PASSWORD=$(aws ssm get-parameter \
+  --region "${AWS_REGION}" \
+  --name "/wsssguardo/grafana-password" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text)
+
+if [ -z "$GRAFANA_PASSWORD" ]; then
+  echo "Erro: não foi possível obter o parâmetro /wsssguardo/grafana-password do SSM"
+  exit 1
+fi
+
 cat > /opt/${PROJECT}-obs/.env <<EOF
-GRAFANA_PASSWORD=\$GRAFANA_PASSWORD
+GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
 BACKEND_DOMAIN=${BACKEND_DOMAIN}
 EOF
 
