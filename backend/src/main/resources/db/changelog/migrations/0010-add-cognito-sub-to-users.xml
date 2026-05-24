@@ -22,7 +22,25 @@
             constraintName="uq_users_email"/>
     </changeSet>
 
+    <!-- Backfill antes de remover as colunas antigas.
+         username não é email real nos seeds, então adiciona domínio placeholder.
+         cognito_sub fica NULL nos usuários existentes — PostgreSQL permite múltiplos NULLs em UNIQUE. -->
     <changeSet id="0010-2" author="cognito-integration">
+        <sql>
+            UPDATE users
+            SET
+                email      = username || '@wsssguardo.local',
+                first_name = split_part(full_name, ' ', 1),
+                last_name  = CASE
+                                 WHEN full_name LIKE '% %'
+                                 THEN substring(full_name FROM position(' ' IN full_name) + 1)
+                                 ELSE NULL
+                             END
+            WHERE email IS NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="0010-3" author="cognito-integration">
         <dropColumn tableName="users" columnName="full_name"/>
         <dropColumn tableName="users" columnName="username"/>
     </changeSet>

@@ -27,6 +27,9 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMe() {
+        if (authenticatedUser.get() == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(service.toResponse(authenticatedUser.get()));
     }
 }

@@ -13,8 +13,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 import wsssguardo.user.User;
 import wsssguardo.user.service.UserService;
 
@@ -50,8 +51,9 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
             if (existing.isPresent()) {
                 user = existing.get();
             } else {
-                // Primeiro login: busca atributos no Cognito para criar o usuário local
-                Map<String, String> attrs = fetchAttributes(sub);
+                // Primeiro login: busca atributos no Cognito pelo sub (via ListUsers)
+                // ListUsers com filtro por sub funciona independente do formato do Username interno
+                Map<String, String> attrs = fetchAttributesBySub(sub);
                 user = userService.findOrCreateByCognitoSub(
                         sub,
                         attrs.get("email"),
@@ -64,15 +66,22 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    private Map<String, String> fetchAttributes(String sub) {
+    private Map<String, String> fetchAttributesBySub(String sub) {
         try {
-            List<AttributeType> attrs = cognitoClient.adminGetUser(
-                    AdminGetUserRequest.builder()
+            List<UserType> users = cognitoClient.listUsers(
+                    ListUsersRequest.builder()
                             .userPoolId(userPoolId)
-                            .username(sub)
+                            .filter("sub = \"" + sub + "\"")
+                            .limit(1)
                             .build()
-            ).userAttributes();
-            return attrs.stream()
+            ).users();
+
+            if (users.isEmpty()) {
+                log.warn("Nenhum usuário encontrado no Cognito para sub {}", sub);
+                return Map.of();
+            }
+
+            return users.get(0).attributes().stream()
                     .collect(Collectors.toMap(AttributeType::name, AttributeType::value));
         } catch (Exception e) {
             log.warn("Não foi possível buscar atributos do Cognito para sub {}: {}", sub, e.getMessage());

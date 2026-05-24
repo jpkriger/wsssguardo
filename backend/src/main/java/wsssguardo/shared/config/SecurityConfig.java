@@ -39,24 +39,24 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable());
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (authDisabled) {
             http
+                .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(Customizer.withDefaults()).disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         } else {
             http
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .ignoringRequestMatchers("/api/auth/**")
+                )
                 .headers(headers -> headers
                     .frameOptions(frame -> frame.deny())
                     .contentSecurityPolicy(csp -> csp
                         .policyDirectives("default-src 'self'; script-src 'self'; object-src 'none'")
                     )
-                )
-                .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringRequestMatchers("/api/auth/**")
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                     .jwt(jwt -> jwt.decoder(jwtDecoder))

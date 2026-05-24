@@ -123,8 +123,10 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     private User createUser(String usernamePrefix) {
         User user = new User();
-        user.setFullName("Consultant User");
-        user.setUsername(usernamePrefix + "-" + UUID.randomUUID());
+        user.setFirstName("Consultant");
+        user.setLastName("User");
+        user.setEmail(usernamePrefix + "-" + UUID.randomUUID() + "@test.com");
+        user.setCognitoSub(UUID.randomUUID().toString());
         user.setRole(UserRole.CONSULTANT);
         user.setCreatedAt(LocalDateTime.now());
         return userRepository.saveAndFlush(user);

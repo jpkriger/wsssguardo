@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException;
 import wsssguardo.auth.CognitoAuthService.MfaSetupStartResult;
 import wsssguardo.auth.dto.*;
+import wsssguardo.user.service.UserService;
 
 import java.util.Map;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 public class AuthController {
 
     private final CognitoAuthService cognitoAuthService;
+    private final UserService userService;
 
     @Value("${auth.cookie.secure:true}")
     private boolean cookieSecure;
@@ -126,8 +128,12 @@ public class AuthController {
         if (refreshToken == null || email == null) {
             return ResponseEntity.status(401).build();
         }
+        // Cognito REFRESH_TOKEN_AUTH exige SECRET_HASH computado com o username interno (sub UUID),
+        // não com o email. Buscamos o sub no banco para montar o hash correto.
+        String cognitoUsername = userService.findCognitoSubByEmail(email)
+                .orElse(email);
         try {
-            TokenPair tokens = cognitoAuthService.refresh(refreshToken, email);
+            TokenPair tokens = cognitoAuthService.refresh(refreshToken, cognitoUsername);
             addTokenCookies(res, tokens);
             return ResponseEntity.ok().build();
         } catch (CognitoIdentityProviderException e) {
@@ -155,7 +161,10 @@ public class AuthController {
 
     private void addTokenCookies(HttpServletResponse res, TokenPair tokens) {
         addCookie(res, buildCookie("access_token", tokens.accessToken(), "/api", 3600));
-        addCookie(res, buildCookie("refresh_token", tokens.refreshToken(), "/api/auth/refresh", 30 * 24 * 3600));
+        // Cognito não emite novo refresh token no fluxo de refresh — só atualiza quando presente
+        if (tokens.refreshToken() != null) {
+            addCookie(res, buildCookie("refresh_token", tokens.refreshToken(), "/api/auth/refresh", 30 * 24 * 3600));
+        }
     }
 
     private void clearTokenCookies(HttpServletResponse res) {

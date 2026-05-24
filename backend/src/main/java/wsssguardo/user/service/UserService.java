@@ -34,6 +34,10 @@ public class UserService {
         return repository.findByCognitoSub(cognitoSub);
     }
 
+    public Optional<String> findCognitoSubByEmail(String email) {
+        return repository.findByEmail(email).map(User::getCognitoSub);
+    }
+
     @Transactional
     public User findOrCreateByCognitoSub(String cognitoSub, String email,
                                          String firstName, String lastName) {

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "WSSSguardo — Auth",
-    "description": "Fluxo completo de autenticação via AWS Cognito (backend proxy + httpOnly cookies).\n\n## Fluxo do primeiro acesso\n1. Login → recebe NEW_PASSWORD_REQUIRED\n2. New Password → recebe MFA_SETUP_REQUIRED\n3. MFA Setup Start → recebe QR code (otpauthUri)\n4. MFA Setup Complete → recebe tokens (cookies)\n5. Chamadas autenticadas funcionam normalmente\n\n## Fluxo dos logins subsequentes\n1. Login → recebe MFA_REQUIRED\n2. MFA Verify → recebe tokens (cookies)\n\nOs scripts 'Tests' de cada request capturam automaticamente o `session` e salvam na variável de coleção, então você não precisa copiar manualmente entre requests.",
+    "description": "Fluxo completo de autenticação via AWS Cognito (backend proxy + httpOnly cookies).\n\n## Fluxo do primeiro acesso\n1. Login → recebe NEW_PASSWORD_REQUIRED\n2. New Password → recebe MFA_SETUP_REQUIRED\n3. MFA Setup Start → recebe QR code (otpauthUri)\n4. MFA Setup Complete → recebe tokens (cookies)\n5. Chamadas autenticadas funcionam normalmente\n\n## Fluxo dos logins subsequentes\n1. Login → recebe MFA_REQUIRED\n2. MFA Verify → recebe tokens (cookies)\n\nOs scripts 'Tests' capturam automaticamente session e tokens. Os tokens são salvos em variáveis de coleção e enviados manualmente nos headers das requests autenticadas (Postman não faz path-matching de cookies igual ao browser).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -34,6 +34,16 @@
       "key": "totpCode",
       "value": "000000",
       "description": "Código de 6 dígitos do Google Authenticator. Atualize manualmente antes de usar MFA Verify ou MFA Setup Complete."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "Preenchido automaticamente após login completo (extraído do Set-Cookie)."
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "description": "Preenchido automaticamente após login completo (extraído do Set-Cookie)."
     }
   ],
   "item": [
@@ -70,26 +80,12 @@
                   "        .to.include(res.status);",
                   "});",
                   "if (res.session) {",
-                  "    pm.collectionVariables.set(\"session\", res.session);",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
                   "    console.log(\"session salvo:\", res.session.substring(0, 20) + \"...\");",
                   "}",
                   "console.log(\"status:\", res.status);"
                 ]
               }
-            }
-          ],
-          "response": [
-            {
-              "name": "Exemplo — NEW_PASSWORD_REQUIRED",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"status\": \"NEW_PASSWORD_REQUIRED\",\n  \"session\": \"AYABeH...\"\n}"
-            },
-            {
-              "name": "Exemplo — credenciais inválidas",
-              "status": "Unauthorized",
-              "code": 401,
-              "body": "{\n  \"message\": \"Credenciais inválidas\"\n}"
             }
           ]
         },
@@ -109,7 +105,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "new-password"]
             },
-            "description": "Troca a senha temporária pela senha permanente.\n\nEspera receber: `{ \"status\": \"MFA_SETUP_REQUIRED\", \"session\": \"...\" }`\n\nRequisitos da senha: mín. 12 caracteres, maiúscula, minúscula, número e símbolo."
+            "description": "Troca a senha temporária pela senha permanente.\n\nEspera receber: `{ \"status\": \"MFA_SETUP_REQUIRED\", \"session\": \"...\" }`"
           },
           "event": [
             {
@@ -122,20 +118,12 @@
                   "        .to.include(res.status);",
                   "});",
                   "if (res.session) {",
-                  "    pm.collectionVariables.set(\"session\", res.session);",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
                   "    console.log(\"session atualizado\");",
                   "}",
                   "console.log(\"status:\", res.status);"
                 ]
               }
-            }
-          ],
-          "response": [
-            {
-              "name": "Exemplo — MFA_SETUP_REQUIRED",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"status\": \"MFA_SETUP_REQUIRED\",\n  \"session\": \"AYABeH...\"\n}"
             }
           ]
         },
@@ -167,21 +155,13 @@
                   "    pm.expect(res.otpauthUri).to.include(\"otpauth://totp/\");",
                   "});",
                   "if (res.session) {",
-                  "    pm.collectionVariables.set(\"session\", res.session);",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
                   "    console.log(\"session atualizado para mfa-setup/complete\");",
                   "}",
                   "console.log(\"otpauthUri:\", res.otpauthUri);",
                   "console.log(\"→ Cole a URI acima em https://stefansundin.github.io/2fa-qr/ para gerar o QR code\");"
                 ]
               }
-            }
-          ],
-          "response": [
-            {
-              "name": "Exemplo — otpauthUri",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"session\": \"AYABeH...\",\n  \"otpauthUri\": \"otpauth://totp/WSSSguardo:usuario@exemplo.com?secret=JBSWY3DPEHPK3PXP&issuer=WSSSguardo\"\n}"
             }
           ]
         },
@@ -201,7 +181,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "mfa-setup", "complete"]
             },
-            "description": "Confirma que o QR foi escaneado com sucesso.\n\n**Antes de enviar:** atualize a variável `totpCode` com o código de 6 dígitos que aparece no Google Authenticator.\n\nEm caso de sucesso (HTTP 200), os cookies `access_token` e `refresh_token` são definidos automaticamente. O Postman armazena os cookies no Cookie Jar — verifique em Cookies na aba da resposta."
+            "description": "Confirma que o QR foi escaneado com sucesso.\n\n**Antes de enviar:** atualize a variável `totpCode` com o código de 6 dígitos que aparece no Google Authenticator.\n\nEm caso de sucesso (HTTP 200), os tokens são extraídos dos headers Set-Cookie e salvos nas variáveis `accessToken` e `refreshToken`."
           },
           "event": [
             {
@@ -211,12 +191,19 @@
                   "pm.test(\"Setup concluído com sucesso (200)\", () => {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "const cookies = pm.cookies.toObject();",
-                  "if (cookies.access_token) {",
-                  "    console.log(\"✓ access_token setado no cookie jar\");",
-                  "} else {",
-                  "    console.warn(\"⚠ access_token não encontrado nos cookies — verifique se o Cookie Jar está habilitado\");",
-                  "}"
+                  "// Extrai tokens dos headers Set-Cookie (Postman não faz path-matching automático)",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken salvo');",
+                  "    }",
+                  "    if (parts.startsWith('refresh_token=')) {",
+                  "        pm.collectionVariables.set('refreshToken', parts.replace('refresh_token=', ''));",
+                  "        console.log('✓ refreshToken salvo');",
+                  "    }",
+                  "});"
                 ]
               }
             }
@@ -254,7 +241,7 @@
                   "const res = pm.response.json();",
                   "pm.test(\"MFA_REQUIRED\", () => pm.expect(res.status).to.eql(\"MFA_REQUIRED\"));",
                   "if (res.session) {",
-                  "    pm.collectionVariables.set(\"session\", res.session);",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
                   "    console.log(\"session salvo — atualize totpCode e execute MFA Verify\");",
                   "}"
                 ]
@@ -278,7 +265,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "mfa-verify"]
             },
-            "description": "**Antes de enviar:** atualize `totpCode` com o código atual do Google Authenticator.\n\nEm caso de sucesso, os cookies `access_token` e `refresh_token` são definidos."
+            "description": "**Antes de enviar:** atualize `totpCode` com o código atual do Google Authenticator.\n\nEm caso de sucesso, os tokens são extraídos dos headers Set-Cookie e salvos nas variáveis `accessToken` e `refreshToken`."
           },
           "event": [
             {
@@ -286,9 +273,19 @@
               "script": {
                 "exec": [
                   "pm.test(\"Login completo (200)\", () => pm.response.to.have.status(200));",
-                  "const cookies = pm.cookies.toObject();",
-                  "console.log(\"access_token presente:\", !!cookies.access_token);",
-                  "console.log(\"refresh_token presente:\", !!cookies.refresh_token);"
+                  "// Extrai tokens dos headers Set-Cookie (Postman não faz path-matching automático)",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken salvo');",
+                  "    }",
+                  "    if (parts.startsWith('refresh_token=')) {",
+                  "        pm.collectionVariables.set('refreshToken', parts.replace('refresh_token=', ''));",
+                  "        console.log('✓ refreshToken salvo');",
+                  "    }",
+                  "});"
                 ]
               }
             }
@@ -298,18 +295,25 @@
     },
     {
       "name": "Endpoints autenticados",
-      "description": "Requerem o cookie access_token (setado automaticamente pelo Cookie Jar após login).",
+      "description": "Requerem o cookie access_token. Os scripts pre-request adicionam o Cookie header automaticamente a partir da variável de coleção `accessToken`.",
       "item": [
         {
           "name": "GET /api/users/me",
           "request": {
             "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users/me",
               "host": ["{{baseUrl}}"],
               "path": ["api", "users", "me"]
             },
-            "description": "Retorna os dados do usuário autenticado sincronizados com o banco local.\n\nO backend lê o JWT do cookie `access_token`, valida com o JWKS do Cognito, extrai `sub`/`email`/`given_name`/`family_name` e faz upsert na tabela `users`."
+            "description": "Retorna os dados do usuário autenticado sincronizados com o banco local.\n\nO backend lê o JWT do cookie `access_token`, valida com o JWKS do Cognito, extrai `sub` e faz upsert na tabela `users`."
           },
           "event": [
             {
@@ -334,6 +338,13 @@
           "name": "POST /api/auth/refresh",
           "request": {
             "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "refresh_token={{refreshToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/auth/refresh?email={{email}}",
               "host": ["{{baseUrl}}"],
@@ -346,7 +357,7 @@
                 }
               ]
             },
-            "description": "Renova o `access_token` usando o `refresh_token` (válido por 30 dias).\n\nO cookie `refresh_token` tem `Path=/api/auth/refresh`, então o Postman só o envia para esta URL — não vaza para outras chamadas.\n\nEm caso de sucesso, um novo `access_token` é setado no cookie."
+            "description": "Renova o `access_token` usando o `refresh_token` (válido por 30 dias).\n\nO novo `access_token` é extraído do Set-Cookie e salvo na variável `accessToken`."
           },
           "event": [
             {
@@ -354,8 +365,15 @@
               "script": {
                 "exec": [
                   "pm.test(\"Refresh bem-sucedido (200)\", () => pm.response.to.have.status(200));",
-                  "const cookies = pm.cookies.toObject();",
-                  "console.log(\"novo access_token presente:\", !!cookies.access_token);"
+                  "// Atualiza o accessToken com o novo valor",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken renovado');",
+                  "    }",
+                  "});"
                 ]
               }
             }
@@ -365,12 +383,19 @@
           "name": "POST /api/auth/logout",
           "request": {
             "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/auth/logout",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "logout"]
             },
-            "description": "Invalida a sessão no Cognito (GlobalSignOut — afeta TODOS os dispositivos) e apaga os cookies locais.\n\nRequer o cookie `access_token` válido — é um endpoint autenticado intencionalmente."
+            "description": "Invalida a sessão no Cognito (GlobalSignOut — afeta TODOS os dispositivos) e apaga os cookies locais."
           },
           "event": [
             {
@@ -378,7 +403,9 @@
               "script": {
                 "exec": [
                   "pm.test(\"Logout bem-sucedido (200)\", () => pm.response.to.have.status(200));",
-                  "console.log(\"Sessão encerrada no Cognito e cookies removidos.\");"
+                  "pm.collectionVariables.set('accessToken', '');",
+                  "pm.collectionVariables.set('refreshToken', '');",
+                  "console.log(\"Sessão encerrada no Cognito e variáveis limpas.\");"
                 ]
               }
             }
