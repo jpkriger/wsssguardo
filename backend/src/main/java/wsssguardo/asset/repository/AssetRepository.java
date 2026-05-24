@@ -40,4 +40,5 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
             GROUP BY fa.assets_id
             """, nativeQuery = true)
     List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
+
 }
