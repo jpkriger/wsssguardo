@@ -23,7 +23,7 @@ import {
 import { cn } from "../lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { ChevronDown, EyeIcon } from "lucide-react";
+import { ChevronDown, EyeIcon, Download, File } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const DETAIL_LEVELS = [
@@ -562,10 +562,14 @@ export default function ProjectReport(): ReactElement {
 
           <CardFooter className="mt-auto border-t border-border p-5">
             <div className="grid w-full grid-cols-2 gap-2">
+              <Button className="w-full">
+                <Download />
+                Exportar PDF
+              </Button>
               <Button variant="outline" className="w-full">
+                <File />
                 Exportar HTML
               </Button>
-              <Button className="w-full">Exportar PDF</Button>
             </div>
           </CardFooter>
         </Card>
@@ -574,9 +578,11 @@ export default function ProjectReport(): ReactElement {
           <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
             <div className="flex w-full items-left justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Eye className="size-5 text-muted-foreground" />
-                <CardTitle className="text-sm text-muted-foreground">Preview ao vivo</CardTitle>
-                <div className="text-primary"> &bull; </div> 
+                <EyeIcon className="size-5 text-muted-foreground" />
+                <CardTitle className="text-sm text-muted-foreground">
+                  Preview ao vivo
+                </CardTitle>
+                <div className="text-primary"> &bull; </div>
               </div>
               <Button
                 variant="outline"
