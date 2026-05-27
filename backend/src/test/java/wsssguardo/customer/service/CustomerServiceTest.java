@@ -45,7 +45,7 @@ class CustomerServiceTest {
         Customer entity = new Customer();
         entity.setId(UUID.randomUUID());
         entity.setName("Test Customer");
-        CustomerResponseDTO expected = new CustomerResponseDTO(entity.getId(), "Test Customer");
+        CustomerResponseDTO expected = new CustomerResponseDTO(entity.getId(), "Test Customer", java.time.LocalDateTime.now());
 
         when(mapper.toEntity(dto)).thenReturn(entity);
         when(repository.save(entity)).thenReturn(entity);
@@ -66,7 +66,7 @@ class CustomerServiceTest {
         Customer entity = new Customer();
         entity.setId(id);
         entity.setName("Original Name");
-        CustomerResponseDTO expected = new CustomerResponseDTO(id, "Updated Name");
+        CustomerResponseDTO expected = new CustomerResponseDTO(id, "Updated Name", java.time.LocalDateTime.now());
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(mapper.toResponseDTO(entity)).thenReturn(expected);
