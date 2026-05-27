@@ -8,8 +8,8 @@ import AssetTable from "../components/AssetTable/AssetTable";
 import RiskTable from "../components/RiskTable/RiskTable";
 import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
+import ProjectReport from "./ProjectReport";
 import { Badge } from "../components/ui/badge";
-import { buttonVariants } from "../components/ui/button";
 import { projectsById, type ProjectResponse, type ProjectStatus } from "../api/project";
 import { cn } from "../lib/utils";
 
@@ -38,6 +38,7 @@ export const ProjectTabs = {
   Artifacts: "Artefatos",
   Findings: "Achados",
   Risks: "Riscos",
+  Report: "Relatório",
 } as const;
 
 type ProjectTab = (typeof ProjectTabs)[keyof typeof ProjectTabs];
@@ -48,6 +49,7 @@ const TABS: ProjectTab[] = [
   ProjectTabs.Artifacts,
   ProjectTabs.Findings,
   ProjectTabs.Risks,
+  ProjectTabs.Report,
 ];
 
 export default function Project(): ReactElement {
@@ -151,18 +153,10 @@ export default function Project(): ReactElement {
             );
           })()}
         </div>
-        {projectId && (
-          <Link
-            to={`/projeto/${projectId}/relatorio`}
-            className={buttonVariants({ variant: "default" })}
-          >
-            Gerar relatório
-          </Link>
-        )}
       </div>
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
-        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-6">
           {TABS.map((tab) => {
             const isActive = tab === activeTab;
             return (
@@ -201,6 +195,7 @@ export default function Project(): ReactElement {
             <RiskTable />
           </ProjectProvider>
         )}
+        {activeTab === ProjectTabs.Report && <ProjectReport />}
       </div>
     </section>
   );
