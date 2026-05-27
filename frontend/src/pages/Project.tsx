@@ -9,7 +9,7 @@ import RiskTable from "../components/RiskTable/RiskTable";
 import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
+import { buttonVariants } from "../components/ui/button";
 import { projectsById, type ProjectResponse, type ProjectStatus } from "../api/project";
 import { cn } from "../lib/utils";
 
@@ -151,7 +151,14 @@ export default function Project(): ReactElement {
             );
           })()}
         </div>
-        <Button>Gerar relatório</Button>
+        {projectId && (
+          <Link
+            to={`/projeto/${projectId}/relatorio`}
+            className={buttonVariants({ variant: "default" })}
+          >
+            Gerar relatório
+          </Link>
+        )}
       </div>
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
