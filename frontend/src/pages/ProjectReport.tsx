@@ -3,13 +3,11 @@ import { Link, useParams } from "react-router";
 import {
   CalendarClock,
   ChevronLeft,
-  FileText,
   LayoutGrid,
   ListFilter,
   MapPinned,
   ShieldCheck,
 } from "lucide-react";
-import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -56,16 +54,6 @@ function getTodayIsoDate(): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function formatDate(date: string | null): string {
-  if (!date) return "Sem data definida";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
 }
 
 function buildInitialFormState(project: ProjectResponse | null): FormState {
@@ -189,10 +177,6 @@ export default function ProjectReport(): ReactElement {
       cancelled = true;
     };
   }, [projectId]);
-
-  const activeSections = REPORT_SECTIONS.filter((section) => sectionsEnabled[section.key]);
-  const activeRisks = RISK_FILTERS.filter((risk) => riskFilters[risk.key]);
-  const selectedDetailLabel = DETAIL_LEVELS.find((level) => level.value === reportLevel)?.label ?? "Equilibrado";
 
   function toggleSection(sectionKey: ReportSectionKey): void {
     setSectionsEnabled((current) => ({
