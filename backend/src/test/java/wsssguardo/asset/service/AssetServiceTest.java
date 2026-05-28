@@ -160,7 +160,7 @@ class AssetServiceTest {
         Asset asset = new Asset();
         Asset savedAsset = new Asset();
         AssetResponseDTO expectedResponse = new AssetResponseDTO(UUID.randomUUID(), "Asset name", "Description",
-                "Content", projectId, null, null, null);
+                "Content", projectId, null, null, null, 0L);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         doReturn(asset).when(assetMapper).toEntity(request, project, username);
@@ -198,7 +198,7 @@ class AssetServiceTest {
         Asset asset = new Asset();
         Asset updatedAsset = new Asset();
         AssetResponseDTO expectedResponse = new AssetResponseDTO(UUID.randomUUID(), "name", "description", "content",
-                UUID.randomUUID(), null, null, null);
+                UUID.randomUUID(), null, null, null, 0L);
 
         when(repository.findById(id)).thenReturn(Optional.of(asset));
         doReturn(updatedAsset).when(assetMapper).updateEntity(asset, request, username);

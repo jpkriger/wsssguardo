@@ -1,14 +1,18 @@
 package wsssguardo.asset.mapper;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
 import wsssguardo.asset.Asset;
-import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
-import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.project.Project;
-import java.time.LocalDateTime;
 
 @Component
 public class AssetMapper {
@@ -25,6 +29,10 @@ public class AssetMapper {
     }
 
     public AssetResponseDTO toResponse(Asset asset) {
+        return toResponse(asset, 0L);
+    }
+
+    public AssetResponseDTO toResponse(Asset asset, long findingsCount) {
         return new AssetResponseDTO(
                 asset.getId(),
                 asset.getName(),
@@ -33,12 +41,15 @@ public class AssetMapper {
                 asset.getProject().getId(),
                 asset.getCreatedBy(),
                 asset.getCreatedAt(),
-                asset.getUpdatedAt());
+                asset.getUpdatedAt(),
+                findingsCount);
     }
 
-    public AssetPageResponseDTO toPageDTO(Page<Asset> page) {
+    public AssetPageResponseDTO toPageDTO(Page<Asset> page, Map<UUID, Long> findingCounts) {
         return new AssetPageResponseDTO(
-                page.getContent().stream().map(this::toResponse).toList(),
+                page.getContent().stream()
+                        .map(a -> toResponse(a, findingCounts.getOrDefault(a.getId(), 0L)))
+                        .toList(),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),

@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import wsssguardo.asset.Asset;
 
@@ -17,4 +19,15 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
     List<Asset> findAllByIdInAndProjectId(Collection<UUID> ids, UUID projectId);
 
     long countByProjectId(UUID projectId);
+
+    @Query(value = """
+            SELECT fa.assets_id, COUNT(fa.find_id)
+            FROM finds_assets fa
+            JOIN finds f ON f.id = fa.find_id
+            JOIN assets a ON a.id = fa.assets_id
+            WHERE a.project_id = :projectId
+              AND f.deleted_at IS NULL
+            GROUP BY fa.assets_id
+            """, nativeQuery = true)
+    List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
 }

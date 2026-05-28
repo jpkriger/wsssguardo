@@ -273,7 +273,7 @@ export default function AssetTable(): ReactElement {
                         </div>
                       </TableCell>
                       <TableCell className="px-5 py-2.5 text-sm text-center">
-                        0
+                        {asset.findingsCount}
                       </TableCell>
                       <TableCell className="px-3 py-2.5 text-center">
                         <button
