@@ -1,4 +1,4 @@
-package wsssguardo.customer.service;
+package wsssguardo.company.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,43 +15,43 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.dto.requestdto.CustomerRequestDTO;
-import wsssguardo.customer.dto.requestdto.CustomerUpdateRequestDTO;
-import wsssguardo.customer.dto.responsedto.CustomerResponseDTO;
-import wsssguardo.customer.mapper.CustomerMapper;
-import wsssguardo.customer.mapper.CustomerUpdateMapper;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.dto.requestdto.CompanyRequestDTO;
+import wsssguardo.company.dto.requestdto.CompanyUpdateRequestDTO;
+import wsssguardo.company.dto.responsedto.CompanyResponseDTO;
+import wsssguardo.company.mapper.CompanyMapper;
+import wsssguardo.company.mapper.CompanyUpdateMapper;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
-class CustomerServiceTest {
+class CompanyServiceTest {
 
     @Mock
-    private CustomerRepository repository;
+    private CompanyRepository repository;
 
     @Mock
-    private CustomerMapper mapper;
+    private CompanyMapper mapper;
 
     @Mock
-    private CustomerUpdateMapper updateMapper;
+    private CompanyUpdateMapper updateMapper;
 
     @InjectMocks
-    private CustomerService service;
+    private CompanyService service;
 
     @Test
     void createShouldReturnMappedResponse() {
-        CustomerRequestDTO dto = new CustomerRequestDTO("Test Customer");
-        Customer entity = new Customer();
+        CompanyRequestDTO dto = new CompanyRequestDTO("Test Company");
+        Company entity = new Company();
         entity.setId(UUID.randomUUID());
-        entity.setName("Test Customer");
-        CustomerResponseDTO expected = new CustomerResponseDTO(entity.getId(), "Test Customer", java.time.LocalDateTime.now());
+        entity.setName("Test Company");
+        CompanyResponseDTO expected = new CompanyResponseDTO(entity.getId(), "Test Company", java.time.LocalDateTime.now());
 
         when(mapper.toEntity(dto)).thenReturn(entity);
         when(repository.save(entity)).thenReturn(entity);
         when(mapper.toResponseDTO(entity)).thenReturn(expected);
 
-        CustomerResponseDTO actual = service.create(dto);
+        CompanyResponseDTO actual = service.create(dto);
 
         assertEquals(expected, actual);
         verify(mapper).toEntity(dto);
@@ -62,16 +62,16 @@ class CustomerServiceTest {
     @Test
     void updateFoundShouldReturnMappedResponse() {
         UUID id = UUID.randomUUID();
-        CustomerUpdateRequestDTO dto = new CustomerUpdateRequestDTO("Updated Name");
-        Customer entity = new Customer();
+        CompanyUpdateRequestDTO dto = new CompanyUpdateRequestDTO("Updated Name");
+        Company entity = new Company();
         entity.setId(id);
         entity.setName("Original Name");
-        CustomerResponseDTO expected = new CustomerResponseDTO(id, "Updated Name", java.time.LocalDateTime.now());
+        CompanyResponseDTO expected = new CompanyResponseDTO(id, "Updated Name", java.time.LocalDateTime.now());
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(mapper.toResponseDTO(entity)).thenReturn(expected);
 
-        CustomerResponseDTO actual = service.update(id, dto);
+        CompanyResponseDTO actual = service.update(id, dto);
 
         assertEquals(expected, actual);
         verify(repository).findById(id);
@@ -82,7 +82,7 @@ class CustomerServiceTest {
     @Test
     void updateNotFoundShouldThrowException() {
         UUID id = UUID.randomUUID();
-        CustomerUpdateRequestDTO dto = new CustomerUpdateRequestDTO("Updated Name");
+        CompanyUpdateRequestDTO dto = new CompanyUpdateRequestDTO("Updated Name");
 
         when(repository.findById(id)).thenReturn(Optional.empty());
 
@@ -94,7 +94,7 @@ class CustomerServiceTest {
     @Test
     void deleteFoundShouldDeleteEntity() {
         UUID id = UUID.randomUUID();
-        Customer entity = new Customer();
+        Company entity = new Company();
         entity.setId(id);
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));

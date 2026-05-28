@@ -23,6 +23,7 @@ public class UserService {
                 user.getId(),
                 user.getFullName(),
                 user.getUsername(),
+                user.getAuthSub(),
                 user.getRole(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()

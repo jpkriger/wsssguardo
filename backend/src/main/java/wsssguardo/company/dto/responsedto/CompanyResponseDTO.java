@@ -1,9 +1,9 @@
-package wsssguardo.customer.dto.responsedto;
+package wsssguardo.company.dto.responsedto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record CustomerResponseDTO(
+public record CompanyResponseDTO(
     UUID id,
     String name,
     LocalDateTime createdAt

@@ -16,12 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 
 import wsssguardo.AbstractIntegrationTest;
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
-import wsssguardo.project.domain.UserProjectLevel;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
@@ -36,7 +35,7 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private CompanyRepository companyRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -46,9 +45,9 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void projectsByIdShouldReturnPersistedItemsInRequestedOrder() throws Exception {
-        Customer customer = createCustomer("Acme Corp");
-        Project first = createProject("Alpha Platform", customer, ProjectStatus.COMPLETED);
-        Project second = createProject("Mobile App", customer, ProjectStatus.IN_PROGRESS);
+        Company company = createCompany("Acme Corp");
+        Project first = createProject("Alpha Platform", company, ProjectStatus.COMPLETED);
+        Project second = createProject("Mobile App", company, ProjectStatus.IN_PROGRESS);
 
         mockMvc.perform(get("/api/projects")
                 .queryParam("ids", second.getId().toString())
@@ -57,7 +56,7 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[0].id", is(second.getId().toString())))
             .andExpect(jsonPath("$[0].name", is("Mobile App")))
-            .andExpect(jsonPath("$[0].customerId", is(customer.getId().toString())))
+            .andExpect(jsonPath("$[0].companyId", is(company.getId().toString())))
             .andExpect(jsonPath("$[0].status", is("IN_PROGRESS")))
             .andExpect(jsonPath("$[1].id", is(first.getId().toString())))
             .andExpect(jsonPath("$[1].name", is("Alpha Platform")))
@@ -66,9 +65,9 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void listAllProjectsShouldReturnPersistedItemsWhenNoFiltersAreProvided() throws Exception {
-        Customer customer = createCustomer("Acme Corp");
-        Project older = createProject("Legacy", customer, LocalDateTime.of(2026, 3, 20, 8, 0));
-        Project newer = createProject("Modern", customer, LocalDateTime.of(2026, 3, 21, 8, 0));
+        Company company = createCompany("Acme Corp");
+        Project older = createProject("Legacy", company, LocalDateTime.of(2026, 3, 20, 8, 0));
+        Project newer = createProject("Modern", company, LocalDateTime.of(2026, 3, 21, 8, 0));
 
         mockMvc.perform(get("/api/projects"))
             .andExpect(status().isOk())
@@ -79,8 +78,8 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void projectsByIdShouldIgnoreUnknownIds() throws Exception {
-        Customer customer = createCustomer("Stark Industries");
-        Project project = createProject("Internal Tools", customer, ProjectStatus.ON_HOLD);
+        Company company = createCompany("Stark Industries");
+        Project project = createProject("Internal Tools", company, ProjectStatus.ON_HOLD);
         UUID unknownId = UUID.randomUUID();
 
         mockMvc.perform(get("/api/projects")
@@ -95,13 +94,13 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void projectsByUserIdShouldReturnRelatedProjectIds() throws Exception {
         User user = createUser("consultant-one");
-        Customer customer = createCustomer("Acme Corp");
+        Company company = createCompany("Acme Corp");
 
-        Project older = createProject("Legacy", customer, LocalDateTime.of(2026, 3, 20, 8, 0));
-        Project newer = createProject("Modern", customer, LocalDateTime.of(2026, 3, 21, 8, 0));
+        Project older = createProject("Legacy", company, LocalDateTime.of(2026, 3, 20, 8, 0));
+        Project newer = createProject("Modern", company, LocalDateTime.of(2026, 3, 21, 8, 0));
 
-        linkUserToProject(user, older, UserProjectLevel.VIEWER);
-        linkUserToProject(user, newer, UserProjectLevel.EDITOR);
+        linkUserToProject(user, older);
+        linkUserToProject(user, newer);
 
         mockMvc.perform(get("/api/projects")
                 .queryParam("userId", user.getId().toString()))
@@ -130,17 +129,17 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
         return userRepository.saveAndFlush(user);
     }
 
-    private Customer createCustomer(String name) {
-        Customer customer = new Customer();
-        customer.setName(name);
-        customer.setCreatedAt(LocalDateTime.now());
-        return customerRepository.saveAndFlush(customer);
+    private Company createCompany(String name) {
+        Company company = new Company();
+        company.setName(name);
+        company.setCreatedAt(LocalDateTime.now());
+        return companyRepository.saveAndFlush(company);
     }
 
-    private Project createProject(String name, Customer customer, LocalDateTime createdAt) {
+    private Project createProject(String name, Company company, LocalDateTime createdAt) {
         Project project = new Project();
         project.setName(name);
-        project.setCustomer(customer);
+        project.setCompany(company);
         project.setStartDate(LocalDate.of(2026, 3, 1));
         project.setEndDate(LocalDate.of(2026, 12, 1));
         project.setStatus(ProjectStatus.IN_PROGRESS);
@@ -148,10 +147,10 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
         return projectRepository.saveAndFlush(project);
     }
 
-    private Project createProject(String name, Customer customer, ProjectStatus status) {
+    private Project createProject(String name, Company company, ProjectStatus status) {
         Project project = new Project();
         project.setName(name);
-        project.setCustomer(customer);
+        project.setCompany(company);
         project.setStartDate(LocalDate.of(2026, 3, 1));
         project.setEndDate(LocalDate.of(2026, 12, 1));
         project.setStatus(status);
@@ -159,11 +158,10 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
         return projectRepository.saveAndFlush(project);
     }
 
-    private void linkUserToProject(User user, Project project, UserProjectLevel level) {
+    private void linkUserToProject(User user, Project project) {
         ProjectUser link = new ProjectUser();
         link.setUser(user);
         link.setProject(project);
-        link.setAccessLevel(level);
         link.setCreatedAt(LocalDateTime.now());
         entityManager.persist(link);
         entityManager.flush();
