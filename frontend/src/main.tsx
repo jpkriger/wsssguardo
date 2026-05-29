@@ -6,7 +6,6 @@ import App from "./App.tsx";
 import Project from "./pages/Project.tsx";
 import ProjectsHome from "./pages/ProjectsHome";
 import Companies from "./pages/Companies";
-import GenericTableDemo from "./pages/GenericTableDemo";
 import { ProjectProvider } from "./contexts/ProjectProvider";
 
 createRoot(document.getElementById("root")!).render(
@@ -19,7 +18,6 @@ createRoot(document.getElementById("root")!).render(
             <Route path="project/:id" element={<Project />} />
             <Route path="/projects" element={<ProjectsHome />} />
             <Route path="/companies" element={<Companies />} />
-            <Route path="/demo/generic-table" element={<GenericTableDemo />} />
             {/* Adicionar novas rotas aqui */}
           </Route>
         </Routes>
