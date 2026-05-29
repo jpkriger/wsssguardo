@@ -35,14 +35,25 @@ import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
 import wsssguardo.user.repository.UserRepository;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @Autowired(required = false)
     private ObjectMapper objectMapper;
+
+    @jakarta.annotation.PostConstruct
+    public void initObjectMapper() {
+        if (objectMapper == null) {
+            objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        }
+    }
 
     @Autowired
     private UserRepository userRepository;
@@ -229,6 +240,7 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
     void updateProjectShouldNotAllowChangingCompanyId() throws Exception {
         Company originalCompany = createCompany("Original Corp");
         Project project = createProject("Test Project", originalCompany, ProjectStatus.IN_PROGRESS);
+        Company newCompany = createCompany("New Corp");
 
         ProjectUpdateRequest request = new ProjectUpdateRequest(
                 "Updated Name",
