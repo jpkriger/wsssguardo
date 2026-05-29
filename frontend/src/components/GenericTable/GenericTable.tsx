@@ -46,7 +46,7 @@ export default function GenericTable<T>({
     try {
       const saved = localStorage.getItem(`table-columns-${tableId}`);
       if (saved) {
-        return JSON.parse(saved);
+        return JSON.parse(saved) as Record<string, boolean>;
       }
     } catch {
       console.warn(`Failed to load column visibility for table ${tableId}`);
