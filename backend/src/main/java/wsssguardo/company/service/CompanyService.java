@@ -3,6 +3,7 @@ package wsssguardo.company.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import wsssguardo.company.mapper.CompanyUpdateMapper;
 import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.project.mapper.ProjectMapper;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -75,6 +77,10 @@ public class CompanyService {
     public void delete(UUID id) {
         Company company = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+
+        if (!projectRepository.findByCompanyId(id).isEmpty()) {
+            throw new ApiException("Cannot delete company with linked projects", HttpStatus.CONFLICT);
+        }
 
         repository.delete(company);
     }
