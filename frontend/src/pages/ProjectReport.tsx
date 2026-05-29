@@ -495,11 +495,11 @@ export default function ProjectReport(): ReactElement {
                     </Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
+                        <button
                           id="report-date"
-                          variant={"outline"}
+                          type="button"
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
                             !formState.date && "text-muted-foreground"
                           )}
                         >
@@ -509,7 +509,7 @@ export default function ProjectReport(): ReactElement {
                           ) : (
                             <span>Selecione uma data</span>
                           )}
-                        </Button>
+                        </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
