@@ -1,6 +1,6 @@
 import { ReactElement, useState, useMemo, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Search, Settings } from "lucide-react";
-import type { ColumnDefinition, GenericTableProps, TableState } from "./types";
+import type { GenericTableProps, TableState } from "./types";
 import "./GenericTable.css";
 
 /**
@@ -182,7 +182,7 @@ export default function GenericTable<T>({
   // Render sort indicator
   const renderSortIndicator = (columnId: string): string | null => {
     if (!enableSorting || tableState.sortColumn !== columnId) return null;
-    return tableState.sortDirection === "asc" ? "↑" : "↓";
+    return (tableState.sortDirection === "asc" ? "↑" : "↓") as string;
   };
 
   // Render header
