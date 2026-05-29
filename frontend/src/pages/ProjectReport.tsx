@@ -494,23 +494,20 @@ export default function ProjectReport(): ReactElement {
                       Data
                     </Label>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          id="report-date"
-                          type="button"
-                          className={cn(
-                            "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                            !formState.date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 size-4" />
-                          {formState.date ? (
-                            format(new Date(formState.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                        </button>
-                      </PopoverTrigger>
+                      <PopoverTrigger
+                        id="report-date"
+                      className={cn(
+                        "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                        !formState.date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 size-4" />
+                      {formState.date ? (
+                        format(new Date(formState.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })
+                      ) : (
+                      <span>Selecione uma data</span>
+                      )}
+                    </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
@@ -525,6 +522,7 @@ export default function ProjectReport(): ReactElement {
                           captionLayout="dropdown" 
                           fromYear={2025} 
                           toYear={2040}
+                          locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
