@@ -1,6 +1,17 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ChevronLeft, Expand } from "lucide-react";
+import { 
+  ChevronLeft, 
+  Expand, 
+  ChevronDown, 
+  EyeIcon, 
+  Download, 
+  File,
+  Calendar as CalendarIcon 
+} from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -12,6 +23,16 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { Calendar } from "../components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+
 import { projectsById, type ProjectResponse } from "../api/project";
 import {
   fetchRisksByProject,
@@ -20,10 +41,6 @@ import {
   type RiskSummaryResponse,
 } from "../api/risk";
 import { cn } from "../lib/utils";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { ChevronDown, EyeIcon, Download, File } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const DETAIL_LEVELS = [
   {
@@ -319,7 +336,6 @@ export default function ProjectReport(): ReactElement {
                     {REPORT_SECTIONS.map((section) => {
                       const skey = section.key;
                       const slabel = section.label;
-                      const sdesc = ""; 
                       const isRiskTable = skey === "riskTable";
 
                       return (
@@ -334,10 +350,6 @@ export default function ProjectReport(): ReactElement {
                                   {loadingRiskSummary || loadingProjectRisks
                                     ? "Carregando riscos..."
                                     : `${includedRisksCount}/${totalRisksCount} de riscos incluidos`}
-                                </div>
-                              ) : sdesc ? (
-                                <div className="mt-0.5 text-xs text-muted-foreground">
-                                  {sdesc}
                                 </div>
                               ) : null}
                             </div>
@@ -474,24 +486,48 @@ export default function ProjectReport(): ReactElement {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 flex flex-col">
                     <Label
                       className="text-muted-foreground"
                       htmlFor="report-date"
                     >
                       Data
                     </Label>
-                    <Input
-                      id="report-date"
-                      type="date"
-                      value={formState.date}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          date: event.target.value,
-                        }))
-                      }
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="report-date"
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formState.date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {formState.date ? (
+                            format(new Date(formState.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formState.date ? new Date(formState.date + "T12:00:00") : undefined}
+                          onSelect={(newDate) =>
+                            setFormState((current) => ({
+                              ...current,
+                              date: newDate ? newDate.toISOString().split("T")[0] : "",
+                            }))
+                          }
+                          initialFocus
+                          captionLayout="dropdown" 
+                          fromYear={2025} 
+                          toYear={2040}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-2">
