@@ -1,6 +1,6 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ChevronLeft, Expand, Eye } from "lucide-react";
+import { ChevronLeft, Expand } from "lucide-react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -11,7 +11,6 @@ import {
 } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import {} from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
 import { projectsById, type ProjectResponse } from "../api/project";
 import {
@@ -100,17 +99,7 @@ function buildInitialFormState(project: ProjectResponse | null): FormState {
 }
 
 function buildSectionState(): Record<string, boolean> {
-  if (!Array.isArray(REPORT_SECTIONS)) return {};
-  return Object.fromEntries(
-    REPORT_SECTIONS.map((s) => [
-      // support different shapes the user might have provided
-      (s as any).key ??
-        (s as any).id ??
-        (s as any).name ??
-        String(Math.random()),
-      true,
-    ]),
-  );
+  return Object.fromEntries(REPORT_SECTIONS.map((s) => [s.key, true]));
 }
 
 function buildRiskSelectionState(
@@ -299,7 +288,7 @@ export default function ProjectReport(): ReactElement {
                     key={level.value}
                     type="button"
                     aria-pressed={reportLevel === level.value}
-                    onClick={() => setReportLevel(level.value as DetailLevel)}
+                    onClick={() => setReportLevel(level.value)}
                     className={cn(
                       "flex flex-col items-start justify-center gap-1 rounded-md border border-border p-3 text-left text-sm transition-colors",
                       reportLevel === level.value
@@ -328,19 +317,9 @@ export default function ProjectReport(): ReactElement {
                 <div className="px-0 pb-4 pt-2">
                   <div className="space-y-3">
                     {REPORT_SECTIONS.map((section) => {
-                      const skey =
-                        (section as any).key ??
-                        (section as any).id ??
-                        (section as any).name ??
-                        "";
-                      const slabel =
-                        (section as any).label ??
-                        (section as any).title ??
-                        skey;
-                      const sdesc =
-                        (section as any).description ??
-                        (section as any).subtitle ??
-                        "";
+                      const skey = section.key;
+                      const slabel = section.label;
+                      const sdesc = ""; 
                       const isRiskTable = skey === "riskTable";
 
                       return (
