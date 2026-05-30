@@ -133,7 +133,7 @@ export default function ProjectReport(): ReactElement {
   );
   const [loadingRiskSummary, setLoadingRiskSummary] = useState(true);
   const [loadingProjectRisks, setLoadingProjectRisks] = useState(true);
-  const [reportLevel, setReportLevel] = useState<DetailLevel>(
+  const [_reportLevel, _setReportLevel] = useState<DetailLevel>(
     DETAIL_LEVELS[0].value,
   );
   const [formState, setFormState] = useState<FormState>(() =>
