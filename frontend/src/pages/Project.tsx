@@ -31,6 +31,26 @@ const TABS: ProjectTab[] = [
   ProjectTabs.Risks,
 ];
 
+function formatDateBr(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function parseProjectEndDate(value: string): Date {
+  const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = dateOnlyPattern.exec(value);
+
+  if (!match) {
+    return new Date(value);
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Summary);
   const { id: projectId } = useParams<{ id: string }>();
@@ -101,17 +121,34 @@ export default function Project(): ReactElement {
           <div className="flex items-center gap-2">
             {(() => {
               if (loadingProject || projectError) return null;
-              if (!project?.endDate) return (
-                <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">Sem prazo definido</span>
+              if (!project?.endDate)
+                return (
+                  <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                    Sem prazo definido
+                  </span>
+                );
+
+              const endDate = startOfDay(parseProjectEndDate(project.endDate));
+              const today = startOfDay(new Date());
+              const daysRemaining = Math.floor(
+                (endDate.getTime() - today.getTime()) / 86_400_000,
               );
-              const days = Math.ceil((new Date(project.endDate).getTime() - Date.now()) / 86_400_000);
+
+              if (daysRemaining < 0) {
+                return (
+                  <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                    {`Encerrado em ${formatDateBr(endDate)}`}
+                  </span>
+                );
+              }
+
               let colorText = "text-success";
-              if (days <= 7) colorText = "text-destructive";
-              else if (days <= 15) colorText = "text-warning";
+              if (daysRemaining <= 7) colorText = "text-destructive";
+              else if (daysRemaining <= 15) colorText = "text-warning";
 
               return (
                 <span className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}>
-                  {days > 0 ? `Entrega em ${days} dia${days === 1 ? "" : "s"}` : "Prazo encerrado"}
+                  {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
                 </span>
               );
             })()}
