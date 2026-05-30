@@ -2,6 +2,7 @@ package wsssguardo.asset.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -41,4 +42,5 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
             """, nativeQuery = true)
     List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
 
+    Optional<Asset> findByIdAndProjectId(UUID id, UUID projectId);
 }
