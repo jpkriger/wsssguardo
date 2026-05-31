@@ -1,7 +1,7 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router";
-import { ChevronLeft, Settings } from "lucide-react";
+import { ChevronLeft, FileDown, LoaderCircle, Settings } from "lucide-react";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
 import FindingList from "../components/FindingList/FindingList";
 import AssetTable from "../components/AssetTable/AssetTable";
@@ -11,7 +11,14 @@ import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { projectsById, type ProjectResponse, type ProjectStatus } from "../api/project";
+import {
+  buildReportRequest,
+  downloadReportArtifacts,
+  getReportErrorMessage,
+  generateReport,
+} from "../api/report";
 import { cn } from "../lib/utils";
+import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<ProjectStatus, { label: string; className: string }> = {
   IN_PROGRESS: {
@@ -56,6 +63,8 @@ export default function Project(): ReactElement {
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [projectError, setProjectError] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +109,28 @@ export default function Project(): ReactElement {
       cancelled = true;
     };
   }, [projectId]);
+
+  async function handleGenerateReport(): Promise<void> {
+    if (!project) {
+      setExportError("Não foi possível gerar o relatório sem um projeto carregado.");
+      return;
+    }
+
+    setExportLoading(true);
+    setExportError(null);
+
+    try {
+      const report = await generateReport(buildReportRequest(project));
+      await downloadReportArtifacts(report);
+      toast.success("Relatório gerado e arquivos baixados com sucesso.");
+    } catch (err: unknown) {
+      const message = getReportErrorMessage(err);
+      setExportError(message);
+      toast.error(message);
+    } finally {
+      setExportLoading(false);
+    }
+  }
 
   return (
     <section className="w-full">
@@ -151,8 +182,33 @@ export default function Project(): ReactElement {
             );
           })()}
         </div>
-        <Button>Gerar relatório</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => void handleGenerateReport()}
+            disabled={loadingProject || !!projectError || !project || exportLoading}
+            className="min-w-36"
+          >
+            {exportLoading ? (
+              <>
+                <LoaderCircle className="size-4 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <FileDown className="size-4" />
+                Gerar relatório
+              </>
+            )}
+          </Button>
+        </div>
       </div>
+
+      {exportError && (
+        <p className="mt-3 text-sm text-destructive" role="alert">
+          {exportError}
+        </p>
+      )}
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
         <ul className="grid grid-cols-2 gap-1 sm:grid-cols-5">
