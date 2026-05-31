@@ -1,13 +1,12 @@
 import { ReactElement, useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
-import { 
-  ChevronLeft, 
-  Expand, 
-  ChevronDown, 
-  EyeIcon, 
-  Download, 
+import { useParams } from "react-router";
+import {
+  Expand,
+  ChevronDown,
+  EyeIcon,
+  Download,
   File,
-  Calendar as CalendarIcon 
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +23,8 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Calendar } from "../components/ui/calendar";
+import ExecutiveSummary from "../components/ReportTemplate/ExecutiveSummary/ExecutiveSummary";
+import RiskOverview from "../components/ReportTemplate/RiskOverview/RiskOverview";
 import {
   Popover,
   PopoverContent,
@@ -271,16 +272,6 @@ export default function ProjectReport(): ReactElement {
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to={projectId ? `/project/${projectId}` : "/projects"}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="size-4" />
-          Voltar para o projeto
-        </Link>
-      </div>
-
       <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-card/80 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
           <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
@@ -496,32 +487,39 @@ export default function ProjectReport(): ReactElement {
                     <Popover>
                       <PopoverTrigger
                         id="report-date"
-                      className={cn(
-                        "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                        !formState.date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 size-4" />
-                      {formState.date ? (
-                        format(new Date(formState.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })
-                      ) : (
-                      <span>Selecione uma data</span>
-                      )}
-                    </PopoverTrigger>
+                        className={cn(
+                          "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                          !formState.date && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 size-4" />
+                        {formState.date ? (
+                          format(
+                            new Date(formState.date + "T12:00:00"),
+                            "dd/MM/yyyy",
+                            { locale: ptBR },
+                          )
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={formState.date ? new Date(formState.date + "T12:00:00") : undefined}
+                          selected={
+                            formState.date
+                              ? new Date(formState.date + "T12:00:00")
+                              : undefined
+                          }
                           onSelect={(newDate) =>
                             setFormState((current) => ({
                               ...current,
-                              date: newDate ? newDate.toISOString().split("T")[0] : "",
+                              date: newDate
+                                ? newDate.toISOString().split("T")[0]
+                                : "",
                             }))
                           }
-                          initialFocus
-                          captionLayout="dropdown" 
-                          fromYear={2025} 
-                          toYear={2040}
+                          captionLayout="dropdown"
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -608,7 +606,10 @@ export default function ProjectReport(): ReactElement {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1" />
+          <CardContent className="min-h-0 flex-1 space-y-4 p-5">
+            <ExecutiveSummary projectId={projectId} />
+            <RiskOverview projectId={projectId} />
+          </CardContent>
         </Card>
       </div>
     </section>
