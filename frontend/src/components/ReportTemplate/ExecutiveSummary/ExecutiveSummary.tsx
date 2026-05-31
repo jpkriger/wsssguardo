@@ -79,7 +79,7 @@ export default function ExecutiveSummary({
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <StatTile
-                icon={<File className="size-4 text-slate-500" />}
+                icon={<File className="size-4 text-slate-600" />}
                 label="RISCOS TOTAIS"
                 value={summary.riskCount}
               />
@@ -138,7 +138,7 @@ function StatTile({
     <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4">
       <div className="mt-0.5 p-2">{icon}</div>
       <div>
-        <div className="text-sm text-slate-500">{label}</div>
+        <div className="text-sm text-slate-600">{label}</div>
         <div className="mt-1 text-3xl font-semibold text-slate-900">
           {valueFormat === "decimal" ? (
             <>

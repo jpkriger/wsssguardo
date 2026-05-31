@@ -1,13 +1,12 @@
 import { ReactElement, useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
-import { 
-  ChevronLeft, 
-  Expand, 
-  ChevronDown, 
-  EyeIcon, 
-  Download, 
+import { useParams } from "react-router";
+import {
+  Expand,
+  ChevronDown,
+  EyeIcon,
+  Download,
   File,
-  Calendar as CalendarIcon 
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +23,8 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Calendar } from "../components/ui/calendar";
+import ExecutiveSummary from "../components/ReportTemplate/ExecutiveSummary/ExecutiveSummary";
+import RiskOverview from "../components/ReportTemplate/RiskOverview/RiskOverview";
 import {
   Popover,
   PopoverContent,
@@ -61,13 +62,13 @@ const DETAIL_LEVELS = [
 ] as const;
 
 const REPORT_SECTIONS = [
-  // {
-  //   key: "cover",
-  //   label: "Capa",
-  // },
+  {
+    key: "cover",
+    label: "Capa",
+  },
   {
     key: "summary",
-    label: "Resumo",
+    label: "Resumo executivo",
   },
   {
     key: "riskTable",
@@ -108,7 +109,7 @@ function getTodayIsoDate(): string {
 function buildInitialFormState(project: ProjectResponse | null): FormState {
   return {
     title: project?.name ?? "",
-    client: project?.companyId ?? "",
+    client: project?.customerId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
@@ -133,7 +134,7 @@ export default function ProjectReport(): ReactElement {
   );
   const [loadingRiskSummary, setLoadingRiskSummary] = useState(true);
   const [loadingProjectRisks, setLoadingProjectRisks] = useState(true);
-  const [_reportLevel, _setReportLevel] = useState<DetailLevel>(
+  const [reportLevel, setReportLevel] = useState<DetailLevel>(
     DETAIL_LEVELS[0].value,
   );
   const [formState, setFormState] = useState<FormState>(() =>
@@ -147,7 +148,6 @@ export default function ProjectReport(): ReactElement {
     Record<string, boolean>
   >({});
   const [riskTableExpanded, setRiskTableExpanded] = useState(false);
-  const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
 
   useEffect(() => {
     setFormState(buildInitialFormState(project));
@@ -272,16 +272,6 @@ export default function ProjectReport(): ReactElement {
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to={projectId ? `/project/${projectId}` : "/projects"}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="size-4" />
-          Voltar para o projeto
-        </Link>
-      </div>
-
       <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-card/80 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
           <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
@@ -292,8 +282,7 @@ export default function ProjectReport(): ReactElement {
 
           <CardContent className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <div className="space-y-5">
-              
-              {/* <div className="justify-between">
+              <div className="justify-between">
                 <div>
                   <CardTitle className="text-sm tracking-wider text-muted-foreground">
                     NÍVEL DE DETALHE
@@ -321,9 +310,9 @@ export default function ProjectReport(): ReactElement {
                     </div>
                   </button>
                 ))}
-              </div> 
-              Separator />*/}
-              
+              </div>
+
+              <Separator />
               <section>
                 <div className="justify-between">
                   <div>
@@ -339,13 +328,6 @@ export default function ProjectReport(): ReactElement {
                       const skey = section.key;
                       const slabel = section.label;
                       const isRiskTable = skey === "riskTable";
-                      const isRiskDetails = skey === "riskDetails";
-                      const isRiskDetailChild =
-                        skey === "assetsArtifacts" || skey === "recommendations";
-
-                      if (isRiskDetailChild) {
-                        return null;
-                      }
 
                       return (
                         <div key={skey} className="space-y-2">
@@ -382,30 +364,6 @@ export default function ProjectReport(): ReactElement {
                                     className={cn(
                                       "size-4 transition-transform",
                                       riskTableExpanded
-                                        ? "rotate-180"
-                                        : "rotate-0",
-                                    )}
-                                  />
-                                </button>
-                              ) : null}
-                              {isRiskDetails ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setRiskDetailsExpanded((current) => !current)
-                                  }
-                                  className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                  aria-label={
-                                    riskDetailsExpanded
-                                      ? "Recolher detalhamento de riscos"
-                                      : "Expandir detalhamento de riscos"
-                                  }
-                                  aria-expanded={riskDetailsExpanded}
-                                >
-                                  <ChevronDown
-                                    className={cn(
-                                      "size-4 transition-transform",
-                                      riskDetailsExpanded
                                         ? "rotate-180"
                                         : "rotate-0",
                                     )}
@@ -459,43 +417,6 @@ export default function ProjectReport(): ReactElement {
                                   Nenhum risco encontrado para este projeto.
                                 </div>
                               )}
-                            </div>
-                          ) : null}
-
-                          {isRiskDetails && riskDetailsExpanded ? (
-                            <div className="space-y-2 px-3 py-3">
-                              {REPORT_SECTIONS.filter(
-                                (item) =>
-                                  item.key === "assetsArtifacts" ||
-                                  item.key === "recommendations",
-                              ).map((childSection) => {
-                                const childKey = childSection.key;
-
-                                return (
-                                  <div
-                                    key={childKey}
-                                    className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2.5"
-                                  >
-                                    <div className="min-w-0">
-                                      <div className="block text-sm font-medium text-foreground">
-                                        {childSection.label}
-                                      </div>
-                                    </div>
-
-                                    <Switch
-                                      size="default"
-                                      checked={!!sectionsEnabled[childKey]}
-                                      onCheckedChange={(checked) =>
-                                        setSectionsEnabled((current) => ({
-                                          ...current,
-                                          [childKey]: !!checked,
-                                        }))
-                                      }
-                                      aria-label={`Ativar ${childSection.label}`}
-                                    />
-                                  </div>
-                                );
-                              })}
                             </div>
                           ) : null}
                         </div>
@@ -566,36 +487,39 @@ export default function ProjectReport(): ReactElement {
                     <Popover>
                       <PopoverTrigger
                         id="report-date"
-                              className={cn(
-                                "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                                !formState.date && "text-muted-foreground",
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 size-4" />
-                              {formState.date ? (
-                                format(
-                                  new Date(formState.date + "T12:00:00"),
-                                  "dd/MM/yyyy",
-                                  { locale: ptBR },
-                                )
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                            </PopoverTrigger>
+                        className={cn(
+                          "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                          !formState.date && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 size-4" />
+                        {formState.date ? (
+                          format(
+                            new Date(formState.date + "T12:00:00"),
+                            "dd/MM/yyyy",
+                            { locale: ptBR },
+                          )
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={formState.date ? new Date(formState.date + "T12:00:00") : undefined}
-                          onSelect={(newDate: Date | undefined) =>
+                          selected={
+                            formState.date
+                              ? new Date(formState.date + "T12:00:00")
+                              : undefined
+                          }
+                          onSelect={(newDate) =>
                             setFormState((current) => ({
                               ...current,
-                              date: newDate ? newDate.toISOString().split("T")[0] : "",
+                              date: newDate
+                                ? newDate.toISOString().split("T")[0]
+                                : "",
                             }))
                           }
-                          initialFocus
-                          captionLayout="dropdown" 
-                          fromYear={2025} 
-                          toYear={2040}
+                          captionLayout="dropdown"
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -682,7 +606,10 @@ export default function ProjectReport(): ReactElement {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1" />
+          <CardContent className="min-h-0 flex-1 space-y-4 p-5">
+            <ExecutiveSummary projectId={projectId} />
+            <RiskOverview projectId={projectId} />
+          </CardContent>
         </Card>
       </div>
     </section>
