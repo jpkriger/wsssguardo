@@ -274,7 +274,7 @@ export default function ProjectReport(): ReactElement {
     <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
       <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-card/80 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
-          <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
+          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border border-r border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
             <CardTitle className="text-primary">
               CONFIGURAÇÃO DO RELATÓRIO
             </CardTitle>
@@ -585,8 +585,8 @@ export default function ProjectReport(): ReactElement {
           </CardFooter>
         </Card>
 
-        <Card className="flex min-h-0 w-full flex-col rounded-none border-border bg-card/70 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)] lg:overflow-y-auto">
-          <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
+        <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-white py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
+          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border border-r border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
             <div className="flex w-full items-left justify-between gap-3">
               <div className="flex items-center gap-3">
                 <EyeIcon className="size-5 text-muted-foreground" />
@@ -606,7 +606,7 @@ export default function ProjectReport(): ReactElement {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1 space-y-4 p-5">
+          <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
             <ExecutiveSummary projectId={projectId} />
             <RiskOverview projectId={projectId} />
           </CardContent>
