@@ -44,8 +44,7 @@ export default function ReportHeader({
   }, [projectId]);
 
   return (
-    <header className="my-8 flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
-      {/* Esquerda: ícone + bloco de título */}
+    <header className="my-8 flex items-start justify-between gap-4 border-b border-slate-300 pb-6">
       <div className="flex items-start gap-3">
         <Shield
           className="mt-1 shrink-0 text-slate-800"
@@ -59,7 +58,6 @@ export default function ReportHeader({
           <p className="text-sm text-slate-500">
             Avaliação de Segurança Empresarial 2026
           </p>
-          {/* Empresa abaixo do subtítulo */}
           <div className="pt-5 space-y-0.5">
             <p className="text-sm text-slate-400">Empresa</p>
             <p className="text-base font-semibold text-slate-800">
