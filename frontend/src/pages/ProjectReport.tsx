@@ -25,6 +25,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Calendar } from "../components/ui/calendar";
 import ExecutiveSummary from "../components/ReportTemplate/ExecutiveSummary/ExecutiveSummary";
 import RiskOverview from "../components/ReportTemplate/RiskOverview/RiskOverview";
+import RiskAnalysis from "../components/ReportTemplate/RiskAnalysis/RiskAnalysis";
 import {
   Popover,
   PopoverContent,
@@ -43,6 +44,7 @@ import {
 } from "../api/risk";
 import { cn } from "../lib/utils";
 import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
+import BusinessImpactAssessment from "@/components/ReportTemplate/BusinessImpactAssessment/BusinessImpactAssessment";
 
 const DETAIL_LEVELS = [
   {
@@ -270,6 +272,19 @@ export default function ProjectReport(): ReactElement {
     (risk) => selectedRiskIds[risk.id],
   ).length;
   const totalRisksCount = riskSummary?.total ?? projectRisks.length;
+
+  function openFullscreenPreview(): void {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const routePrefix = window.location.pathname.includes("/projeto/")
+      ? "/projeto"
+      : "/project";
+    const fullscreenPath = `${routePrefix}/${projectId}/relatorio/fullscreen`;
+
+    window.open(`${window.location.origin}${fullscreenPath}`, "_blank", "noopener,noreferrer");
+  }
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
@@ -597,9 +612,11 @@ export default function ProjectReport(): ReactElement {
                 <div className="text-primary"> &bull; </div>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 aria-label="Expandir preview"
+                onClick={openFullscreenPreview}
                 className="text-muted-foreground border-muted-foreground hover:bg-muted/90"
               >
                 <Expand className="size-4 text-muted-foreground" />
@@ -611,6 +628,8 @@ export default function ProjectReport(): ReactElement {
             <ReportHeader projectId={projectId} />
             <ExecutiveSummary projectId={projectId} />
             <RiskOverview projectId={projectId} />
+            <RiskAnalysis projectId={projectId} />
+            <BusinessImpactAssessment />
           </CardContent>
         </Card>
       </div>

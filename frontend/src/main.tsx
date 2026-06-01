@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./App.tsx";
 import Project from "./pages/Project.tsx";
 import ProjectReport from "./pages/ProjectReport.tsx";
+import ProjectReportFullscreen from "./pages/ProjectReportFullscreen";
 import ProjectsHome from "./pages/ProjectsHome";
 import Companies from "./pages/Companies";
 import GenericTableDemo from "./pages/GenericTableDemo";
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <ProjectProvider>
         <Routes>
+          <Route path="project/:id/relatorio/fullscreen" element={<ProjectReportFullscreen />} />
           <Route element={<App />}>
             <Route index element={<ProjectsHome />} />
             <Route path="projeto/:id/relatorio" element={<ProjectReport />} />
