@@ -15,7 +15,9 @@ export default function ReportHeader({
   projectId,
   date = new Date(),
 }: ReportHeaderProps): ReactElement {
-  const [companyName, setCompanyName] = useState<string>("Carregando empresa...");
+  const [companyName, setCompanyName] = useState<string>(
+    "Carregando empresa...",
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -36,7 +38,9 @@ export default function ReportHeader({
     }
 
     void loadCompanyName();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   return (
@@ -64,7 +68,7 @@ export default function ReportHeader({
           </div>
         </div>
       </div>
-      
+
       <div className="flex flex-col items-end gap-4 shrink-0">
         <Badge
           variant="outline"
