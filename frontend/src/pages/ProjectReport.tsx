@@ -42,6 +42,7 @@ import {
   type RiskSummaryResponse,
 } from "../api/risk";
 import { cn } from "../lib/utils";
+import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
 
 const DETAIL_LEVELS = [
   {
@@ -607,6 +608,7 @@ export default function ProjectReport(): ReactElement {
             </div>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
+            <ReportHeader projectId={projectId} />
             <ExecutiveSummary projectId={projectId} />
             <RiskOverview projectId={projectId} />
           </CardContent>
