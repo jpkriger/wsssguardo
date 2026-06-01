@@ -66,28 +66,20 @@ const DETAIL_LEVELS = [
 
 const REPORT_SECTIONS = [
   {
-    key: "cover",
-    label: "Capa",
-  },
-  {
     key: "summary",
     label: "Resumo executivo",
   },
   {
     key: "riskTable",
-    label: "Tabela de Riscos",
+    label: "Visão Geral dos Riscos",
   },
   {
     key: "riskDetails",
-    label: "Detalhamento de Riscos",
+    label: "Análise dos Riscos",
   },
   {
-    key: "assetsArtifacts",
-    label: "Ativos e Artefatos",
-  },
-  {
-    key: "recommendations",
-    label: "Recomendações",
+    key: "impactAssessment",
+    label: "Avaliação de Impacto",
   },
 ] as const;
 
@@ -150,7 +142,7 @@ export default function ProjectReport(): ReactElement {
   const [selectedRiskIds, setSelectedRiskIds] = useState<
     Record<string, boolean>
   >({});
-  const [riskTableExpanded, setRiskTableExpanded] = useState(false);
+  const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
 
   useEffect(() => {
     setFormState(buildInitialFormState(project));
@@ -273,19 +265,6 @@ export default function ProjectReport(): ReactElement {
   ).length;
   const totalRisksCount = riskSummary?.total ?? projectRisks.length;
 
-  function openFullscreenPreview(): void {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const routePrefix = window.location.pathname.includes("/projeto/")
-      ? "/projeto"
-      : "/project";
-    const fullscreenPath = `${routePrefix}/${projectId}/relatorio/fullscreen`;
-
-    window.open(`${window.location.origin}${fullscreenPath}`, "_blank", "noopener,noreferrer");
-  }
-
   return (
     <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
       <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
@@ -329,6 +308,7 @@ export default function ProjectReport(): ReactElement {
               </div>
 
               <Separator />
+
               <section>
                 <div className="justify-between">
                   <div>
@@ -343,7 +323,7 @@ export default function ProjectReport(): ReactElement {
                     {REPORT_SECTIONS.map((section) => {
                       const skey = section.key;
                       const slabel = section.label;
-                      const isRiskTable = skey === "riskTable";
+                      const isRiskDetails = skey === "riskDetails";
 
                       return (
                         <div key={skey} className="space-y-2">
@@ -352,34 +332,36 @@ export default function ProjectReport(): ReactElement {
                               <div className="block text-base font-medium text-foreground">
                                 {slabel}
                               </div>
-                              {isRiskTable ? (
+                              {isRiskDetails ? (
                                 <div className="mt-0.5 text-xs text-muted-foreground">
                                   {loadingRiskSummary || loadingProjectRisks
                                     ? "Carregando riscos..."
-                                    : `${includedRisksCount}/${totalRisksCount} de riscos incluidos`}
+                                    : `${includedRisksCount}/${totalRisksCount} riscos incluídos`}
                                 </div>
                               ) : null}
                             </div>
 
                             <div className="flex items-center gap-2">
-                              {isRiskTable ? (
+                              {isRiskDetails ? (
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setRiskTableExpanded((current) => !current)
+                                    setRiskDetailsExpanded(
+                                      (current) => !current,
+                                    )
                                   }
                                   className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                   aria-label={
-                                    riskTableExpanded
+                                    riskDetailsExpanded
                                       ? "Recolher riscos"
                                       : "Expandir riscos"
                                   }
-                                  aria-expanded={riskTableExpanded}
+                                  aria-expanded={riskDetailsExpanded}
                                 >
                                   <ChevronDown
                                     className={cn(
                                       "size-4 transition-transform",
-                                      riskTableExpanded
+                                      riskDetailsExpanded
                                         ? "rotate-180"
                                         : "rotate-0",
                                     )}
@@ -400,7 +382,7 @@ export default function ProjectReport(): ReactElement {
                             </div>
                           </div>
 
-                          {isRiskTable && riskTableExpanded ? (
+                          {isRiskDetails && riskDetailsExpanded ? (
                             <div className="space-y-2 px-3 py-3">
                               {projectRisks.length > 0 ? (
                                 projectRisks.map((risk) => (
@@ -441,6 +423,7 @@ export default function ProjectReport(): ReactElement {
                   </div>
                 </div>
               </section>
+
               <Separator />
 
               <div className="justify-between">
@@ -616,7 +599,6 @@ export default function ProjectReport(): ReactElement {
                 variant="outline"
                 size="sm"
                 aria-label="Expandir preview"
-                onClick={openFullscreenPreview}
                 className="text-muted-foreground border-muted-foreground hover:bg-muted/90"
               >
                 <Expand className="size-4 text-muted-foreground" />
@@ -626,10 +608,21 @@ export default function ProjectReport(): ReactElement {
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
             <ReportHeader projectId={projectId} />
-            <ExecutiveSummary projectId={projectId} />
-            <RiskOverview projectId={projectId} />
-            <RiskAnalysis projectId={projectId} />
-            <BusinessImpactAssessment />
+            {sectionsEnabled["summary"] && (
+              <ExecutiveSummary projectId={projectId} />
+            )}
+            {sectionsEnabled["riskTable"] && (
+              <RiskOverview projectId={projectId} />
+            )}
+            {sectionsEnabled["riskDetails"] && (
+              <RiskAnalysis
+                projectId={projectId}
+                selectedRiskIds={selectedRiskIds}
+              />
+            )}
+            {sectionsEnabled["impactAssessment"] && (
+              <BusinessImpactAssessment />
+            )}
           </CardContent>
         </Card>
       </div>
