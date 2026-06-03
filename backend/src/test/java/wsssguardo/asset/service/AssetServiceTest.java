@@ -232,32 +232,30 @@ class AssetServiceTest {
     @Test
     void deleteAsset_Found_DeletesEntity() {
         UUID id = UUID.randomUUID();
-        UUID projectId = UUID.randomUUID();
         String username = "testUser";
         Asset asset = new Asset();
 
-        when(repository.findByIdAndProjectId(id, projectId)).thenReturn(Optional.of(asset));
+        when(repository.findById(id)).thenReturn(Optional.of(asset));
         when(repository.existsActiveFindLink(id)).thenReturn(false);
 
-        service.deleteAsset(projectId, id, username);
+        service.deleteAsset(id, username);
 
-        verify(repository).findByIdAndProjectId(id, projectId);
+        verify(repository).findById(id);
         verify(assetMapper).deleteEntity(asset, username);
     }
 
     @Test
     void deleteAsset_WithLinkedFindings_ThrowsConflict() {
         UUID id = UUID.randomUUID();
-        UUID projectId = UUID.randomUUID();
         String username = "testUser";
         Asset asset = new Asset();
 
-        when(repository.findByIdAndProjectId(id, projectId)).thenReturn(Optional.of(asset));
+        when(repository.findById(id)).thenReturn(Optional.of(asset));
         when(repository.existsActiveFindLink(id)).thenReturn(true);
 
-        assertThrows(ApiException.class, () -> service.deleteAsset(projectId, id, username));
+        assertThrows(ApiException.class, () -> service.deleteAsset(id, username));
 
-        verify(repository).findByIdAndProjectId(id, projectId);
+        verify(repository).findById(id);
         verify(repository).existsActiveFindLink(id);
         verify(assetMapper, never()).deleteEntity(any(), anyString());
     }
@@ -265,13 +263,12 @@ class AssetServiceTest {
     @Test
     void deleteAsset_NotFound_ThrowsException() {
         UUID id = UUID.randomUUID();
-        UUID projectId = UUID.randomUUID();
         String username = "testUser";
 
-        when(repository.findByIdAndProjectId(id, projectId)).thenReturn(Optional.empty());
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.deleteAsset(projectId, id, username));
-        verify(repository).findByIdAndProjectId(id, projectId);
+        assertThrows(ResourceNotFoundException.class, () -> service.deleteAsset(id, username));
+        verify(repository).findById(id);
         verifyNoInteractions(assetMapper);
     }
 }

@@ -348,11 +348,10 @@ export default function AssetTable(): ReactElement {
                   <button
                     key={p}
                     className={`w-8 h-8 rounded-md text-sm transition-colors
-              ${
-                p === displayPage
-                  ? "text-foreground font-semibold border border-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              ${p === displayPage
+                        ? "text-foreground font-semibold border border-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
                     onClick={() => void loadAssets((p as number) - 1)}
                   >
                     {p}
