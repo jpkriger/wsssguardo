@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiErrorResponse } from "./errors";
-import { listProjects, projectsById, projectsByUserId } from "./project";
+import { createProject, listProjects, projectsById, projectsByUserId } from "./project";
 
 describe("project api", () => {
   afterEach(() => {
@@ -139,6 +139,49 @@ describe("project api", () => {
       errorType: "Not Found",
       message: "User not found",
       path: "/api/projects",
+    });
+  });
+
+  it("createProject sends riskConfig in POST body", async () => {
+    const payload = {
+      id: "018f2f32-ff0a-7c30-9dfa-a9f765432201",
+      name: "New Audit",
+      companyId: "018f2f32-ff0a-7c30-9dfa-a9f765432103",
+      startDate: "2026-04-01",
+      endDate: "2026-06-01",
+      status: "IN_PROGRESS",
+    };
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 201 }),
+      );
+
+    const riskConfig = {
+      minRange: 0,
+      maxRange: 10,
+      categories: [
+        { label: "Baixo", minRange: 0, maxRange: 3 },
+        { label: "Médio", minRange: 4, maxRange: 7 },
+        { label: "Alto", minRange: 8, maxRange: 10 },
+      ],
+    };
+
+    const request = {
+      name: "New Audit",
+      companyId: "018f2f32-ff0a-7c30-9dfa-a9f765432103",
+      startDate: "2026-04-01",
+      endDate: "2026-06-01",
+      riskConfig,
+    };
+
+    await expect(createProject(request)).resolves.toEqual(payload);
+
+    expect(fetchSpy).toHaveBeenCalledWith("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
     });
   });
 });

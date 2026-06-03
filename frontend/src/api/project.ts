@@ -1,4 +1,5 @@
 import { parseApiErrorResponse } from "./errors";
+import type { RiskConfigDTO } from "./projectConfiguration";
 
 export type ProjectStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
 
@@ -16,6 +17,7 @@ export interface CreateProjectRequest {
   companyId: string;
   startDate: string | null;
   endDate: string | null;
+  riskConfig: RiskConfigDTO;
 }
 
 export interface UpdateProjectRequest {
