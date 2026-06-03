@@ -108,7 +108,7 @@ function getTodayIsoDate(): string {
 function buildInitialFormState(project: ProjectResponse | null): FormState {
   return {
     title: project?.name ?? "",
-    client: project?.customerId ?? "",
+    client: project?.companyId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",

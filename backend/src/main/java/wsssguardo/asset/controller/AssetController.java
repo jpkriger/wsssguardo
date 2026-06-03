@@ -61,9 +61,9 @@ public class AssetController {
 
     @Operation(summary = "Excluir ativo")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAsset(@PathVariable UUID projectId, @PathVariable UUID id) {
+    public ResponseEntity<Void> deleteAsset(@PathVariable UUID id) {
         var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
-        service.deleteAsset(projectId, id, username);
+        service.deleteAsset(id, username);
         return ResponseEntity.noContent().build();
     }
 
