@@ -86,7 +86,7 @@ public class AssetMapper {
     // --- métodos de campo: responsabilidade única, retornam se houve mudança ---
 
     boolean applyName(Asset asset, String name) {
-        if (name == null) {
+        if (name == null || name.trim().isBlank()) {
             return false;
         }
         asset.setName(name);

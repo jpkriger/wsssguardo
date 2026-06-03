@@ -68,8 +68,9 @@ public class AssetService {
     }
 
     @Transactional
-    public void deleteAsset(UUID id, String username) {
-        var asset = repository.findById(id)
+    public void deleteAsset(UUID projectId, UUID id, String username) {
+        // TODO: Validar usuario tem autorizacao para excluir
+        var asset = repository.findByIdAndProjectId(id, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
 
         if (repository.existsActiveFindLink(id)) {
