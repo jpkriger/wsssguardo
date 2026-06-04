@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="0010-drop-risks-damage-assets-fk-asset" author="matheuskur">
+        <dropForeignKeyConstraint baseTableName="risks_damage_assets"
+                                  constraintName="fk_risdamass_on_asset"/>
+    </changeSet>
+    <changeSet id="0010-drop-risks-damage-assets-fk-risk" author="matheuskur">
+        <dropForeignKeyConstraint baseTableName="risks_damage_assets"
+                                  constraintName="fk_risdamass_on_risk"/>
+    </changeSet>
+    <changeSet id="0010-drop-risks-damage-assets-table" author="matheuskur">
+        <dropTable tableName="risks_damage_assets"/>
+    </changeSet>
+    <changeSet id="0010-add-users-auth-sub" author="matheuskur">
+        <addColumn tableName="users">
+            <column name="auth_sub" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="0010-drop-project-users-access-level" author="matheuskur">
+        <dropColumn tableName="project_users" columnName="access_level"/>
+    </changeSet>
+    <changeSet id="0010-rename-projects-customer-id-to-company-id" author="matheuskur">
+        <renameColumn tableName="projects"
+                      oldColumnName="customer_id"
+                      newColumnName="company_id"
+                      columnDataType="UUID"/>
+    </changeSet>
+    <changeSet id="0010-rename-customers-table-to-companies" author="matheuskur">
+        <renameTable oldTableName="customers" newTableName="companies"/>
+    </changeSet>
+    <changeSet id="0010-rename-customers-pk-to-companies" author="matheuskur">
+        <sql>ALTER TABLE companies RENAME CONSTRAINT pk_customers TO pk_companies</sql>
+    </changeSet>
+    <changeSet id="0010-rename-projects-customer-fk-to-company" author="matheuskur">
+        <sql>ALTER TABLE projects RENAME CONSTRAINT fk_projects_on_customer TO fk_projects_on_company</sql>
+    </changeSet>
+</databaseChangeLog>

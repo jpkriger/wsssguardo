@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import wsssguardo.asset.Asset;
-import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
@@ -43,7 +41,6 @@ public class RiskServiceImpl implements RiskService {
   private final RiskRepository repository;
   private final ProjectRepository projectRepository;
   private final FindRepository findRepository;
-  private final AssetRepository assetRepository;
   private final RiskMapper mapper;
 
   @Override
@@ -52,9 +49,8 @@ public class RiskServiceImpl implements RiskService {
     Project project = projectRepository.findById(request.projectId())
         .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
     List<Find> finds = findByIds(request.findIds(), findRepository, "Find", project.getId());
-    List<Asset> damageAssets = findByIds(request.damageAssetIds(), assetRepository, "Asset", project.getId());
 
-    Risk risk = mapper.toEntity(request, project, finds, damageAssets, username);
+    Risk risk = mapper.toEntity(request, project, finds, username);
     Risk savedRisk = repository.save(risk);
     return mapper.toResponse(savedRisk);
   }
@@ -111,11 +107,8 @@ public class RiskServiceImpl implements RiskService {
     List<Find> finds = dto.findIds() != null
         ? findByIds(dto.findIds(), findRepository, "Find", projectId)
         : null;
-    List<Asset> assets = dto.assetIds() != null
-        ? findByIds(dto.assetIds(), assetRepository, "Asset", projectId)
-        : null;
 
-    risk = mapper.updateEntity(risk, dto, finds, assets, null);
+    risk = mapper.updateEntity(risk, dto, finds, null);
 
     return mapper.toResponse(repository.save(risk));
   }
@@ -150,18 +143,12 @@ public class RiskServiceImpl implements RiskService {
       throw new ResourceNotFoundException(resourceName, missingId);
     }
 
-    // Validate that the entities belong to the project
     for (T entity : entities) {
       if (entity instanceof Find f && !f.getProject().getId().equals(projectId)) {
         throw new ApiException("Find " + f.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
       }
-      if (entity instanceof Asset a && !a.getProject().getId().equals(projectId)) {
-        throw new ApiException("Asset " + a.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
-      }
     }
 
-            
     return new ArrayList<>(uniqueIds.stream().map(entitiesById::get).toList());
   }
 }
-            

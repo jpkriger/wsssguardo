@@ -162,11 +162,15 @@ export default function Companies(): ReactElement {
         endDate: data.endDate || null,
       });
     } else {
+      if (!data.riskConfig) {
+        throw new Error("Configuração de risco é obrigatória para criar um projeto.");
+      }
       await createProject({
         name: data.name,
-        customerId: targetCompanyId,
+        companyId: targetCompanyId,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        riskConfig: data.riskConfig,
       });
     }
     await loadCompanies();

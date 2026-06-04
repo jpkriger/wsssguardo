@@ -8,6 +8,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,7 @@ import wsssguardo.asset.mapper.AssetMapper;
 import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 import java.util.List;
@@ -232,11 +236,28 @@ class AssetServiceTest {
         Asset asset = new Asset();
 
         when(repository.findById(id)).thenReturn(Optional.of(asset));
+        when(repository.existsActiveFindLink(id)).thenReturn(false);
 
         service.deleteAsset(id, username);
 
         verify(repository).findById(id);
         verify(assetMapper).deleteEntity(asset, username);
+    }
+
+    @Test
+    void deleteAsset_WithLinkedFindings_ThrowsConflict() {
+        UUID id = UUID.randomUUID();
+        String username = "testUser";
+        Asset asset = new Asset();
+
+        when(repository.findById(id)).thenReturn(Optional.of(asset));
+        when(repository.existsActiveFindLink(id)).thenReturn(true);
+
+        assertThrows(ApiException.class, () -> service.deleteAsset(id, username));
+
+        verify(repository).findById(id);
+        verify(repository).existsActiveFindLink(id);
+        verify(assetMapper, never()).deleteEntity(any(), anyString());
     }
 
     @Test

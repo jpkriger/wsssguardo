@@ -7,7 +7,6 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import wsssguardo.asset.Asset;
 import wsssguardo.find.Find;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
@@ -19,8 +18,7 @@ import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 @Component
 public class RiskMapper {
 
-  public Risk toEntity(RiskCreateRequestDTO request, Project project, List<Find> finds,
-      List<Asset> damageAssets, String username) {
+  public Risk toEntity(RiskCreateRequestDTO request, Project project, List<Find> finds, String username) {
     Risk risk = Risk.builder()
         .project(project)
         .name(request.name().trim())
@@ -30,7 +28,6 @@ public class RiskMapper {
         .occurrenceProbability(request.occurrenceProbability())
         .impactProbability(request.impactProbability())
         .damageOperations(request.damageOperations())
-        .damageAssets(damageAssets)
         .damageIndividuals(request.damageIndividuals())
         .damageOtherOrgs(request.damageOtherOrgs())
         .recommendation(request.recommendation())
@@ -51,7 +48,6 @@ public class RiskMapper {
         risk.getOccurrenceProbability(),
         risk.getImpactProbability(),
         risk.getDamageOperations(),
-        idsFromAssets(risk.getDamageAssets()),
         risk.getDamageIndividuals(),
         risk.getDamageOtherOrgs(),
         risk.getRecommendation(),
@@ -73,8 +69,7 @@ public class RiskMapper {
     );
   }
 
-  public Risk updateEntity(Risk risk, RiskUpdateRequestDTO request,
-                           List<Find> finds, List<Asset> damageAssets, String username) {
+  public Risk updateEntity(Risk risk, RiskUpdateRequestDTO request, List<Find> finds, String username) {
     boolean changed = false;
 
     changed |= applyName(risk, request.name());
@@ -84,7 +79,6 @@ public class RiskMapper {
     changed |= applyImpactProbability(risk, request.impactProbability());
     changed |= applyDamageOperations(risk, request.damageOperations());
     changed |= applyFinds(risk, finds);
-    changed |= applyDamageAssets(risk, damageAssets);
     changed |= applyDamageIndividuals(risk, request.damageIndividuals());
     changed |= applyDamageOtherOrgs(risk, request.damageOtherOrgs());
     changed |= applyRecommendation(risk, request.recommendation());
@@ -109,13 +103,6 @@ public class RiskMapper {
     return finds.stream().map(Find::getId).toList();
   }
 
-  private List<UUID> idsFromAssets(List<Asset> assets) {
-    if (assets == null || assets.isEmpty()) {
-      return List.of();
-    }
-    return assets.stream().map(Asset::getId).toList();
-  }
-
   // --- field-level apply methods ---
 
   boolean applyName(Risk r, String v)                        { if (v == null) return false; r.setName(v); return true; }
@@ -131,12 +118,6 @@ public class RiskMapper {
     return true;
   }
 
-  boolean applyDamageAssets(Risk r, List<Asset> v) {
-    if (v == null) return false;
-    r.getDamageAssets().clear();
-    r.getDamageAssets().addAll(v);
-    return true;
-  }
   boolean applyDamageIndividuals(Risk r, String v)           { if (v == null) return false; r.setDamageIndividuals(v); return true; }
   boolean applyDamageOtherOrgs(Risk r, String v)             { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
   boolean applyRecommendation(Risk r, String v)              { if (v == null) return false; r.setRecommendation(v); return true; }

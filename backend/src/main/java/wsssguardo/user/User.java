@@ -32,9 +32,6 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    /* TODO: Configurar quando implementar autenticação
-    @OneToMany(mappedBy = "user")
-    private List<AuthCredential> authCredentials; 
-    */
-    
+    @Column(name = "auth_sub")
+    private String authSub;
 }

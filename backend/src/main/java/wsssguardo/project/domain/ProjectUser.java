@@ -39,8 +39,4 @@ public class ProjectUser extends BaseEntity {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "access_level", nullable = false)
-    private UserProjectLevel accessLevel;
-
 }

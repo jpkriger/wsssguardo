@@ -1,11 +1,12 @@
 import { parseApiErrorResponse } from "./errors";
+import type { RiskConfigDTO } from "./projectConfiguration";
 
 export type ProjectStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
 
 export interface ProjectResponse {
   id: string;
   name: string;
-  customerId: string;
+  companyId: string;
   startDate: string | null;
   endDate: string | null;
   status: ProjectStatus;
@@ -13,9 +14,10 @@ export interface ProjectResponse {
 
 export interface CreateProjectRequest {
   name: string;
-  customerId: string;
+  companyId: string;
   startDate: string | null;
   endDate: string | null;
+  riskConfig: RiskConfigDTO;
 }
 
 export interface UpdateProjectRequest {

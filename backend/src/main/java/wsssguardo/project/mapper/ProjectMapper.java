@@ -12,7 +12,7 @@ public class ProjectMapper {
         return new ProjectResponse(
             project.getId(),
             project.getName(),
-            project.getCustomer() != null ? project.getCustomer().getId() : null,
+            project.getCompany() != null ? project.getCompany().getId() : null,
             project.getStartDate(),
             project.getEndDate(),
             project.getStatus()
