@@ -7,19 +7,19 @@ import { getProjectSummary, type ProjectSummaryDTO } from "@/api/project";
 
 interface ExecutiveSummaryProps {
   projectId?: string;
-  mockCriticalRisks?: number;
-  mockHighRisks?: number;
+  customSummary?: string;
+  highRisks?: number;
+  mediumRisks?: number;
   mockWssScore?: number;
 }
 
-const DEFAULT_MOCK_CRITICAL_RISKS = 2;
-const DEFAULT_MOCK_HIGH_RISKS = 5;
 const DEFAULT_MOCK_WSS_SCORE = 8.7;
 
 export default function ExecutiveSummary({
   projectId,
-  mockCriticalRisks = DEFAULT_MOCK_CRITICAL_RISKS,
-  mockHighRisks = DEFAULT_MOCK_HIGH_RISKS,
+  customSummary,
+  highRisks = 0,
+  mediumRisks = 0,
   mockWssScore = DEFAULT_MOCK_WSS_SCORE,
 }: ExecutiveSummaryProps): ReactElement {
   const [summary, setSummary] = useState<ProjectSummaryDTO | null>(null);
@@ -93,13 +93,13 @@ export default function ExecutiveSummary({
                 />
                 <StatTile
                   icon={<TriangleAlert className="size-4 text-red-500" />}
-                  label="RISCOS CRÍTICOS"
-                  value={mockCriticalRisks}
+                  label="RISCOS ALTOS"
+                  value={highRisks}
                 />
                 <StatTile
-                  icon={<TriangleAlert className="size-4 text-amber-500" />}
-                  label="RISCOS ALTOS"
-                  value={mockHighRisks}
+                  icon={<TriangleAlert className="size-4 text-yellow-500" />}
+                  label="RISCOS MÉDIOS"
+                  value={mediumRisks}
                 />
                 <StatTile
                   icon={<Shield className="size-4" />}
@@ -109,21 +109,20 @@ export default function ExecutiveSummary({
                 />
               </div>
 
-              <Card className="border border-slate-200 bg-white shadow-none">
-                <CardContent className="p-4 text-left">
-                  <div className="flex flex-col gap-2 items-start">
-                    <div className="text-sm font-medium text-slate-900">
-                      RESUMO
+              {customSummary && (
+                <Card className="border border-slate-200 bg-white shadow-none">
+                  <CardContent className="p-4 text-left">
+                    <div className="flex flex-col gap-2 items-start">
+                      <div className="text-sm font-medium text-slate-900">
+                        RESUMO
+                      </div>
+                      <p className="text-sm text-slate-600 whitespace-pre-wrap">
+                        {customSummary}
+                      </p>
                     </div>
-                    <p className="text-sm text-slate-600">
-                      Este projeto possui {summary.riskCount} riscos no total,
-                      com {mockCriticalRisks} crítico(s), {mockHighRisks}{" "}
-                      alto(s) e um WSS Score de {formatScore(mockWssScore)} em
-                      uma escala de 0 a 10.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </CardContent>
