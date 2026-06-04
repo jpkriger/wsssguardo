@@ -42,6 +42,7 @@ import {
   type RiskResponse,
   type RiskSummaryResponse,
 } from "../api/risk";
+import { listCompanies } from "../api/company";
 import { cn } from "../lib/utils";
 import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
 import BusinessImpactAssessment from "@/components/ReportTemplate/BusinessImpactAssessment/BusinessImpactAssessment";
@@ -101,10 +102,10 @@ function getTodayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildInitialFormState(project: ProjectResponse | null): FormState {
+function buildInitialFormState(project: ProjectResponse | null, companyName?: string): FormState {
   return {
     title: project?.name ?? "",
-    client: project?.customerId ?? "",
+    client: companyName ?? project?.customerId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
@@ -124,6 +125,7 @@ function buildRiskSelectionState(
 export default function ProjectReport(): ReactElement {
   const { id: projectId } = useParams<{ id: string }>();
   const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [companyName, setCompanyName] = useState<string | undefined>();
   const [riskSummary, setRiskSummary] = useState<RiskSummaryResponse | null>(
     null,
   );
@@ -145,8 +147,8 @@ export default function ProjectReport(): ReactElement {
   const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
 
   useEffect(() => {
-    setFormState(buildInitialFormState(project));
-  }, [project]);
+    setFormState(buildInitialFormState(project, companyName));
+  }, [project, companyName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,6 +181,35 @@ export default function ProjectReport(): ReactElement {
       cancelled = true;
     };
   }, [projectId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompanyNameData(): Promise<void> {
+      if (!project?.customerId) {
+        setCompanyName(undefined);
+        return;
+      }
+
+      try {
+        const companies = await listCompanies();
+        if (cancelled) return;
+
+        const company = companies.find((c) => c.id === project.customerId);
+        setCompanyName(company?.name);
+      } catch {
+        if (!cancelled) {
+          setCompanyName(undefined);
+        }
+      }
+    }
+
+    void loadCompanyNameData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [project?.customerId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -607,9 +638,19 @@ export default function ProjectReport(): ReactElement {
             </div>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
-            <ReportHeader projectId={projectId} />
+            <ReportHeader 
+              projectId={projectId} 
+              title={formState.title}
+              client={formState.client}
+              date={new Date(formState.date + "T12:00:00")}
+            />
             {sectionsEnabled["summary"] && (
-              <ExecutiveSummary projectId={projectId} />
+              <ExecutiveSummary 
+                projectId={projectId} 
+                customSummary={formState.summary}
+                highRisks={riskSummary?.highRisks}
+                mediumRisks={riskSummary?.mediumRisks}
+              />
             )}
             {sectionsEnabled["riskTable"] && (
               <RiskOverview projectId={projectId} />

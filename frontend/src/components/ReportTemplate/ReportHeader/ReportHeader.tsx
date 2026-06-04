@@ -9,11 +9,15 @@ import { Link } from "react-router";
 interface ReportHeaderProps {
   projectId?: string;
   date?: Date;
+  title?: string;
+  client?: string;
 }
 
 export default function ReportHeader({
   projectId,
   date = new Date(),
+  title = "Relatório Executivo de Risco de Segurança",
+  client,
 }: ReportHeaderProps): ReactElement {
   const [companyName, setCompanyName] = useState<string>(
     "Carregando empresa...",
@@ -76,7 +80,7 @@ export default function ReportHeader({
       </div>
         <div className="space-y-0.5">
           <h1 className="text-3xl font-bold text-slate-800 leading-tight">
-            Relatório Executivo de Risco de Segurança
+            {title}
           </h1>
           <p className="text-sm text-slate-500">
             Avaliação de Segurança Empresarial 2026
@@ -84,7 +88,7 @@ export default function ReportHeader({
           <div className="pt-5 space-y-0.5">
             <p className="text-sm text-slate-400">Empresa</p>
             <p className="text-base font-semibold text-slate-800">
-              {companyName}
+              {client ?? companyName}
             </p>
           </div>
         </div>
