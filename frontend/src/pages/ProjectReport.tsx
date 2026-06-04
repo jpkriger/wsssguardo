@@ -42,6 +42,26 @@ import {
 } from "../api/risk";
 import { cn } from "../lib/utils";
 
+function formatDateBr(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function parseProjectEndDate(value: string): Date {
+  const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = dateOnlyPattern.exec(value);
+
+  if (!match) {
+    return new Date(value);
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 const DETAIL_LEVELS = [
   {
     value: "executive",
@@ -128,6 +148,8 @@ function buildRiskSelectionState(
 export default function ProjectReport(): ReactElement {
   const { id: projectId } = useParams<{ id: string }>();
   const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+  const [projectError, setProjectError] = useState<string | null>(null);
   const [riskSummary, setRiskSummary] = useState<RiskSummaryResponse | null>(
     null,
   );
@@ -158,8 +180,13 @@ export default function ProjectReport(): ReactElement {
     async function loadProject(): Promise<void> {
       if (!projectId) {
         setProject(null);
+        setProjectError("Projeto inválido.");
+        setLoadingProject(false);
         return;
       }
+
+      setLoadingProject(true);
+      setProjectError(null);
 
       try {
         const [response] = await projectsById([projectId]);
@@ -167,13 +194,20 @@ export default function ProjectReport(): ReactElement {
 
         if (!response) {
           setProject(null);
+          setProjectError("Projeto não encontrado.");
           return;
         }
 
         setProject(response);
-      } catch {
+      } catch (err: unknown) {
         if (cancelled) return;
-        setProject(null);
+        const message =
+          err instanceof Error ? err.message : "Erro ao carregar projeto";
+        setProjectError(message);
+      } finally {
+        if (!cancelled) {
+          setLoadingProject(false);
+        }
       }
     }
 
@@ -270,8 +304,8 @@ export default function ProjectReport(): ReactElement {
   const totalRisksCount = riskSummary?.total ?? projectRisks.length;
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="flex h-full min-h-0 flex-col w-full">
+      <div>
         <Link
           to={projectId ? `/project/${projectId}` : "/projects"}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -279,9 +313,61 @@ export default function ProjectReport(): ReactElement {
           <ChevronLeft className="size-4" />
           Voltar para o projeto
         </Link>
+
+        <header className="mt-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+              {project?.name ?? "Projeto"}
+            </h1>
+
+            <div className="flex items-center gap-2">
+              {(() => {
+                if (loadingProject || projectError) return null;
+                if (!project?.endDate)
+                  return (
+                    <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                      Sem prazo definido
+                    </span>
+                  );
+
+                const endDate = startOfDay(parseProjectEndDate(project.endDate));
+                const today = startOfDay(new Date());
+                const daysRemaining = Math.floor(
+                  (endDate.getTime() - today.getTime()) / 86_400_000,
+                );
+
+                if (daysRemaining < 0) {
+                  return (
+                    <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                      {`Encerrado em ${formatDateBr(endDate)}`}
+                    </span>
+                  );
+                }
+
+                let colorText = "text-success";
+                if (daysRemaining <= 7) colorText = "text-destructive";
+                else if (daysRemaining <= 15) colorText = "text-warning";
+
+                return (
+                  <span className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}>
+                    {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div className="mt-2">
+            {loadingProject ? (
+              <span className="text-sm text-muted-foreground">Carregando dados do projeto...</span>
+            ) : projectError ? (
+              <span className="text-sm text-destructive">{projectError}</span>
+            ) : null}
+          </div>
+        </header>
       </div>
 
-      <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
+      <div className="mt-6 grid flex-1 min-h-0 gap-0 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none lg:grid-cols-[45%_55%] lg:items-stretch">
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-card/80 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
           <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
             <CardTitle className="text-primary">
@@ -515,7 +601,7 @@ export default function ProjectReport(): ReactElement {
                           onSelect={(newDate) =>
                             setFormState((current) => ({
                               ...current,
-                              date: newDate ? newDate.toISOString().split("T")[0] : "",
+                              date: newDate ? format(newDate, "yyyy-MM-dd") : "",
                             }))
                           }
                           initialFocus
