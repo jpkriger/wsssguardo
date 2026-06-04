@@ -1,24 +1,24 @@
+import { useMemo, type ReactElement } from "react";
 import { Plus, FolderOpen, Pencil, Trash2, CheckCheck, XCircle } from "lucide-react";
 import type { ProjectStatus as ApiProjectStatus } from "@/api/project";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import GenericTable from "../GenericTable/GenericTable";
+import type { ColumnDefinition } from "../GenericTable/types";
 
 export type ProjectStatus = "Em andamento" | "Atrasado" | "Concluído" | "Em espera" | "Cancelado";
 
 export interface CompanyProject {
   id: string;
   name: string;
+  /** Display string (dd/mm/yyyy) */
   startDate: string;
+  /** Display string (dd/mm/yyyy) */
   endDate: string;
+  /** Raw ISO date for correct sorting/filtering */
+  startDateRaw: string | null;
+  /** Raw ISO date for correct sorting/filtering */
+  endDateRaw: string | null;
   status: ProjectStatus;
   rawStatus: ApiProjectStatus;
 }
@@ -48,6 +48,7 @@ interface CompanyProjectsTableProps {
   onDeleteProject?: (id: string, name: string) => void;
   onCompleteProject?: (id: string) => void;
   onCancelProject?: (id: string) => void;
+  cardClassName?: string;
 }
 
 export function CompanyProjectsTable({
@@ -57,130 +58,115 @@ export function CompanyProjectsTable({
   onDeleteProject,
   onCompleteProject,
   onCancelProject,
-}: CompanyProjectsTableProps): React.JSX.Element {
-  return (
-    <div className="mx-5 mt-4 mb-4 ml-16">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[13px] font-semibold text-foreground tracking-wide uppercase">
-          Projetos da Empresa
-        </span>
-
-        <Button
-          size="sm"
-          onClick={onCreateProject}
-          className="h-8 px-4 text-[12px] font-medium border-0 transition-all
-             bg-[#D4A574] text-[#0F1117] hover:bg-[#C39A5E]
-             dark:bg-[#1F2937] dark:text-[#D4A574] dark:hover:bg-[#374151]"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Criar Projeto
-        </Button>
-      </div>
-
-      {/* Container da tabela */}
-      <div className="rounded-lg border border-border overflow-hidden bg-card">
-        {projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <FolderOpen className="h-8 w-8 text-[#d4a574] flex-shrink-0" />
-            <p className="text-[13px] text-muted-foreground">Nenhum projeto cadastrado.</p>
+  cardClassName = "mx-5 mt-4 mb-4 ml-16",
+}: CompanyProjectsTableProps): ReactElement {
+  const columns: ColumnDefinition<CompanyProject>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        label: "Nome do Projeto",
+        isRequired: true,
+        getSortValue: (p) => p.name,
+        renderCell: (p) => (
+          <div className="flex items-center gap-2">
+            <FolderOpen className="h-3.5 w-3.5 text-brand flex-shrink-0" />
+            <span className="text-[13px] text-foreground">{p.name}</span>
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b border-border hover:bg-transparent">
-                {["Nome do Projeto", "Data Início", "Data Término", "Status", "Ações"].map(
-                  (label, i) => (
-                    <TableHead
-                      key={label}
-                      className={cn(
-                        "text-[11px] uppercase tracking-widest text-muted-foreground font-semibold px-4 py-2.5",
-                        i === 4 && "text-right",
-                      )}
-                    >
-                      {label}
-                    </TableHead>
-                  ),
-                )}
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {projects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="border-b border-border hover:bg-muted/30 transition-colors"
+        ),
+      },
+      {
+        id: "startDate",
+        label: "Data Início",
+        getSortValue: (p) => p.startDateRaw,
+        renderCell: (p) => (
+          <span className="text-[13px] text-muted-foreground">{p.startDate}</span>
+        ),
+      },
+      {
+        id: "endDate",
+        label: "Data Término",
+        getSortValue: (p) => p.endDateRaw,
+        renderCell: (p) => (
+          <span className="text-[13px] text-muted-foreground">{p.endDate}</span>
+        ),
+      },
+      {
+        id: "status",
+        label: "Status",
+        getSortValue: (p) => p.status,
+        renderCell: (p) => (
+          <Badge className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", statusConfig[p.status].className)}>
+            {p.status}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        label: "Ações",
+        isRequired: true,
+        headClassName: "text-right",
+        cellClassName: "text-right",
+        renderCell: (p) => (
+          <div className="flex items-center justify-end gap-1">
+            {p.rawStatus !== "COMPLETED" && p.rawStatus !== "CANCELLED" && (
+              <>
+                <button
+                  type="button"
+                  className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                  title="Concluir projeto"
+                  onClick={(e) => { e.stopPropagation(); onCompleteProject?.(p.id); }}
                 >
-                  <TableCell className="px-4 py-3">
-                    <div className="flex items-center gap-2 ">
-                      <FolderOpen className="h-3.5 w-3.5 text-[#d4a574] flex-shrink-0" />
-                      <span className="text-[13px] text-foreground">{project.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-[13px] text-muted-foreground">
-                    {project.startDate}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-[13px] text-muted-foreground">
-                    {project.endDate}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <Badge
-                      className={cn(
-                        "text-[11px] font-medium px-2 py-0.5 rounded-md",
-                        statusConfig[project.status].className,
-                      )}
-                    >
-                      {project.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {project.rawStatus !== "COMPLETED" && project.rawStatus !== "CANCELLED" && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10"
-                            title="Concluir projeto"
-                            onClick={() => onCompleteProject?.(project.id)}
-                          >
-                            <CheckCheck className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                            title="Cancelar projeto"
-                            onClick={() => onCancelProject?.(project.id)}
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        onClick={() => onEditProject?.(project.id)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                        onClick={() => onDeleteProject?.(project.id, project.name)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
-    </div>
+                  <CheckCheck className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  title="Cancelar projeto"
+                  onClick={(e) => { e.stopPropagation(); onCancelProject?.(p.id); }}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              title="Editar projeto"
+              onClick={(e) => { e.stopPropagation(); onEditProject?.(p.id); }}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Excluir projeto"
+              onClick={(e) => { e.stopPropagation(); onDeleteProject?.(p.id, p.name); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [onCompleteProject, onCancelProject, onEditProject, onDeleteProject],
+  );
+
+  return (
+    <GenericTable
+      tableId="company-projects"
+      data={projects}
+      columns={columns}
+      clientPagination
+      pageSize={5}
+      title="Projetos da Empresa"
+      primaryAction={
+        onCreateProject
+          ? { label: "Criar Projeto", icon: Plus, onClick: onCreateProject }
+          : undefined
+      }
+      emptyMessage="Nenhum projeto cadastrado."
+      cardClassName={cardClassName}
+      enableSearch={false}
+    />
   );
 }

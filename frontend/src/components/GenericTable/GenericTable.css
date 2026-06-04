@@ -1,0 +1,187 @@
+/* Generic Table Styles */
+
+.generic-table-card {
+  width: 95vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.generic-table-wrapper {
+  min-height: calc(6 * 45px + 48px);
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* Nested variant: sized to its container (e.g. inside an expandable row)
+   instead of the page-level 95vw / 500px reservations. */
+.generic-table-card--nested {
+  width: 100%;
+  left: auto;
+  transform: none;
+  min-height: 0;
+}
+
+.generic-table-card--nested .generic-table-wrapper {
+  min-height: 0;
+}
+
+/* Action Buttons */
+.generic-table-action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.8;
+  border-radius: 4px;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.generic-table-action-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Search Input Styles */
+.generic-table-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+}
+
+.generic-table-search-input input {
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 14px;
+  flex: 1;
+}
+
+.generic-table-search-input input::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Sort Indicator Styles */
+.sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--foreground);
+  opacity: 0.6;
+}
+
+/* Table Height and Responsiveness */
+@media (max-width: 1400px) {
+  .generic-table-card {
+    width: 92%;
+  }
+}
+
+@media (max-width: 768px) {
+  .generic-table-card {
+    width: 95%;
+  }
+}
+
+/* Column Header Interactivity */
+.generic-table-card table thead th {
+  position: relative;
+  vertical-align: middle;
+}
+
+/* Improved Row Hover */
+.generic-table-card table tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.generic-table-card table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Empty State Styling */
+.generic-table-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(6 * 45px);
+  padding: 32px;
+  color: var(--muted-foreground);
+}
+
+.generic-table-empty-state-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Loading State */
+.generic-table-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(6 * 45px);
+}
+
+.generic-table-loading-spinner {
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pagination Styles */
+.generic-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.generic-table-pagination-info {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.generic-table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Column Visibility Dropdown Integration */
+.generic-table-column-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Overflow handling for long content */
+.generic-table-card table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generic-table-card table td[data-allow-wrap="true"] {
+  white-space: normal;
+  word-break: break-word;
+}

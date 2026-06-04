@@ -10,12 +10,23 @@ const STATE_COMMANDS: Record<string, string> = {
   bold: "bold",
   italic: "italic",
   underline: "underline",
-  list: "insertUnorderedList",
 };
+
+function isInsideList(editorEl: HTMLDivElement | null): boolean {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || !editorEl) return false;
+  let node: Node | null = sel.getRangeAt(0).commonAncestorContainer;
+  while (node && node !== editorEl) {
+    if (node.nodeName === "UL") return true;
+    node = node.parentNode;
+  }
+  return false;
+}
 
 function getActiveFormats(editorEl: HTMLDivElement | null): Set<string> {
   if (!editorEl) return new Set();
   const active = new Set<string>();
+
   for (const [id, cmd] of Object.entries(STATE_COMMANDS)) {
     try {
       if (document.queryCommandState(cmd)) active.add(id);
@@ -23,6 +34,9 @@ function getActiveFormats(editorEl: HTMLDivElement | null): Set<string> {
       // ignore unsupported commands
     }
   }
+
+  if (isInsideList(editorEl)) active.add("list");
+
   const sel = window.getSelection();
   if (sel && sel.rangeCount > 0) {
     let node: Node | null = sel.getRangeAt(0).startContainer;
@@ -48,7 +62,6 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
     if (editorRef.current && editorRef.current.innerHTML !== content) {
       editorRef.current.innerHTML = content;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -66,9 +79,87 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
     return () => document.removeEventListener("selectionchange", handleSelectionChange);
   }, []);
 
+  function toggleList(): void {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    const range = sel.getRangeAt(0);
+
+    let node: Node | null = range.commonAncestorContainer;
+    let existingUl: HTMLUListElement | null = null;
+    while (node && node !== el) {
+      if (node.nodeName === "UL") {
+        existingUl = node as HTMLUListElement;
+        break;
+      }
+      node = node.parentNode;
+    }
+
+    if (existingUl) {
+      const fragment = document.createDocumentFragment();
+      Array.from(existingUl.querySelectorAll("li")).forEach((li) => {
+        const p = document.createElement("p");
+        p.innerHTML = li.innerHTML;
+        fragment.appendChild(p);
+      });
+      existingUl.replaceWith(fragment);
+    } else {
+      let block: Node | null = range.startContainer;
+      while (block && block !== el && block.nodeType !== Node.ELEMENT_NODE) {
+        block = block.parentNode;
+      }
+      while (block && block.parentNode !== el) {
+        block = block.parentNode;
+      }
+
+      const ul = document.createElement("ul");
+      ul.style.listStyleType = "disc";
+      ul.style.paddingLeft = "1.5rem";
+
+      const li = document.createElement("li");
+      li.style.display = "list-item";
+
+      if (!block || block === el) {
+        li.textContent = range.toString() || "\u200B";
+        ul.appendChild(li);
+        range.deleteContents();
+        range.insertNode(ul);
+      } else {
+        li.innerHTML = (block as HTMLElement).innerHTML || "\u200B";
+        ul.appendChild(li);
+        (block as HTMLElement).replaceWith(ul);
+      }
+
+      const newRange = document.createRange();
+      newRange.selectNodeContents(li);
+      newRange.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+
+    onChange(el.innerHTML);
+    setActiveFormats(getActiveFormats(el));
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>): void {
+    if (e.key === "Tab") {
+      e.preventDefault();
+    }
+  }
+
   function applyFormat(action: string): void {
     const el = editorRef.current;
     if (!el) return;
+
+    if (action === "list") {
+      toggleList();
+      return;
+    }
+
     el.focus();
     switch (action) {
       case "bold":
@@ -88,9 +179,6 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
         break;
       case "h3":
         document.execCommand("formatBlock", false, "h3");
-        break;
-      case "list":
-        document.execCommand("insertUnorderedList", false, undefined);
         break;
     }
     onChange(el.innerHTML);
@@ -115,6 +203,7 @@ export default function NoteEditor({ content, onChange }: NoteEditorProps): Reac
             onChange(editorRef.current.innerHTML);
           }
         }}
+        onKeyDown={handleKeyDown}
         onKeyUp={() => setActiveFormats(getActiveFormats(editorRef.current))}
         onMouseUp={() => setActiveFormats(getActiveFormats(editorRef.current))}
       />

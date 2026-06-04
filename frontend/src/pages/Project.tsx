@@ -1,36 +1,17 @@
 import { ReactElement, useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Link } from "react-router";
-import { ChevronLeft, Settings } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
 import FindingList from "../components/FindingList/FindingList";
 import AssetTable from "../components/AssetTable/AssetTable";
 import RiskTable from "../components/RiskTable/RiskTable";
 import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
-import ProjectReport from "./ProjectReport";
-import { Badge } from "../components/ui/badge";
-import { projectsById, type ProjectResponse, type ProjectStatus } from "../api/project";
-import { cn } from "../lib/utils";
+import { Button } from "../components/ui/button";
+import { projectsById, type ProjectResponse } from "../api/project";
 
-const STATUS_CONFIG: Record<ProjectStatus, { label: string; className: string }> = {
-  IN_PROGRESS: {
-    label: "Em andamento",
-    className: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
-  },
-  ON_HOLD: {
-    label: "Em espera",
-    className: "bg-warning/15 text-yellow-600 border-yellow-500/30 dark:text-yellow-400",
-  },
-  COMPLETED: {
-    label: "Concluído",
-    className: "bg-success/15 text-green-600 border-green-500/30 dark:text-green-400",
-  },
-  CANCELLED: {
-    label: "Cancelado",
-    className: "bg-destructive/15 text-red-600 border-red-500/30 dark:text-red-400",
-  },
-};
+// Status and phase badges removed per design.
 
 export const ProjectTabs = {
   Summary: "Resumo",
@@ -38,7 +19,6 @@ export const ProjectTabs = {
   Artifacts: "Artefatos",
   Findings: "Achados",
   Risks: "Riscos",
-  Report: "Relatório",
 } as const;
 
 type ProjectTab = (typeof ProjectTabs)[keyof typeof ProjectTabs];
@@ -49,12 +29,32 @@ const TABS: ProjectTab[] = [
   ProjectTabs.Artifacts,
   ProjectTabs.Findings,
   ProjectTabs.Risks,
-  ProjectTabs.Report,
 ];
+
+function formatDateBr(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function parseProjectEndDate(value: string): Date {
+  const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = dateOnlyPattern.exec(value);
+
+  if (!match) {
+    return new Date(value);
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
 
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Summary);
   const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [projectError, setProjectError] = useState<string | null>(null);
@@ -113,50 +113,74 @@ export default function Project(): ReactElement {
         Voltar para Dashboard
       </Link>
 
-      <header className="mt-4 space-y-1">
-        <div className="flex items-center gap-2">
+      <header className="mt-4">
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
             {project?.name ?? "Projeto"}
           </h1>
-          <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-            <Settings className="size-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {(() => {
+              if (loadingProject || projectError) return null;
+              if (!project?.endDate)
+                return (
+                  <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                    Sem prazo definido
+                  </span>
+                );
+
+              const endDate = startOfDay(parseProjectEndDate(project.endDate));
+              const today = startOfDay(new Date());
+              const daysRemaining = Math.floor(
+                (endDate.getTime() - today.getTime()) / 86_400_000,
+              );
+
+              if (daysRemaining < 0) {
+                return (
+                  <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                    {`Encerrado em ${formatDateBr(endDate)}`}
+                  </span>
+                );
+              }
+
+              let colorText = "text-success";
+              if (daysRemaining <= 7) colorText = "text-destructive";
+              else if (daysRemaining <= 15) colorText = "text-warning";
+
+              return (
+                <span className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}>
+                  {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
+                </span>
+              );
+            })()}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-1">
+
+        <div className="mt-2">
           {loadingProject ? (
             <span className="text-sm text-muted-foreground">Carregando dados do projeto...</span>
           ) : projectError ? (
             <span className="text-sm text-destructive">{projectError}</span>
-          ) : project?.status ? (
-            <Badge
-              variant="outline"
-              className={cn("text-xs font-medium px-2.5 py-0.5", STATUS_CONFIG[project.status]?.className)}
-            >
-              {STATUS_CONFIG[project.status]?.label ?? project.status}
-            </Badge>
           ) : null}
         </div>
       </header>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">Fase atual: Fase 3</Badge>
-          {(() => {
-            if (!project?.endDate) return <Badge variant="outline">Sem prazo definido</Badge>;
-            const days = Math.ceil(
-              (new Date(project.endDate).getTime() - Date.now()) / 86_400_000,
-            );
-            return (
-              <Badge variant="outline">
-                {days > 0 ? `Entrega em ${days} dia${days === 1 ? "" : "s"}` : "Prazo encerrado"}
-              </Badge>
-            );
-          })()}
-        </div>
+      <div className="mt-4 flex items-center justify-end">
+        <Button
+          type="button"
+          disabled={loadingProject || !!projectError || !projectId}
+          onClick={() => {
+            if (projectId) {
+              void navigate(`/project/${projectId}/relatorio`);
+            }
+          }}
+        >
+          Gerar relatório
+        </Button>
       </div>
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
-        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-6">
+        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-5">
           {TABS.map((tab) => {
             const isActive = tab === activeTab;
             return (
@@ -195,7 +219,6 @@ export default function Project(): ReactElement {
             <RiskTable />
           </ProjectProvider>
         )}
-        {activeTab === ProjectTabs.Report && <ProjectReport />}
       </div>
     </section>
   );
