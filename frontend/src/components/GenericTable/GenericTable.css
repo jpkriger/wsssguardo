@@ -16,6 +16,19 @@
   overflow-y: auto;
 }
 
+/* Nested variant: sized to its container (e.g. inside an expandable row)
+   instead of the page-level 95vw / 500px reservations. */
+.generic-table-card--nested {
+  width: 100%;
+  left: auto;
+  transform: none;
+  min-height: 0;
+}
+
+.generic-table-card--nested .generic-table-wrapper {
+  min-height: 0;
+}
+
 /* Action Buttons */
 .generic-table-action-button {
   background: none;

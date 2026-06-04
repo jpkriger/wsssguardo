@@ -81,6 +81,25 @@ export async function fetchRisksByProject(
     return res.json() as Promise<RiskPageResponse>;
 }
 
+/**
+ * Fetches every risk of a project by paging through the server response.
+ * Used by the client-mode table so sorting/search/filters operate on the full set.
+ */
+export async function fetchAllRisksByProject(
+    projectId: string,
+): Promise<RiskResponse[]> {
+    const PAGE_SIZE = 100;
+    const all: RiskResponse[] = [];
+    let page = 0;
+    for (;;) {
+        const res = await fetchRisksByProject(projectId, page, PAGE_SIZE);
+        all.push(...res.content);
+        if (res.last || res.content.length === 0) break;
+        page += 1;
+    }
+    return all;
+}
+
 export async function createRisk(data: RiskCreateRequest): Promise<RiskResponse> {
     const res = await fetch(BASE, {
         method: "POST",

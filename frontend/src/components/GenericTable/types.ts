@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export type ColumnDataType = "text" | "date" | "enum" | "number" | "custom";
 
@@ -23,6 +23,26 @@ export interface ColumnDefinition<T> {
   width?: string;
 }
 
+/**
+ * A header filter, decoupled from the visible columns so it can target fields
+ * that aren't shown (e.g. "Quem criou"). Applied client-side before search/sort.
+ */
+export type FilterDefinition<T> =
+  | {
+      id: string;
+      label: string;
+      type: "select";
+      /** Value used to match and to build the distinct option list */
+      getValue: (item: T) => string | null;
+    }
+  | {
+      id: string;
+      label: string;
+      type: "dateRange";
+      /** ISO date string used for range comparison */
+      getValue: (item: T) => string | null;
+    };
+
 export interface GenericTableProps<T> {
   /** Unique identifier for the table (used for localStorage) */
   tableId: string;
@@ -30,22 +50,34 @@ export interface GenericTableProps<T> {
   data: T[];
   /** Column definitions */
   columns: ColumnDefinition<T>[];
-  /** Current page (0-indexed) */
-  page: number;
-  /** Total number of pages */
-  totalPages: number;
-  /** Total number of items */
-  totalElements: number;
+  /** Enable client-side pagination (component manages page state internally) */
+  clientPagination?: boolean;
+  /** Enable client-side search filtering across getSortValue of all columns */
+  clientSearch?: boolean;
+  /** Current page (0-indexed) — required for server-side, unused when clientPagination=true */
+  page?: number;
+  /** Total number of pages — required for server-side, computed when clientPagination=true */
+  totalPages?: number;
+  /** Total number of items — required for server-side, computed when clientPagination=true */
+  totalElements?: number;
   /** Items per page */
-  pageSize: number;
+  pageSize?: number;
   /** Is data loading */
-  isLoading: boolean;
+  isLoading?: boolean;
   /** Error message if any */
   error?: string | null;
-  /** Callback when page changes */
-  onPageChange: (page: number) => void;
-  /** Callback when column visibility changes */
-  onColumnToggle?: (columnId: string) => void;
+  /** Callback when page changes — required for server-side, unused when clientPagination=true */
+  onPageChange?: (page: number) => void;
+  /** Callback when column visibility changes — receives the toggled id and the new visibility map */
+  onColumnToggle?: (
+    columnId: string,
+    visibility: Record<string, boolean>,
+  ) => void;
+  /**
+   * Extracts a stable id per row, used for React keys and expansion tracking.
+   * Defaults to `item.id` when present, otherwise the row index.
+   */
+  getRowId?: (item: T, index: number) => string;
   /** Default column visibility config */
   defaultColumnConfig?: { [columnId: string]: boolean };
   /** Title for the table */
@@ -81,6 +113,17 @@ export interface GenericTableProps<T> {
   className?: string;
   /** Card container class */
   cardClassName?: string;
+  /**
+   * Optional: render expandable content below a row. The `close` helper collapses
+   * the expanded row from within the content (e.g. an internal close button).
+   */
+  expandableContent?: (item: T, helpers: { close: () => void }) => ReactNode;
+  /** Optional: extra content rendered in the header toolbar, before the primary action */
+  headerExtra?: ReactNode;
+  /** Optional: called when a row is clicked. Mutually exclusive with expandableContent. */
+  onRowClick?: (item: T) => void;
+  /** Optional: header filters (select / date range), applied client-side */
+  filters?: FilterDefinition<T>[];
 }
 
 export interface TableState {
