@@ -91,21 +91,21 @@ export default function MFAVerificationForm({
       </CardHeader>
 
       <CardContent className="px-8 pb-8">
-        <div className="grid gap-5">
+        <div className="grid min-w-0 gap-4">
           {/* QR Code */}
           <div className="flex justify-center">
             <div className="bg-white p-3 rounded-lg">
-              <QRCode value={totpUri} size={160} />
+              <QRCode value={totpUri} size={140} />
             </div>
           </div>
 
           {/* Chave manual */}
-          <div className="grid gap-1">
+          <div className="grid min-w-0 gap-1">
             <p className="text-xs text-muted-foreground text-center">
               Ou insira a chave manualmente
             </p>
-            <div className="flex items-center gap-2 rounded-md border border-input bg-input/30 px-3 py-2">
-              <span className="flex-1 font-mono text-xs text-foreground tracking-widest truncate select-all">
+            <div className="flex min-w-0 items-center gap-2 rounded-md border border-input bg-input/30 px-3 py-2">
+              <span className="min-w-0 flex-1 font-mono text-xs text-foreground tracking-widest truncate select-all">
                 {secret}
               </span>
               <button
@@ -127,7 +127,7 @@ export default function MFAVerificationForm({
           </div>
 
           {/* OTP inputs */}
-          <div className="flex gap-2 justify-between">
+          <div className="grid grid-cols-6 gap-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <input
                 key={i}
@@ -141,7 +141,7 @@ export default function MFAVerificationForm({
                 onChange={(e) => handleChange(i, e)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
-                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+                className="h-12 w-full min-w-0 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
               />
             ))}
           </div>

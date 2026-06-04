@@ -63,7 +63,7 @@ describe("entityObject api", () => {
           timestamp: "2026-03-27T15:30:45.123456Z",
           path: "/api/entity-objects",
         }),
-        { status: 400 },
+        { status: 400, headers: { "Content-Type": "application/json" } },
       ),
     );
 

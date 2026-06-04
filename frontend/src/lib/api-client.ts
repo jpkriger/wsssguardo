@@ -1,5 +1,5 @@
 import ky, { isHTTPError } from "ky";
-import { ApiErrorResponse, parseApiErrorResponse } from "@/api/errors";
+import { ApiErrorResponse, apiErrorFromBody } from "@/api/errors";
 
 /** Chave do localStorage onde o email do usuário fica para recompor o SECRET_HASH no refresh. */
 export const AUTH_EMAIL_KEY = "wss.authEmail";
@@ -77,13 +77,16 @@ const apiClient = ky.create({
       },
     ],
     beforeError: [
-      async ({ error }) => {
+      ({ error }) => {
+        // O ky já consome o corpo da resposta em `error.data` — não dá para reler/clonar.
         if (isHTTPError(error) && error.response) {
-          return await parseApiErrorResponse(error.response.clone(), error.response.url);
+          const res = error.response;
+          return apiErrorFromBody(error.data, res.status, res.statusText, res.url);
         }
         return error;
       },
     ],
+
   },
 });
 

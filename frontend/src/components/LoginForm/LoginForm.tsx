@@ -24,7 +24,7 @@ export default function LoginForm({ onSubmit, loading = false, error }: LoginFor
   const canSubmit = email.trim() !== "" && password !== "" && !loading;
 
   return (
-    <Card className="w-full max-w-xs py-0 gap-0">
+    <Card className="w-full max-w-sm py-0 gap-0">
       <CardHeader className="px-8 pt-8 pb-5">
         <h2 className="text-2xl font-normal text-foreground leading-tight">Login</h2>
         <p className="text-sm text-muted-foreground mt-1">

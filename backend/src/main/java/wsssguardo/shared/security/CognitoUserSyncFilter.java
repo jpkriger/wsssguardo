@@ -67,6 +67,7 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
     }
 
     private Map<String, String> fetchAttributesBySub(String sub) {
+        log.info(">>> fetchAttributesBySub: userPoolId={}, sub={}", userPoolId, sub);
         try {
             List<UserType> users = cognitoClient.listUsers(
                     ListUsersRequest.builder()
@@ -76,15 +77,19 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
                             .build()
             ).users();
 
+            log.info(">>> fetchAttributesBySub: ListUsers retornou {} usuário(s)", users.size());
+
             if (users.isEmpty()) {
                 log.warn("Nenhum usuário encontrado no Cognito para sub {}", sub);
                 return Map.of();
             }
 
-            return users.get(0).attributes().stream()
+            Map<String, String> attrs = users.get(0).attributes().stream()
                     .collect(Collectors.toMap(AttributeType::name, AttributeType::value));
+            log.info(">>> fetchAttributesBySub: atributos lidos = {}", attrs);
+            return attrs;
         } catch (Exception e) {
-            log.warn("Não foi possível buscar atributos do Cognito para sub {}: {}", sub, e.getMessage());
+            log.warn("Não foi possível buscar atributos do Cognito para sub {}: {}", sub, e.getMessage(), e);
             return Map.of();
         }
     }

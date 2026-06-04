@@ -20,9 +20,9 @@ export type UserRole = "CONSULTANT" | "MANAGER";
 
 export interface UserProfile {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
   role: UserRole;
   createdAt: string;
   updatedAt: string;

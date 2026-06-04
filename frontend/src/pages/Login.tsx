@@ -126,31 +126,33 @@ export default function Login(): ReactElement {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center w-full p-4">
-      {stage === "CREDENTIALS" && (
-        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
-      )}
-      {stage === "NEW_PASSWORD" && (
-        <NewPasswordForm
-          onSubmit={handleNewPassword}
-          loading={loading}
-          error={error}
-          onBack={reset}
-        />
-      )}
-      {stage === "MFA_SETUP" && (
-        <MFAVerificationForm
-          email={email}
-          secret={secret}
-          onSubmit={handleMfaSetup}
-          loading={loading}
-          error={error}
-          onBack={reset}
-        />
-      )}
-      {stage === "MFA_VERIFY" && (
-        <MFAForm onSubmit={handleMfaVerify} loading={loading} error={error} onBack={reset} />
-      )}
+    <div className="w-full flex-1 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center px-4 py-10">
+        {stage === "CREDENTIALS" && (
+          <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+        )}
+        {stage === "NEW_PASSWORD" && (
+          <NewPasswordForm
+            onSubmit={handleNewPassword}
+            loading={loading}
+            error={error}
+            onBack={reset}
+          />
+        )}
+        {stage === "MFA_SETUP" && (
+          <MFAVerificationForm
+            email={email}
+            secret={secret}
+            onSubmit={handleMfaSetup}
+            loading={loading}
+            error={error}
+            onBack={reset}
+          />
+        )}
+        {stage === "MFA_VERIFY" && (
+          <MFAForm onSubmit={handleMfaVerify} loading={loading} error={error} onBack={reset} />
+        )}
+      </div>
     </div>
   );
 }

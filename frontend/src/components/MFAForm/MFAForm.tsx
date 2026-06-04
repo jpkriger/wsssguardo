@@ -64,7 +64,7 @@ export default function MFAForm({ onSubmit, loading = false, error, onBack }: MF
   }
 
   return (
-    <Card className="w-full max-w-xs py-0 gap-0">
+    <Card className="w-full max-w-sm py-0 gap-0">
       <CardHeader className="px-8 pt-8 pb-5">
         <h2 className="text-2xl font-normal text-foreground leading-tight">
           Autenticação de Dois Fatores
@@ -75,8 +75,8 @@ export default function MFAForm({ onSubmit, loading = false, error, onBack }: MF
       </CardHeader>
 
       <CardContent className="px-8 pb-8">
-        <div className="grid gap-5">
-          <div className="flex gap-2 justify-between">
+        <div className="grid min-w-0 gap-5">
+          <div className="grid grid-cols-6 gap-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <input
                 key={i}
@@ -90,7 +90,7 @@ export default function MFAForm({ onSubmit, loading = false, error, onBack }: MF
                 onChange={(e) => handleChange(i, e)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
-                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+                className="h-12 w-full min-w-0 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
               />
             ))}
           </div>

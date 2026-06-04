@@ -18,21 +18,17 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider>
         <ProjectProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <App />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<ProjectsHome />} />
-              <Route path="projeto/:id/relatorio" element={<ProjectReport />} />
-              <Route path="project/:id" element={<Project />} />
-              <Route path="project/:id/relatorio" element={<ProjectReport />} />
-              <Route path="/projects" element={<ProjectsHome />} />
-              <Route path="/companies" element={<Companies />} />
-              {/* Adicionar novas rotas aqui */}
+            <Route element={<App />}>
+              <Route path="/login" element={<Login />} />
+              <Route element={<ProtectedRoute />}>
+                <Route index element={<ProjectsHome />} />
+                <Route path="projeto/:id/relatorio" element={<ProjectReport />} />
+                <Route path="project/:id" element={<Project />} />
+                <Route path="project/:id/relatorio" element={<ProjectReport />} />
+                <Route path="/projects" element={<ProjectsHome />} />
+                <Route path="/companies" element={<Companies />} />
+                {/* Adicionar novas rotas aqui */}
+              </Route>
             </Route>
           </Routes>
         </ProjectProvider>

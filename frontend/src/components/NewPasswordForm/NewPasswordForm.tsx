@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
 import { type FormEvent, type ReactElement, useState } from "react";
 
 interface NewPasswordFormProps {
@@ -14,6 +14,20 @@ interface NewPasswordFormProps {
 
 const MIN_LENGTH = 12;
 
+interface Rule {
+  label: string;
+  test: (pwd: string) => boolean;
+}
+
+// Espelha a policy do Cognito (doc seção 2): mín. 12 + maiúscula + minúscula + número + símbolo.
+const RULES: Rule[] = [
+  { label: `Mínimo de ${MIN_LENGTH} caracteres`, test: (p) => p.length >= MIN_LENGTH },
+  { label: "Uma letra maiúscula", test: (p) => /[A-Z]/.test(p) },
+  { label: "Uma letra minúscula", test: (p) => /[a-z]/.test(p) },
+  { label: "Um número", test: (p) => /[0-9]/.test(p) },
+  { label: "Um símbolo", test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
 export default function NewPasswordForm({
   onSubmit,
   loading = false,
@@ -24,14 +38,18 @@ export default function NewPasswordForm({
   const [confirm, setConfirm] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
+  const meetsAllRules = RULES.every((rule) => rule.test(password));
+  const passwordsMatch = password === confirm;
+  const canSubmit = meetsAllRules && passwordsMatch && !loading;
+
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     if (loading) return;
-    if (password.length < MIN_LENGTH) {
-      setLocalError(`A senha deve ter no mínimo ${MIN_LENGTH} caracteres.`);
+    if (!meetsAllRules) {
+      setLocalError("A senha não atende a todos os requisitos.");
       return;
     }
-    if (password !== confirm) {
+    if (!passwordsMatch) {
       setLocalError("As senhas não coincidem.");
       return;
     }
@@ -40,12 +58,11 @@ export default function NewPasswordForm({
   }
 
   return (
-    <Card className="w-full max-w-xs py-0 gap-0">
+    <Card className="w-full max-w-sm py-0 gap-0">
       <CardHeader className="px-8 pt-8 pb-5">
         <h2 className="text-2xl font-normal text-foreground leading-tight">Definir nova senha</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Crie uma senha com no mínimo {MIN_LENGTH} caracteres, incluindo maiúscula, minúscula,
-          número e símbolo.
+          Crie uma senha forte para acessar a plataforma.
         </p>
       </CardHeader>
 
@@ -64,6 +81,23 @@ export default function NewPasswordForm({
             />
           </div>
 
+          <ul className="grid gap-1">
+            {RULES.map((rule) => {
+              const ok = rule.test(password);
+              return (
+                <li
+                  key={rule.label}
+                  className={`flex items-center gap-1.5 text-xs ${
+                    ok ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                  }`}
+                >
+                  {ok ? <Check size={13} /> : <X size={13} className="opacity-50" />}
+                  {rule.label}
+                </li>
+              );
+            })}
+          </ul>
+
           <div className="grid gap-2">
             <Label htmlFor="confirm-password">Confirmar senha</Label>
             <Input
@@ -75,13 +109,16 @@ export default function NewPasswordForm({
               onChange={(e) => setConfirm(e.target.value)}
               disabled={loading}
             />
+            {confirm !== "" && !passwordsMatch && (
+              <p className="text-xs text-destructive">As senhas não coincidem.</p>
+            )}
           </div>
 
           {(localError ?? error) && (
             <p className="text-sm text-destructive">{localError ?? error}</p>
           )}
 
-          <Button type="submit" className="w-full mt-1" disabled={loading}>
+          <Button type="submit" className="w-full mt-1" disabled={!canSubmit}>
             {loading && <Loader2 className="size-4 animate-spin" />}
             Continuar
           </Button>

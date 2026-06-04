@@ -52,7 +52,7 @@ describe("finding api", () => {
           timestamp: "2026-04-01T10:00:00Z",
           path: `/api/projects/${PROJECT_ID}/findings/listByProject/`,
         }),
-        { status: 404 },
+        { status: 404, headers: { "Content-Type": "application/json" } },
       ),
     );
 
@@ -108,7 +108,7 @@ describe("finding api", () => {
           timestamp: "2026-04-01T10:00:00Z",
           path: `/api/projects/${PROJECT_ID}/findings/create/`,
         }),
-        { status: 400 },
+        { status: 400, headers: { "Content-Type": "application/json" } },
       ),
     );
 

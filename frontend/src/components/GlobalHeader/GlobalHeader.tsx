@@ -10,8 +10,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
   MANAGER: "Gerente",
 };
 
-function initials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+function initials(firstName: string | null, lastName: string | null, email: string | null): string {
+  const ini = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase();
+  if (ini) return ini;
+  return email?.charAt(0).toUpperCase() ?? "?";
 }
 
 export default function GlobalHeader(): ReactElement {
@@ -36,7 +38,9 @@ export default function GlobalHeader(): ReactElement {
     };
   }, [open]);
 
-  const fullName = user ? `${user.firstName} ${user.lastName}` : "";
+  const fullName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Usuário"
+    : "";
   const roleLabel = user ? ROLE_LABELS[user.role] : "";
 
   return (
@@ -84,44 +88,48 @@ export default function GlobalHeader(): ReactElement {
 
       <div className="w-186 flex justify-end items-center gap-1.5">
         <ThemeToggle />
-        <div className="flex flex-col items-end align-middle px-4 h-full pt-1">
-          <p className="-my-0.5">{fullName}</p>
-          <p className="-my-0.5 opacity-50">{roleLabel}</p>
-        </div>
-
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setOpen((prev) => !prev)}
-            className="border rounded-full w-14 h-14 bg-foreground/10 flex justify-center items-center cursor-pointer transition-all duration-300 hover:bg-foreground/20 hover:border-[#998457]/60"
-          >
-            <p className="font-normal! text-xl! pt-0.5 opacity-60">
-              {user ? initials(user.firstName, user.lastName) : ""}
-            </p>
-          </button>
-
-          {open && (
-            <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-background shadow-lg z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b">
-                <p className="text-sm font-medium">{fullName}</p>
-                <p className="text-xs opacity-50">{roleLabel}</p>
-              </div>
-
-              <button
-                onClick={() => { setOpen(false); void navigate("/profile"); }}
-                className="w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-foreground/5 cursor-pointer"
-              >
-                Meu Perfil
-              </button>
-
-              <button
-                onClick={() => { setOpen(false); void logout(); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-red-500 transition-colors duration-150 hover:bg-red-500/5 cursor-pointer border-t"
-              >
-                Sair
-              </button>
+        {user && (
+          <>
+            <div className="flex flex-col items-end align-middle px-4 h-full pt-1">
+              <p className="-my-0.5">{fullName}</p>
+              <p className="-my-0.5 opacity-50">{roleLabel}</p>
             </div>
-          )}
-        </div>
+
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setOpen((prev) => !prev)}
+                className="border rounded-full w-14 h-14 bg-foreground/10 flex justify-center items-center cursor-pointer transition-all duration-300 hover:bg-foreground/20 hover:border-[#998457]/60"
+              >
+                <p className="font-normal! text-xl! pt-0.5 opacity-60">
+                  {initials(user.firstName, user.lastName, user.email)}
+                </p>
+              </button>
+
+              {open && (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-background shadow-lg z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b">
+                    <p className="text-sm font-medium">{fullName}</p>
+                    <p className="text-xs opacity-50">{roleLabel}</p>
+                  </div>
+
+                  <button
+                    onClick={() => { setOpen(false); void navigate("/profile"); }}
+                    className="w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-foreground/5 cursor-pointer"
+                  >
+                    Meu Perfil
+                  </button>
+
+                  <button
+                    onClick={() => { setOpen(false); void logout(); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 transition-colors duration-150 hover:bg-red-500/5 cursor-pointer border-t"
+                  >
+                    Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

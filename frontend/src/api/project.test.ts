@@ -84,7 +84,7 @@ describe("project api", () => {
           timestamp: "2026-03-27T15:30:45.123456Z",
           path: "/api/projects",
         }),
-        { status: 404 },
+        { status: 404, headers: { "Content-Type": "application/json" } },
       ),
     );
 
@@ -127,7 +127,7 @@ describe("project api", () => {
           timestamp: "2026-03-27T15:30:45.123456Z",
           path: "/api/projects",
         }),
-        { status: 404 },
+        { status: 404, headers: { "Content-Type": "application/json" } },
       ),
     );
 

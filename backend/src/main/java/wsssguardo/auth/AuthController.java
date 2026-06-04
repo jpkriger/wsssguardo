@@ -50,7 +50,8 @@ public class AuthController {
                     ResponseEntity.ok(new LoginResponse(result.status(), result.session()));
             };
         } catch (CognitoIdentityProviderException e) {
-            log.debug("Login failed for {}: {}", req.email(), e.awsErrorDetails().errorCode());
+            log.warn("Login failed for {}: {} - {}", req.email(),
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             return unauthorized();
         }
     }
@@ -71,7 +72,8 @@ public class AuthController {
                     ResponseEntity.ok(new LoginResponse(result.status(), result.session()));
             };
         } catch (CognitoIdentityProviderException e) {
-            log.debug("New password failed: {}", e.awsErrorDetails().errorCode());
+            log.warn("New password failed: {} - {}",
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             return unauthorized();
         }
     }
@@ -90,7 +92,8 @@ public class AuthController {
                 + "&issuer=WSSSguardo";
             return ResponseEntity.ok(new MfaSetupResponse(result.session(), otpauthUri));
         } catch (CognitoIdentityProviderException e) {
-            log.debug("MFA setup start failed: {}", e.awsErrorDetails().errorCode());
+            log.warn("MFA setup start failed: {} - {}",
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             return unauthorized();
         }
     }
@@ -103,7 +106,8 @@ public class AuthController {
             addTokenCookies(res, tokens);
             return ResponseEntity.ok().build();
         } catch (CognitoIdentityProviderException e) {
-            log.debug("MFA setup complete failed: {}", e.awsErrorDetails().errorCode());
+            log.warn("MFA setup complete failed: {} - {}",
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             return ResponseEntity.status(401).build();
         }
     }
@@ -116,7 +120,8 @@ public class AuthController {
             addTokenCookies(res, tokens);
             return ResponseEntity.ok().build();
         } catch (CognitoIdentityProviderException e) {
-            log.debug("MFA verify failed: {}", e.awsErrorDetails().errorCode());
+            log.warn("MFA verify failed: {} - {}",
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             return ResponseEntity.status(401).build();
         }
     }
@@ -137,7 +142,8 @@ public class AuthController {
             addTokenCookies(res, tokens);
             return ResponseEntity.ok().build();
         } catch (CognitoIdentityProviderException e) {
-            log.debug("Refresh failed: {}", e.awsErrorDetails().errorCode());
+            log.warn("Refresh failed: {} - {}",
+                    e.awsErrorDetails().errorCode(), e.awsErrorDetails().errorMessage());
             clearTokenCookies(res);
             return ResponseEntity.status(401).build();
         }
