@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export interface AssetResponse {
     id: string;
@@ -22,31 +22,22 @@ export interface AssetPageResponse {
     last: boolean;
 }
 
-const BASE = "/api/assets";
+const BASE = "assets";
 
-export async function fetchAssetsByProject(
+export function fetchAssetsByProject(
     projectId: string,
     page: number = 0,
     size: number = 5,
 ): Promise<AssetPageResponse> {
-    const params = new URLSearchParams({
-        page: String(page),
-        size: String(size),
-    });
-
-    const url = `${BASE}/project/${projectId}?${params.toString()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<AssetPageResponse>;
+    return apiClient
+        .get(`${BASE}/project/${projectId}`, {
+            searchParams: { page: String(page), size: String(size) },
+        })
+        .json<AssetPageResponse>();
 }
 
 export async function deleteAsset(id: string): Promise<void> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, { method: "DELETE" });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
+    await apiClient.delete(`${BASE}/${id}`);
 }
 
 export interface AssetCreateRequest {
@@ -62,27 +53,10 @@ export interface AssetUpdateRequest {
     content?: string;
 }
 
-export async function createAsset(data: AssetCreateRequest): Promise<AssetResponse> {
-    const res = await fetch(BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-    return res.json() as Promise<AssetResponse>;
+export function createAsset(data: AssetCreateRequest): Promise<AssetResponse> {
+    return apiClient.post(BASE, { json: data }).json<AssetResponse>();
 }
 
-export async function updateAsset(id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<AssetResponse>;
+export function updateAsset(id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
+    return apiClient.patch(`${BASE}/${id}`, { json: data }).json<AssetResponse>();
 }

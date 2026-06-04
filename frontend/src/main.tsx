@@ -7,27 +7,33 @@ import Project from "./pages/Project.tsx";
 import ProjectsHome from "./pages/ProjectsHome";
 import Companies from "./pages/Companies";
 import { ProjectProvider } from "./contexts/ProjectProvider";
+import { AuthProvider } from "./contexts/AuthProvider";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Login from "./pages/Login.tsx";
-import MFAChallenge from "./pages/MFAChallenge.tsx";
-import MFAVerification from "./pages/MFAVerification.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <ProjectProvider>
-        <Routes>
-          <Route element={<App />}>
-            <Route index element={<ProjectsHome />} />
-            <Route path="project/:id" element={<Project />} />
-            <Route path="/projects" element={<ProjectsHome />} />
-            <Route path="/companies" element={<Companies />} />
+      <AuthProvider>
+        <ProjectProvider>
+          <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/mfa" element={<MFAChallenge />} />
-            <Route path="/mfa/setup" element={<MFAVerification />} />
-            {/* Adicionar novas rotas aqui */}
-          </Route>
-        </Routes>
-      </ProjectProvider>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <App />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ProjectsHome />} />
+              <Route path="project/:id" element={<Project />} />
+              <Route path="/projects" element={<ProjectsHome />} />
+              <Route path="/companies" element={<Companies />} />
+              {/* Adicionar novas rotas aqui */}
+            </Route>
+          </Routes>
+        </ProjectProvider>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 );

@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiErrorResponse } from "./errors";
 import { listProjects, projectsById, projectsByUserId } from "./project";
 
+function requestOf(spy: { mock: { calls: unknown[][] } }, call = 0): Request {
+  return spy.mock.calls[call][0] as Request;
+}
+
 describe("project api", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -22,12 +26,10 @@ describe("project api", () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify(payload), { status: 200 }),
-      );
+      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
 
     await expect(listProjects()).resolves.toEqual(payload);
-    expect(fetchSpy).toHaveBeenCalledWith("/api/projects");
+    expect(new URL(requestOf(fetchSpy).url).pathname).toBe("/api/projects");
   });
 
   it("projectsById returns empty list when no ids are provided", async () => {
@@ -63,15 +65,13 @@ describe("project api", () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify(payload), { status: 200 }),
-      );
+      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
 
     await expect(projectsById([secondId, firstId])).resolves.toEqual(payload);
 
-    expect(fetchSpy).toHaveBeenCalledWith(
-      `/api/projects?ids=${secondId}&ids=${firstId}`,
-    );
+    const url = new URL(requestOf(fetchSpy).url);
+    expect(url.pathname).toBe("/api/projects");
+    expect(url.searchParams.getAll("ids")).toEqual([secondId, firstId]);
   });
 
   it("projectsById throws structured error when backend returns api error", async () => {
@@ -108,13 +108,13 @@ describe("project api", () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify(payload), { status: 200 }),
-      );
+      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
 
     await expect(projectsByUserId(userId)).resolves.toEqual(payload);
 
-    expect(fetchSpy).toHaveBeenCalledWith(`/api/projects?userId=${userId}`);
+    const url = new URL(requestOf(fetchSpy).url);
+    expect(url.pathname).toBe("/api/projects");
+    expect(url.searchParams.get("userId")).toBe(userId);
   });
 
   it("projectsByUserId throws structured error when backend returns api error", async () => {

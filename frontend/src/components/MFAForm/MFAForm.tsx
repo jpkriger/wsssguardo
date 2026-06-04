@@ -1,10 +1,25 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ReactElement, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { type ReactElement, useRef, useState } from "react";
 
-export default function MFAForm(): ReactElement {
+interface MFAFormProps {
+  onSubmit: (code: string) => void | Promise<void>;
+  loading?: boolean;
+  error?: string | null;
+  onBack?: () => void;
+}
+
+export default function MFAForm({ onSubmit, loading = false, error, onBack }: MFAFormProps): ReactElement {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>(new Array<HTMLInputElement | null>(6).fill(null));
+
+  const code = otp.join("");
+  const canSubmit = code.length === 6 && !loading;
+
+  function submit(): void {
+    if (code.length === 6 && !loading) void onSubmit(code);
+  }
 
   function handleChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
     const digit = e.target.value.replace(/\D/g, "").slice(-1);
@@ -17,6 +32,10 @@ export default function MFAForm(): ReactElement {
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      submit();
+      return;
+    }
     if (e.key === "Backspace") {
       if (otp[index]) {
         const newOtp = [...otp];
@@ -67,25 +86,30 @@ export default function MFAForm(): ReactElement {
                 pattern="[0-9]*"
                 maxLength={1}
                 value={otp[i]}
+                disabled={loading}
                 onChange={(e) => handleChange(i, e)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
-                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
               />
             ))}
           </div>
 
-          <Button type="button" className="w-full">
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+
+          <Button type="button" className="w-full" onClick={submit} disabled={!canSubmit}>
+            {loading && <Loader2 className="size-4 animate-spin" />}
             Verificar
           </Button>
 
           <div className="flex flex-col items-center gap-2 pt-1">
-            <a
-              href="/login"
+            <button
+              type="button"
+              onClick={onBack}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Voltar ao login
-            </a>
+            </button>
           </div>
         </div>
       </CardContent>

@@ -1,23 +1,37 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
-import { ReactElement, useRef, useState } from "react";
+import { Copy, Check, Loader2 } from "lucide-react";
+import { type ReactElement, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 
 interface MFAVerificationFormProps {
   email: string;
   secret: string;
+  onSubmit: (code: string) => void | Promise<void>;
+  loading?: boolean;
+  error?: string | null;
+  onBack?: () => void;
 }
 
 export default function MFAVerificationForm({
   email,
   secret,
+  onSubmit,
+  loading = false,
+  error,
+  onBack,
 }: MFAVerificationFormProps): ReactElement {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [copied, setCopied] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>(new Array<HTMLInputElement | null>(6).fill(null));
 
   const totpUri = `otpauth://totp/WSSSguardo:${encodeURIComponent(email)}?secret=${secret}&issuer=WSSSguardo`;
+  const code = otp.join("");
+  const canSubmit = code.length === 6 && !loading;
+
+  function submit(): void {
+    if (code.length === 6 && !loading) void onSubmit(code);
+  }
 
   function handleChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
     const digit = e.target.value.replace(/\D/g, "").slice(-1);
@@ -30,6 +44,10 @@ export default function MFAVerificationForm({
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      submit();
+      return;
+    }
     if (e.key === "Backspace") {
       if (otp[index]) {
         const newOtp = [...otp];
@@ -66,9 +84,7 @@ export default function MFAVerificationForm({
   return (
     <Card className="w-full max-w-sm py-0 gap-0">
       <CardHeader className="px-8 pt-8 pb-5">
-        <h2 className="text-2xl font-normal text-foreground leading-tight">
-          Configurar Autenticador
-        </h2>
+        <h2 className="text-2xl font-normal text-foreground leading-tight">Configurar Autenticador</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Escaneie o QR code com seu aplicativo autenticador
         </p>
@@ -121,25 +137,30 @@ export default function MFAVerificationForm({
                 pattern="[0-9]*"
                 maxLength={1}
                 value={otp[i]}
+                disabled={loading}
                 onChange={(e) => handleChange(i, e)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
-                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="w-10 h-12 text-center text-lg rounded-md border border-input bg-input/30 text-foreground transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
               />
             ))}
           </div>
 
-          <Button type="button" className="w-full">
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+
+          <Button type="button" className="w-full" onClick={submit} disabled={!canSubmit}>
+            {loading && <Loader2 className="size-4 animate-spin" />}
             Verificar
           </Button>
 
           <div className="flex justify-center">
-            <a
-              href="/login"
+            <button
+              type="button"
+              onClick={onBack}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Voltar ao login
-            </a>
+            </button>
           </div>
         </div>
       </CardContent>

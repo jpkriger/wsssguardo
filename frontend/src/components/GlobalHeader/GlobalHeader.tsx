@@ -1,7 +1,21 @@
 import type { ReactElement } from "react";
+import { LogOut } from "lucide-react";
 import { ThemeToggle } from "../theme-toggle";
+import { useAuth } from "@/contexts/AuthContext";
+import type { UserRole } from "@/api/auth";
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  CONSULTANT: "Consultor",
+  MANAGER: "Gerente",
+};
+
+function initials(firstName: string, lastName: string): string {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+}
 
 export default function GlobalHeader(): ReactElement {
+  const { user, logout } = useAuth();
+
   return (
     <div className="w-full h-22 px-40 border-b flex items-center justify-between">
       <div className="w-186 py-3 flex justify-start gap-5">
@@ -41,12 +55,25 @@ export default function GlobalHeader(): ReactElement {
       <div className="w-186 flex justify-end items-center gap-1.5">
         <ThemeToggle />
         <div className="flex flex-col items-end align-middle px-4 h-full pt-1">
-          <p className="-my-0.5">Daniel Moura</p>
-          <p className="-my-0.5 opacity-50">Consultor</p>
+          <p className="-my-0.5">
+            {user ? `${user.firstName} ${user.lastName}` : ""}
+          </p>
+          <p className="-my-0.5 opacity-50">{user ? ROLE_LABELS[user.role] : ""}</p>
         </div>
         <div className="border rounded-full w-14 h-14 bg-foreground/10 flex justify-center items-center">
-          <p className="font-normal! text-xl! pt-0.5 opacity-60">DM</p>
+          <p className="font-normal! text-xl! pt-0.5 opacity-60">
+            {user ? initials(user.firstName, user.lastName) : ""}
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => void logout()}
+          aria-label="Sair"
+          title="Sair"
+          className="ml-2 flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-colors"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </div>
   );
