@@ -11,5 +11,5 @@ export type ReportGenerateResponse = { reportId: string; projectId: string; stat
 export async function generateReport(req: ReportGenerateRequest): Promise<ReportGenerateResponse> {
   const res = await fetch('/api/reports/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req) });
   if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  return res.json() as Promise<ReportGenerateResponse>;
 }
