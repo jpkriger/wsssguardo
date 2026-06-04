@@ -27,3 +27,27 @@ variable "frontend_domain" {
   type        = string
   default     = "ages-app.kriger.dev"
 }
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.grafana_password)) > 0
+    error_message = "grafana_password must be provided and must not be empty."
+  }
+}
+
+variable "grafana_password" {
+  description = "Grafana admin password"
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = length(trim(var.grafana_password)) > 0
+    error_message = "grafana_password must not be empty."
+  }
+}
