@@ -163,6 +163,7 @@ export default function Companies(): ReactElement {
         name: data.name,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        consultantIds: data.consultantIds,
       });
     } else {
       if (!data.riskConfig) {

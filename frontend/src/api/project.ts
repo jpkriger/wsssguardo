@@ -10,6 +10,7 @@ export interface ProjectResponse {
   startDate: string | null;
   endDate: string | null;
   status: ProjectStatus;
+  consultantIds: string[];
 }
 
 export interface CreateProjectRequest {
@@ -26,6 +27,7 @@ export interface UpdateProjectRequest {
   startDate?: string | null;
   endDate?: string | null;
   status?: ProjectStatus;
+  consultantIds?: string[];
 }
 
 const BASE = "projects";

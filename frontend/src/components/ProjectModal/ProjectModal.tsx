@@ -63,15 +63,16 @@ export default function ProjectModal({
       setName(project.name);
       setStartDate(project.startDate?.split("T")[0] ?? "");
       setEndDate(project.endDate?.split("T")[0] ?? "");
+      setConsultantIds(project.consultantIds ?? []);
     } else {
       setName("");
       setStartDate("");
       setEndDate("");
       setRiskConfig(createDefaultRiskConfig());
       setConsultantIds([]);
-      setUserSearch("");
-      void listUsers().then(setUsers).catch(() => setUsers([]));
     }
+    setUserSearch("");
+    void listUsers().then(setUsers).catch(() => setUsers([]));
     setError(null);
   }, [project, isOpen]);
 
@@ -206,7 +207,8 @@ export default function ProjectModal({
         name: name.trim(),
         startDate,
         endDate,
-        ...(isEdit ? {} : { riskConfig, consultantIds }),
+        consultantIds,
+        ...(isEdit ? {} : { riskConfig }),
       });
       onClose();
     } catch (err) {
@@ -279,7 +281,7 @@ export default function ProjectModal({
             </div>
           </div>
 
-          {!isEdit && users.length > 0 && (
+          {users.length > 0 && (
             <>
               <Separator />
               <div className="space-y-2">
