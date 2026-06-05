@@ -53,7 +53,7 @@ class RiskServiceImplTest {
     UUID projectId = UUID.randomUUID();
     UUID findId = UUID.randomUUID();
     String username = "testUser";
-    RiskCreateRequestDTO request = request(projectId, List.of(findId));
+    RiskCreateRequestDTO request = request(List.of(findId));
 
     Project project = new Project();
     project.setId(projectId);
@@ -84,7 +84,7 @@ class RiskServiceImplTest {
   @Test
   void createRiskShouldThrowWhenProjectDoesNotExist() {
     UUID projectId = UUID.randomUUID();
-    RiskCreateRequestDTO request = request(projectId, List.of());
+    RiskCreateRequestDTO request = request(List.of());
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
@@ -98,7 +98,7 @@ class RiskServiceImplTest {
   void createRiskShouldThrowWhenFindDoesNotExist() {
     UUID projectId = UUID.randomUUID();
     UUID findId = UUID.randomUUID();
-    RiskCreateRequestDTO request = request(projectId, List.of(findId));
+    RiskCreateRequestDTO request = request(List.of(findId));
 
     Project project = new Project();
     project.setId(projectId);
@@ -110,9 +110,8 @@ class RiskServiceImplTest {
     verifyNoInteractions(repository);
   }
 
-  private RiskCreateRequestDTO request(UUID projectId, List<UUID> findIds) {
+  private RiskCreateRequestDTO request(List<UUID> findIds) {
     return new RiskCreateRequestDTO(
-        projectId,
         "Risk name",
         findIds,
         "Description",
