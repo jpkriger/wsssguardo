@@ -163,9 +163,16 @@ public class ProjectService {
         }
 
         if (request.consultantIds() != null) {
-            List<ProjectUser> projectUsers = buildProjectUsers(request.consultantIds());
-            projectUsers.forEach(projectUser -> projectUser.setProject(project));
-            project.setProjectUsers(projectUsers);
+            List<ProjectUser> newMembers = buildProjectUsers(request.consultantIds());
+            newMembers.forEach(pu -> pu.setProject(project));
+            // Limpa e repovoar a mesma instância da coleção — nunca substituir a referência
+            // quando há orphanRemoval=true, pois o Hibernate rastreia a coleção original.
+            if (project.getProjectUsers() == null) {
+                project.setProjectUsers(newMembers);
+            } else {
+                project.getProjectUsers().clear();
+                project.getProjectUsers().addAll(newMembers);
+            }
         }
 
         if (request.status() != null) {
@@ -281,7 +288,7 @@ public class ProjectService {
 
     private List<ProjectUser> buildProjectUsers(List<UUID> consultantIds) {
         if (consultantIds == null || consultantIds.isEmpty()) {
-            return List.of();
+            return new java.util.ArrayList<>();
         }
 
         List<UUID> uniqueConsultantIds = consultantIds.stream().distinct().toList();
