@@ -1,13 +1,13 @@
 import { ReactElement, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { 
-  ChevronLeft, 
-  Expand, 
-  ChevronDown, 
-  EyeIcon, 
-  Download, 
+import {
+  ChevronLeft,
+  Expand,
+  ChevronDown,
+  EyeIcon,
+  Download,
   File,
-  Calendar as CalendarIcon 
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +24,9 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Calendar } from "../components/ui/calendar";
+import ExecutiveSummary from "../components/ReportTemplate/ExecutiveSummary/ExecutiveSummary";
+import RiskOverview from "../components/ReportTemplate/RiskOverview/RiskOverview";
+import RiskAnalysis from "../components/ReportTemplate/RiskAnalysis/RiskAnalysis";
 import {
   Popover,
   PopoverContent,
@@ -40,7 +43,10 @@ import {
   type RiskResponse,
   type RiskSummaryResponse,
 } from "../api/risk";
+import { listCompanies } from "../api/company";
 import { cn } from "../lib/utils";
+import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
+import BusinessImpactAssessment from "@/components/ReportTemplate/BusinessImpactAssessment/BusinessImpactAssessment";
 
 function formatDateBr(date: Date): string {
   return new Intl.DateTimeFormat("pt-BR").format(date);
@@ -62,29 +68,7 @@ function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-const DETAIL_LEVELS = [
-  {
-    value: "executive",
-    label: "Executivo",
-    description: "Visão resumida",
-  },
-  {
-    value: "managerial",
-    label: "Gerencial",
-    description: "Detalhes táticos",
-  },
-  {
-    value: "technical",
-    label: "Técnico",
-    description: "Dados completos",
-  },
-] as const;
-
 const REPORT_SECTIONS = [
-  // {
-  //   key: "cover",
-  //   label: "Capa",
-  // },
   {
     key: "summary",
     label: "Resumo",
@@ -107,8 +91,6 @@ const REPORT_SECTIONS = [
   },
 ] as const;
 
-type DetailLevel = (typeof DETAIL_LEVELS)[number]["value"];
-
 interface FormState {
   title: string;
   client: string;
@@ -125,10 +107,10 @@ function getTodayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildInitialFormState(project: ProjectResponse | null): FormState {
+function buildInitialFormState(project: ProjectResponse | null, companyName?: string): FormState {
   return {
     title: project?.name ?? "",
-    client: project?.companyId ?? "",
+    client: companyName ?? project?.companyId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
@@ -150,14 +132,12 @@ export default function ProjectReport(): ReactElement {
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [projectError, setProjectError] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | undefined>();
   const [riskSummary, setRiskSummary] = useState<RiskSummaryResponse | null>(
     null,
   );
   const [loadingRiskSummary, setLoadingRiskSummary] = useState(true);
   const [loadingProjectRisks, setLoadingProjectRisks] = useState(true);
-  const [_reportLevel, _setReportLevel] = useState<DetailLevel>(
-    DETAIL_LEVELS[0].value,
-  );
   const [formState, setFormState] = useState<FormState>(() =>
     buildInitialFormState(null),
   );
@@ -172,8 +152,8 @@ export default function ProjectReport(): ReactElement {
   const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
 
   useEffect(() => {
-    setFormState(buildInitialFormState(project));
-  }, [project]);
+    setFormState(buildInitialFormState(project, companyName));
+  }, [project, companyName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +198,35 @@ export default function ProjectReport(): ReactElement {
       cancelled = true;
     };
   }, [projectId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompanyNameData(): Promise<void> {
+      if (!project?.companyId) {
+        setCompanyName(undefined);
+        return;
+      }
+
+      try {
+        const companies = await listCompanies();
+        if (cancelled) return;
+
+        const company = companies.find((c) => c.id === project.companyId);
+        setCompanyName(company?.name);
+      } catch {
+        if (!cancelled) {
+          setCompanyName(undefined);
+        }
+      }
+    }
+
+    void loadCompanyNameData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [project?.companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,7 +369,9 @@ export default function ProjectReport(): ReactElement {
 
           <div className="mt-2">
             {loadingProject ? (
-              <span className="text-sm text-muted-foreground">Carregando dados do projeto...</span>
+              <span className="text-sm text-muted-foreground">
+                Carregando dados do projeto...
+              </span>
             ) : projectError ? (
               <span className="text-sm text-destructive">{projectError}</span>
             ) : null}
@@ -378,38 +389,6 @@ export default function ProjectReport(): ReactElement {
 
           <CardContent className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <div className="space-y-5">
-              
-              {/* <div className="justify-between">
-                <div>
-                  <CardTitle className="text-sm tracking-wider text-muted-foreground">
-                    NÍVEL DE DETALHE
-                  </CardTitle>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {DETAIL_LEVELS.map((level) => (
-                  <button
-                    key={level.value}
-                    type="button"
-                    aria-pressed={reportLevel === level.value}
-                    onClick={() => setReportLevel(level.value)}
-                    className={cn(
-                      "flex flex-col items-start justify-center gap-1 rounded-md border border-border p-3 text-left text-sm transition-colors",
-                      reportLevel === level.value
-                        ? "bg-primary/8 border-primary"
-                        : "bg-muted hover:bg-muted/40",
-                    )}
-                  >
-                    <div className="font-medium">{level.label}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {level.description}
-                    </div>
-                  </button>
-                ))}
-              </div> 
-              Separator />*/}
-              
               <section>
                 <div className="justify-between">
                   <div>
@@ -543,7 +522,7 @@ export default function ProjectReport(): ReactElement {
                               ) : (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
                                   Nenhum risco encontrado para este projeto.
-                                </div>
+                                 </div>
                               )}
                             </div>
                           ) : null}
@@ -590,6 +569,7 @@ export default function ProjectReport(): ReactElement {
                   </div>
                 </div>
               </section>
+
               <Separator />
 
               <div className="justify-between">
@@ -679,8 +659,8 @@ export default function ProjectReport(): ReactElement {
                             }))
                           }
                           initialFocus
-                          captionLayout="dropdown" 
-                          fromYear={2025} 
+                          captionLayout="dropdown"
+                          fromYear={2025}
                           toYear={2040}
                           locale={ptBR}
                         />
@@ -747,8 +727,8 @@ export default function ProjectReport(): ReactElement {
           </CardFooter>
         </Card>
 
-        <Card className="flex min-h-0 w-full flex-col rounded-none border-border bg-card/70 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)] lg:overflow-y-auto">
-          <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
+        <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-white py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
+          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
             <div className="flex w-full items-left justify-between gap-3">
               <div className="flex items-center gap-3">
                 <EyeIcon className="size-5 text-muted-foreground" />
@@ -758,6 +738,7 @@ export default function ProjectReport(): ReactElement {
                 <div className="text-primary"> &bull; </div>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 aria-label="Expandir preview"
@@ -768,7 +749,34 @@ export default function ProjectReport(): ReactElement {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1" />
+          <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
+            <ReportHeader
+              projectId={projectId}
+              title={formState.title}
+              client={formState.client}
+              date={new Date(formState.date + "T12:00:00")}
+            />
+            {sectionsEnabled["summary"] && (
+              <ExecutiveSummary
+                projectId={projectId}
+                customSummary={formState.summary}
+                highRisks={riskSummary?.highRisks}
+                mediumRisks={riskSummary?.mediumRisks}
+              />
+            )}
+            {sectionsEnabled["riskTable"] && (
+              <RiskOverview projectId={projectId} />
+            )}
+            {sectionsEnabled["riskDetails"] && (
+              <RiskAnalysis
+                projectId={projectId}
+                selectedRiskIds={selectedRiskIds}
+              />
+            )}
+            {sectionsEnabled["impactAssessment"] && (
+              <BusinessImpactAssessment />
+            )}
+          </CardContent>
         </Card>
       </div>
     </section>
