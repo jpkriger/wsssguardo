@@ -60,7 +60,7 @@ public class RiskController {
             @PathVariable UUID projectId,
             @Valid @RequestBody RiskCreateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String createdBy = authenticatedUser.get().getEmail();
+        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
         RiskResponseDTO response = service.createRisk(projectId, request, createdBy);
         URI location = URI.create("/api/projects/" + projectId + "/risks/" + response.id());
         return ResponseEntity.created(location).body(response);

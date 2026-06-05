@@ -52,7 +52,7 @@ public class AssetController {
             @PathVariable UUID projectId,
             @Valid @RequestBody AssetCreateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String createdBy = authenticatedUser.get().getEmail();
+        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
         AssetResponseDTO response = service.createAsset(projectId, request, createdBy);
         URI location = URI.create("/api/projects/" + projectId + "/assets/" + response.id());
         return ResponseEntity.created(location).body(response);
@@ -65,7 +65,7 @@ public class AssetController {
             @PathVariable UUID id,
             @Valid @RequestBody AssetUpdateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String updatedBy = authenticatedUser.get().getEmail();
+        String updatedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
         return ResponseEntity.ok(service.updateAsset(projectId, id, request, updatedBy));
     }
 
@@ -75,7 +75,7 @@ public class AssetController {
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
         projectAccessService.assertAccess(projectId);
-        String deletedBy = authenticatedUser.get().getEmail();
+        String deletedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
         service.deleteAsset(projectId, id, deletedBy);
         return ResponseEntity.noContent().build();
     }

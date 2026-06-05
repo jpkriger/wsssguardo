@@ -1,6 +1,7 @@
 package wsssguardo.shared.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import wsssguardo.project.repository.ProjectRepository;
@@ -18,21 +19,19 @@ public class ProjectAccessService {
     private final AuthenticatedUser authenticatedUser;
     private final ProjectRepository projectRepository;
 
-    /**
-     * Lança 403 se o usuário corrente não for MANAGER.
-     */
+    @Value("${security.auth.disabled:false}")
+    private boolean authDisabled;
+
     public void assertManager() {
+        if (authDisabled) return;
         User user = authenticatedUser.get();
         if (user == null || user.getRole() != UserRole.MANAGER) {
             throw new ApiException("Apenas gestores podem realizar esta operação", HttpStatus.FORBIDDEN);
         }
     }
 
-    /**
-     * Lança 403 se o usuário corrente não tem acesso ao projeto.
-     * MANAGER passa sempre; CONSULTANT precisa estar em project_users.
-     */
     public void assertAccess(UUID projectId) {
+        if (authDisabled) return;
         User user = authenticatedUser.get();
         if (user == null) {
             throw new ApiException("Não autenticado", HttpStatus.UNAUTHORIZED);
@@ -43,20 +42,16 @@ public class ProjectAccessService {
         }
     }
 
-    /**
-     * Retorna todos os project IDs visíveis ao usuário corrente.
-     * MANAGER vê todos; CONSULTANT vê apenas os seus.
-     */
     public List<UUID> getAccessibleProjectIds() {
+        if (authDisabled) {
+            return projectRepository.findAll().stream().map(p -> p.getId()).toList();
+        }
         User user = authenticatedUser.get();
         if (user == null) {
             throw new ApiException("Não autenticado", HttpStatus.UNAUTHORIZED);
         }
         if (user.getRole() == UserRole.MANAGER) {
-            return projectRepository.findAll()
-                    .stream()
-                    .map(p -> p.getId())
-                    .toList();
+            return projectRepository.findAll().stream().map(p -> p.getId()).toList();
         }
         return projectRepository.findProjectIdsByUserId(user.getId());
     }

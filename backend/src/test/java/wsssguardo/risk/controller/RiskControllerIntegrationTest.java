@@ -63,7 +63,7 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         }
         """.formatted(project.getId(), find.getId());
 
-    mockMvc.perform(post("/api/risks")
+    mockMvc.perform(post("/api/projects/" + project.getId() + "/risks")
             .contentType(MediaType.APPLICATION_JSON)
             .content(body))
         .andExpect(status().isCreated())
@@ -77,7 +77,9 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   void createRiskShouldReturnBadRequestWhenBodyIsInvalid() throws Exception {
-    mockMvc.perform(post("/api/risks")
+    Company company = createCompany();
+    Project project = createProject(company);
+    mockMvc.perform(post("/api/projects/" + project.getId() + "/risks")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
         .andExpect(status().isBadRequest())
