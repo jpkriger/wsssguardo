@@ -11,13 +11,13 @@ import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskSummaryDTO;
 
 public interface RiskService {
-  RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username);
+  RiskResponseDTO createRisk(UUID projectId, RiskCreateRequestDTO request, String username);
 
   RiskPageResponseDTO findAllByProject(UUID projectId, Pageable pageable);
 
   RiskSummaryDTO getRiskSummary(UUID projectId);
 
-  RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto);
+  RiskResponseDTO update(UUID projectId, UUID id, RiskUpdateRequestDTO dto);
 
-  void delete(UUID id);
+  void delete(UUID projectId, UUID id);
 }

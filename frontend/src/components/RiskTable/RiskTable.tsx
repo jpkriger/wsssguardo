@@ -166,7 +166,7 @@ export default function RiskTable(): ReactElement {
   async function handleDelete(id: string): Promise<void> {
     setDeleting(true);
     try {
-      await deleteRisk(id);
+      await deleteRisk(projectId, id);
       setRisks((prev) => prev.filter((r) => r.id !== id));
     } catch (err: unknown) {
       const message =
@@ -191,7 +191,6 @@ export default function RiskTable(): ReactElement {
       recommendation: risk.recommendation,
       riskLevel: risk.riskLevel,
       findIds: risk.findIds,
-      damageAssetIds: risk.damageAssetIds,
     });
     setModalMode("edit");
     setModalOpen(true);
@@ -214,8 +213,7 @@ export default function RiskTable(): ReactElement {
           (occurrenceP * impactP) / probabilityRange.max,
         );
 
-        await createRisk({
-          projectId,
+        await createRisk(projectId, {
           name: data.name,
           findIds: data.findIds,
           description: data.description,
@@ -223,7 +221,6 @@ export default function RiskTable(): ReactElement {
           occurrenceProbability: occurrenceP,
           impactProbability: impactP,
           damageOperations: data.damageOperations,
-          damageAssetIds: data.damageAssetIds,
           damageIndividuals: data.damageIndividuals,
           damageOtherOrgs: data.damageOtherOrgs,
           recommendation: data.recommendation,
@@ -236,7 +233,7 @@ export default function RiskTable(): ReactElement {
           (occurrenceP * impactP) / probabilityRange.max,
         );
 
-        await updateRisk(data.id, {
+        await updateRisk(projectId, data.id, {
           name: data.name,
           description: data.description,
           consequences: data.consequences,
@@ -244,7 +241,6 @@ export default function RiskTable(): ReactElement {
           impactProbability: impactP,
           damageOperations: data.damageOperations,
           findIds: data.findIds,
-          assetIds: data.damageAssetIds,
           damageIndividuals: data.damageIndividuals,
           damageOtherOrgs: data.damageOtherOrgs,
           recommendation: data.recommendation,

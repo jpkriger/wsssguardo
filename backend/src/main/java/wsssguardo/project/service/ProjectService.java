@@ -57,7 +57,9 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> listAllProjects() {
-        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findAllByIdIn(accessible).stream()
+                .sorted(Comparator.comparing(Project::getCreatedAt).reversed())
                 .map(mapper::toResponse)
                 .toList();
     }
@@ -68,7 +70,9 @@ public class ProjectService {
             return List.of();
         }
 
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
         Map<UUID, Project> projectsById = repository.findAllById(ids).stream()
+                .filter(p -> accessible.contains(p.getId()))
                 .collect(Collectors.toMap(Project::getId, Function.identity()));
 
         return ids.stream()
@@ -83,8 +87,11 @@ public class ProjectService {
         if (userId == null) {
             return List.of();
         }
-
-        return repository.findProjectIdsByUserId(userId);
+        // Retorna somente a interseção com os projetos acessíveis ao usuário corrente.
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findProjectIdsByUserId(userId).stream()
+                .filter(accessible::contains)
+                .toList();
     }
 
     @Transactional

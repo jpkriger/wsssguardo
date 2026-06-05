@@ -45,9 +45,9 @@ public class RiskServiceImpl implements RiskService {
 
   @Override
   @Transactional
-  public RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username) {
-    Project project = projectRepository.findById(request.projectId())
-        .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
+  public RiskResponseDTO createRisk(UUID projectId, RiskCreateRequestDTO request, String username) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
     List<Find> finds = findByIds(request.findIds(), findRepository, "Find", project.getId());
 
     Risk risk = mapper.toEntity(request, project, finds, username);
@@ -98,11 +98,13 @@ public class RiskServiceImpl implements RiskService {
 
   @Override
   @Transactional
-  public RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto) {
+  public RiskResponseDTO update(UUID projectId, UUID id, RiskUpdateRequestDTO dto) {
     Risk risk = repository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Risk", id));
 
-    UUID projectId = risk.getProject().getId();
+    if (!risk.getProject().getId().equals(projectId)) {
+      throw new ApiException("Risk does not belong to the given project", HttpStatus.NOT_FOUND);
+    }
 
     List<Find> finds = dto.findIds() != null
         ? findByIds(dto.findIds(), findRepository, "Find", projectId)
@@ -115,11 +117,15 @@ public class RiskServiceImpl implements RiskService {
 
   @Override
   @Transactional
-  public void delete(UUID id) {
-    if (!repository.existsById(id)) {
-      throw new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND);
+  public void delete(UUID projectId, UUID id) {
+    Risk risk = repository.findById(id)
+        .orElseThrow(() -> new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND));
+
+    if (!risk.getProject().getId().equals(projectId)) {
+      throw new ApiException("Risk does not belong to the given project", HttpStatus.NOT_FOUND);
     }
-    repository.deleteById(id); // soft delete automático
+
+    repository.deleteById(id);
   }
 
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,

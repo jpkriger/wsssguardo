@@ -47,9 +47,9 @@ public class AssetService {
     }
 
     @Transactional
-    public AssetResponseDTO createAsset(AssetCreateRequestDTO request, String username) {
-        var project = projectRepository.findById(request.projectId())
-                .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
+    public AssetResponseDTO createAsset(UUID projectId, AssetCreateRequestDTO request, String username) {
+        var project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
 
         Asset asset = assetMapper.toEntity(request, project, username);
         asset = repository.save(asset);
@@ -58,9 +58,12 @@ public class AssetService {
     }
 
     @Transactional
-    public AssetResponseDTO updateAsset(UUID id, AssetUpdateRequestDTO request, String username) {
+    public AssetResponseDTO updateAsset(UUID projectId, UUID id, AssetUpdateRequestDTO request, String username) {
         var asset = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+        if (!asset.getProject().getId().equals(projectId)) {
+            throw new ApiException("Asset does not belong to the given project", HttpStatus.NOT_FOUND);
+        }
 
         asset = assetMapper.updateEntity(asset, request, username);
 
@@ -68,10 +71,12 @@ public class AssetService {
     }
 
     @Transactional
-    public void deleteAsset(UUID id, String username) {
-        // TODO: Validar usuario tem autorizacao para excluir
+    public void deleteAsset(UUID projectId, UUID id, String username) {
         var asset = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
+        if (!asset.getProject().getId().equals(projectId)) {
+            throw new ApiException("Asset does not belong to the given project", HttpStatus.NOT_FOUND);
+        }
 
         if (repository.existsActiveFindLink(id)) {
             throw new ApiException("Asset has linked findings and cannot be deleted", HttpStatus.CONFLICT);

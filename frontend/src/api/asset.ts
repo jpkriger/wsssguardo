@@ -22,7 +22,9 @@ export interface AssetPageResponse {
     last: boolean;
 }
 
-const BASE = "assets";
+function base(projectId: string): string {
+    return `projects/${projectId}/assets`;
+}
 
 export function fetchAssetsByProject(
     projectId: string,
@@ -30,16 +32,12 @@ export function fetchAssetsByProject(
     size: number = 5,
 ): Promise<AssetPageResponse> {
     return apiClient
-        .get(`${BASE}/project/${projectId}`, {
+        .get(base(projectId), {
             searchParams: { page: String(page), size: String(size) },
         })
         .json<AssetPageResponse>();
 }
 
-/**
- * Fetches every asset of a project by paging through the server response.
- * Used by the client-mode table so sorting/search/filters operate on the full set.
- */
 export async function fetchAllAssetsByProject(
     projectId: string,
 ): Promise<AssetResponse[]> {
@@ -55,12 +53,7 @@ export async function fetchAllAssetsByProject(
     return all;
 }
 
-export async function deleteAsset(id: string): Promise<void> {
-    await apiClient.delete(`${BASE}/${id}`);
-}
-
 export interface AssetCreateRequest {
-    projectId: string;
     name: string;
     description: string;
     content: string;
@@ -72,10 +65,14 @@ export interface AssetUpdateRequest {
     content?: string;
 }
 
-export function createAsset(data: AssetCreateRequest): Promise<AssetResponse> {
-    return apiClient.post(BASE, { json: data }).json<AssetResponse>();
+export function createAsset(projectId: string, data: AssetCreateRequest): Promise<AssetResponse> {
+    return apiClient.post(base(projectId), { json: data }).json<AssetResponse>();
 }
 
-export function updateAsset(id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
-    return apiClient.patch(`${BASE}/${id}`, { json: data }).json<AssetResponse>();
+export function updateAsset(projectId: string, id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
+    return apiClient.patch(`${base(projectId)}/${id}`, { json: data }).json<AssetResponse>();
+}
+
+export async function deleteAsset(projectId: string, id: string): Promise<void> {
+    await apiClient.delete(`${base(projectId)}/${id}`);
 }

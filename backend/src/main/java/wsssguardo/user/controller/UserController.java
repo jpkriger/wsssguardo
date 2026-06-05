@@ -1,12 +1,15 @@
 package wsssguardo.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.security.AuthenticatedUser;
+import wsssguardo.user.domain.UserRole;
 import wsssguardo.user.dto.UserResponse;
 import wsssguardo.user.service.UserService;
 
@@ -22,6 +25,12 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
+        var current = authenticatedUser.get();
+        boolean isSelf = current.getId().equals(id);
+        boolean isManager = current.getRole() == UserRole.MANAGER;
+        if (!isSelf && !isManager) {
+            throw new ApiException("Acesso negado", HttpStatus.FORBIDDEN);
+        }
         return ResponseEntity.ok(service.findById(id));
     }
 
