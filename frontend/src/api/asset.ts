@@ -36,6 +36,25 @@ export function fetchAssetsByProject(
         .json<AssetPageResponse>();
 }
 
+/**
+ * Fetches every asset of a project by paging through the server response.
+ * Used by the client-mode table so sorting/search/filters operate on the full set.
+ */
+export async function fetchAllAssetsByProject(
+    projectId: string,
+): Promise<AssetResponse[]> {
+    const PAGE_SIZE = 100;
+    const all: AssetResponse[] = [];
+    let page = 0;
+    for (;;) {
+        const res = await fetchAssetsByProject(projectId, page, PAGE_SIZE);
+        all.push(...res.content);
+        if (res.last || res.content.length === 0) break;
+        page += 1;
+    }
+    return all;
+}
+
 export async function deleteAsset(id: string): Promise<void> {
     await apiClient.delete(`${BASE}/${id}`);
 }

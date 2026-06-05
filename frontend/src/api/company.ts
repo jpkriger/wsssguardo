@@ -1,14 +1,14 @@
 import apiClient from "@/lib/api-client";
 import type { ProjectResponse as ApiProjectResponse } from "./project";
 
-const BASE = "customers";
+const BASE = "companies";
 
 export type ProjectStatus = ApiProjectResponse["status"];
 
 export interface ProjectResponse {
   id: string;
   name: string;
-  customerId: string;
+  companyId: string;
   startDate: string | null;
   endDate: string | null;
   status: ProjectStatus;

@@ -75,6 +75,21 @@ export function fetchRisksByProject(
         .json<RiskPageResponse>();
 }
 
+export async function fetchAllRisksByProject(
+    projectId: string,
+): Promise<RiskResponse[]> {
+    const PAGE_SIZE = 100;
+    const all: RiskResponse[] = [];
+    let page = 0;
+    for (;;) {
+        const res = await fetchRisksByProject(projectId, page, PAGE_SIZE);
+        all.push(...res.content);
+        if (res.last || res.content.length === 0) break;
+        page += 1;
+    }
+    return all;
+}
+
 export function createRisk(data: RiskCreateRequest): Promise<RiskResponse> {
     return apiClient.post(BASE, { json: data }).json<RiskResponse>();
 }

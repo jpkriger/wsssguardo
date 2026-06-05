@@ -19,8 +19,8 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.dto.ProjectResponse;
@@ -35,7 +35,7 @@ class ProjectServiceTest {
     private ProjectRepository repository;
 
     @Mock
-    private CustomerRepository customerRepository;
+    private CompanyRepository companyRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -50,10 +50,10 @@ class ProjectServiceTest {
     void listAllProjectsShouldReturnMappedProjects() {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
-        UUID customerId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
 
-        Project first = project(firstId, "Legacy", customerId, ProjectStatus.COMPLETED);
-        Project second = project(secondId, "Modern", customerId, ProjectStatus.IN_PROGRESS);
+        Project first = project(firstId, "Legacy", companyId, ProjectStatus.COMPLETED);
+        Project second = project(secondId, "Modern", companyId, ProjectStatus.IN_PROGRESS);
 
         when(repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))).thenReturn(List.of(second, first));
 
@@ -69,10 +69,10 @@ class ProjectServiceTest {
     void projectsByIdShouldReturnProjectsInRequestedOrder() {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
-        UUID customerId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
 
-        Project second = project(secondId, "Mobile App", customerId, ProjectStatus.IN_PROGRESS);
-        Project first = project(firstId, "Alpha Platform", customerId, ProjectStatus.COMPLETED);
+        Project second = project(secondId, "Mobile App", companyId, ProjectStatus.IN_PROGRESS);
+        Project first = project(firstId, "Alpha Platform", companyId, ProjectStatus.COMPLETED);
 
         when(repository.findAllById(List.of(secondId, firstId))).thenReturn(List.of(first, second));
 
@@ -81,7 +81,7 @@ class ProjectServiceTest {
         assertEquals(2, responses.size());
         assertEquals(secondId, responses.get(0).id());
         assertEquals("Mobile App", responses.get(0).name());
-        assertEquals(customerId, responses.get(0).customerId());
+        assertEquals(companyId, responses.get(0).companyId());
         assertEquals(ProjectStatus.IN_PROGRESS, responses.get(0).status());
         assertEquals(firstId, responses.get(1).id());
     }
@@ -90,9 +90,9 @@ class ProjectServiceTest {
     void projectsByIdShouldIgnoreUnknownIds() {
         UUID knownId = UUID.randomUUID();
         UUID unknownId = UUID.randomUUID();
-        UUID customerId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
 
-        Project known = project(knownId, "Known Project", customerId, ProjectStatus.ON_HOLD);
+        Project known = project(knownId, "Known Project", companyId, ProjectStatus.ON_HOLD);
 
         when(repository.findAllById(List.of(unknownId, knownId))).thenReturn(List.of(known));
 
@@ -141,16 +141,16 @@ class ProjectServiceTest {
         verifyNoInteractions(repository);
     }
 
-    private static Project project(UUID id, String name, UUID customerId, ProjectStatus status) {
-        Customer customer = new Customer();
-        customer.setId(customerId);
-        customer.setName("Customer");
-        customer.setCreatedAt(LocalDateTime.now());
+    private static Project project(UUID id, String name, UUID companyId, ProjectStatus status) {
+        Company company = new Company();
+        company.setId(companyId);
+        company.setName("Company");
+        company.setCreatedAt(LocalDateTime.now());
 
         Project project = new Project();
         project.setId(id);
         project.setName(name);
-        project.setCustomer(customer);
+        project.setCompany(company);
         project.setStartDate(LocalDate.of(2026, 3, 21));
         project.setEndDate(LocalDate.of(2026, 4, 21));
         project.setStatus(status);

@@ -8,7 +8,7 @@ import wsssguardo.project.domain.ProjectStatus;
 public record ProjectResponse(
     UUID id,
     String name,
-    UUID customerId,
+    UUID companyId,
     LocalDate startDate,
     LocalDate endDate,
     ProjectStatus status

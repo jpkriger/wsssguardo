@@ -1,4 +1,4 @@
-package wsssguardo.customer;
+package wsssguardo.company;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,14 +12,14 @@ import org.hibernate.annotations.SQLDelete;
 import wsssguardo.shared.domain.BaseEntity;
 
 @Entity
-@Table(name = "customers")
+@Table(name = "companies")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE customers SET deleted_at = NOW() WHERE id = ?")
-public class Customer extends BaseEntity {
+@SQLDelete(sql = "UPDATE companies SET deleted_at = NOW() WHERE id = ?")
+public class Company extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
