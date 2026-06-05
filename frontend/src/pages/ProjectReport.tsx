@@ -1,6 +1,7 @@
 import { ReactElement, useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import {
+  ChevronLeft,
   Expand,
   ChevronDown,
   EyeIcon,
@@ -47,44 +48,48 @@ import { cn } from "../lib/utils";
 import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
 import BusinessImpactAssessment from "@/components/ReportTemplate/BusinessImpactAssessment/BusinessImpactAssessment";
 
-const DETAIL_LEVELS = [
-  {
-    value: "executive",
-    label: "Executivo",
-    description: "Visão resumida",
-  },
-  {
-    value: "managerial",
-    label: "Gerencial",
-    description: "Detalhes táticos",
-  },
-  {
-    value: "technical",
-    label: "Técnico",
-    description: "Dados completos",
-  },
-] as const;
+function formatDateBr(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function parseProjectEndDate(value: string): Date {
+  const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const match = dateOnlyPattern.exec(value);
+
+  if (!match) {
+    return new Date(value);
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
 
 const REPORT_SECTIONS = [
   {
     key: "summary",
-    label: "Resumo executivo",
+    label: "Resumo",
   },
   {
     key: "riskTable",
-    label: "Visão Geral dos Riscos",
+    label: "Tabela de Riscos",
   },
   {
     key: "riskDetails",
-    label: "Análise dos Riscos",
+    label: "Detalhamento de Riscos",
   },
   {
-    key: "impactAssessment",
-    label: "Avaliação de Impacto",
+    key: "assetsArtifacts",
+    label: "Ativos e Artefatos",
+  },
+  {
+    key: "recommendations",
+    label: "Recomendações",
   },
 ] as const;
-
-type DetailLevel = (typeof DETAIL_LEVELS)[number]["value"];
 
 interface FormState {
   title: string;
@@ -102,7 +107,10 @@ function getTodayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildInitialFormState(project: ProjectResponse | null, companyName?: string): FormState {
+function buildInitialFormState(
+  project: ProjectResponse | null,
+  companyName?: string,
+): FormState {
   return {
     title: project?.name ?? "",
     client: companyName ?? project?.customerId ?? "",
@@ -125,15 +133,14 @@ function buildRiskSelectionState(
 export default function ProjectReport(): ReactElement {
   const { id: projectId } = useParams<{ id: string }>();
   const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+  const [projectError, setProjectError] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | undefined>();
   const [riskSummary, setRiskSummary] = useState<RiskSummaryResponse | null>(
     null,
   );
   const [loadingRiskSummary, setLoadingRiskSummary] = useState(true);
   const [loadingProjectRisks, setLoadingProjectRisks] = useState(true);
-  const [reportLevel, setReportLevel] = useState<DetailLevel>(
-    DETAIL_LEVELS[0].value,
-  );
   const [formState, setFormState] = useState<FormState>(() =>
     buildInitialFormState(null),
   );
@@ -144,6 +151,7 @@ export default function ProjectReport(): ReactElement {
   const [selectedRiskIds, setSelectedRiskIds] = useState<
     Record<string, boolean>
   >({});
+  const [riskTableExpanded, setRiskTableExpanded] = useState(false);
   const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
 
   useEffect(() => {
@@ -156,8 +164,13 @@ export default function ProjectReport(): ReactElement {
     async function loadProject(): Promise<void> {
       if (!projectId) {
         setProject(null);
+        setProjectError("Projeto inválido.");
+        setLoadingProject(false);
         return;
       }
+
+      setLoadingProject(true);
+      setProjectError(null);
 
       try {
         const [response] = await projectsById([projectId]);
@@ -165,13 +178,20 @@ export default function ProjectReport(): ReactElement {
 
         if (!response) {
           setProject(null);
+          setProjectError("Projeto não encontrado.");
           return;
         }
 
         setProject(response);
-      } catch {
+      } catch (err: unknown) {
         if (cancelled) return;
-        setProject(null);
+        const message =
+          err instanceof Error ? err.message : "Erro ao carregar projeto";
+        setProjectError(message);
+      } finally {
+        if (!cancelled) {
+          setLoadingProject(false);
+        }
       }
     }
 
@@ -297,10 +317,78 @@ export default function ProjectReport(): ReactElement {
   const totalRisksCount = riskSummary?.total ?? projectRisks.length;
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-6 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none">
-      <div className="grid flex-1 min-h-0 gap-0 lg:grid-cols-[45%_55%] lg:items-stretch">
+    <section className="flex h-full min-h-0 flex-col w-full">
+      <div>
+        <Link
+          to={projectId ? `/project/${projectId}` : "/projects"}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+          Voltar para o projeto
+        </Link>
+
+        <header className="mt-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+              {project?.name ?? "Projeto"}
+            </h1>
+
+            <div className="flex items-center gap-2">
+              {(() => {
+                if (loadingProject || projectError) return null;
+                if (!project?.endDate)
+                  return (
+                    <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                      Sem prazo definido
+                    </span>
+                  );
+
+                const endDate = startOfDay(
+                  parseProjectEndDate(project.endDate),
+                );
+                const today = startOfDay(new Date());
+                const daysRemaining = Math.floor(
+                  (endDate.getTime() - today.getTime()) / 86_400_000,
+                );
+
+                if (daysRemaining < 0) {
+                  return (
+                    <span className="text-xl sm:text-2xl font-semibold tracking-tight text-muted-foreground">
+                      {`Encerrado em ${formatDateBr(endDate)}`}
+                    </span>
+                  );
+                }
+
+                let colorText = "text-success";
+                if (daysRemaining <= 7) colorText = "text-destructive";
+                else if (daysRemaining <= 15) colorText = "text-warning";
+
+                return (
+                  <span
+                    className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}
+                  >
+                    {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div className="mt-2">
+            {loadingProject ? (
+              <span className="text-sm text-muted-foreground">
+                Carregando dados do projeto...
+              </span>
+            ) : projectError ? (
+              <span className="text-sm text-destructive">{projectError}</span>
+            ) : null}
+          </div>
+        </header>
+      </div>
+
+      <div className="mt-6 grid flex-1 min-h-0 gap-0 lg:-mx-40 lg:w-[calc(100%+20rem)] lg:max-w-none lg:grid-cols-[45%_55%] lg:items-stretch">
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-card/80 py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
-          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border border-r border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
+          <CardHeader className="flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none">
             <CardTitle className="text-primary">
               CONFIGURAÇÃO DO RELATÓRIO
             </CardTitle>
@@ -308,38 +396,6 @@ export default function ProjectReport(): ReactElement {
 
           <CardContent className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <div className="space-y-5">
-              <div className="justify-between">
-                <div>
-                  <CardTitle className="text-sm tracking-wider text-muted-foreground">
-                    NÍVEL DE DETALHE
-                  </CardTitle>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {DETAIL_LEVELS.map((level) => (
-                  <button
-                    key={level.value}
-                    type="button"
-                    aria-pressed={reportLevel === level.value}
-                    onClick={() => setReportLevel(level.value)}
-                    className={cn(
-                      "flex flex-col items-start justify-center gap-1 rounded-md border border-border p-3 text-left text-sm transition-colors",
-                      reportLevel === level.value
-                        ? "bg-primary/8 border-primary"
-                        : "bg-muted hover:bg-muted/40",
-                    )}
-                  >
-                    <div className="font-medium">{level.label}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {level.description}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <Separator />
-
               <section>
                 <div className="justify-between">
                   <div>
@@ -354,7 +410,14 @@ export default function ProjectReport(): ReactElement {
                     {REPORT_SECTIONS.map((section) => {
                       const skey = section.key;
                       const slabel = section.label;
+                      const isRiskTable = skey === "riskTable";
                       const isRiskDetails = skey === "riskDetails";
+                      const isRiskDetailChild =
+                        skey === "assetsArtifacts" || skey === "recommendations";
+
+                      if (isRiskDetailChild) {
+                        return null;
+                      }
 
                       return (
                         <div key={skey} className="space-y-2">
@@ -363,16 +426,40 @@ export default function ProjectReport(): ReactElement {
                               <div className="block text-base font-medium text-foreground">
                                 {slabel}
                               </div>
-                              {isRiskDetails ? (
+                              {isRiskTable ? (
                                 <div className="mt-0.5 text-xs text-muted-foreground">
                                   {loadingRiskSummary || loadingProjectRisks
                                     ? "Carregando riscos..."
-                                    : `${includedRisksCount}/${totalRisksCount} riscos incluídos`}
+                                    : `${includedRisksCount}/${totalRisksCount} de riscos incluidos`}
                                 </div>
                               ) : null}
                             </div>
 
                             <div className="flex items-center gap-2">
+                              {isRiskTable ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setRiskTableExpanded((current) => !current)
+                                  }
+                                  className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                  aria-label={
+                                    riskTableExpanded
+                                      ? "Recolher riscos"
+                                      : "Expandir riscos"
+                                  }
+                                  aria-expanded={riskTableExpanded}
+                                >
+                                  <ChevronDown
+                                    className={cn(
+                                      "size-4 transition-transform",
+                                      riskTableExpanded
+                                        ? "rotate-180"
+                                        : "rotate-0",
+                                    )}
+                                  />
+                                </button>
+                              ) : null}
                               {isRiskDetails ? (
                                 <button
                                   type="button"
@@ -384,8 +471,8 @@ export default function ProjectReport(): ReactElement {
                                   className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                   aria-label={
                                     riskDetailsExpanded
-                                      ? "Recolher riscos"
-                                      : "Expandir riscos"
+                                      ? "Recolher detalhamento de riscos"
+                                      : "Expandir detalhamento de riscos"
                                   }
                                   aria-expanded={riskDetailsExpanded}
                                 >
@@ -413,7 +500,7 @@ export default function ProjectReport(): ReactElement {
                             </div>
                           </div>
 
-                          {isRiskDetails && riskDetailsExpanded ? (
+                          {isRiskTable && riskTableExpanded ? (
                             <div className="space-y-2 px-3 py-3">
                               {projectRisks.length > 0 ? (
                                 projectRisks.map((risk) => (
@@ -446,6 +533,43 @@ export default function ProjectReport(): ReactElement {
                                   Nenhum risco encontrado para este projeto.
                                 </div>
                               )}
+                            </div>
+                          ) : null}
+
+                          {isRiskDetails && riskDetailsExpanded ? (
+                            <div className="space-y-2 px-3 py-3">
+                              {REPORT_SECTIONS.filter(
+                                (item) =>
+                                  item.key === "assetsArtifacts" ||
+                                  item.key === "recommendations",
+                              ).map((childSection) => {
+                                const childKey = childSection.key;
+
+                                return (
+                                  <div
+                                    key={childKey}
+                                    className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2.5"
+                                  >
+                                    <div className="min-w-0">
+                                      <div className="block text-sm font-medium text-foreground">
+                                        {childSection.label}
+                                      </div>
+                                    </div>
+
+                                    <Switch
+                                      size="default"
+                                      checked={!!sectionsEnabled[childKey]}
+                                      onCheckedChange={(checked) =>
+                                        setSectionsEnabled((current) => ({
+                                          ...current,
+                                          [childKey]: !!checked,
+                                        }))
+                                      }
+                                      aria-label={`Ativar ${childSection.label}`}
+                                    />
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : null}
                         </div>
@@ -541,15 +665,18 @@ export default function ProjectReport(): ReactElement {
                               ? new Date(formState.date + "T12:00:00")
                               : undefined
                           }
-                          onSelect={(newDate) =>
+                          onSelect={(newDate: Date | undefined) =>
                             setFormState((current) => ({
                               ...current,
                               date: newDate
-                                ? newDate.toISOString().split("T")[0]
+                                ? format(newDate, "yyyy-MM-dd")
                                 : "",
                             }))
                           }
+                          initialFocus
                           captionLayout="dropdown"
+                          fromYear={2025}
+                          toYear={2040}
                           locale={ptBR}
                         />
                       </PopoverContent>
@@ -616,7 +743,7 @@ export default function ProjectReport(): ReactElement {
         </Card>
 
         <Card className="flex min-h-0 w-full flex-col gap-0 rounded-none border-border bg-white py-0 shadow-sm backdrop-blur lg:h-[calc(100vh-14rem)]">
-          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border border-r border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
+          <CardHeader className="sticky top-0 z-10 flex min-h-12 items-center border-b border-border px-5 [.border-b]:pb-0 rounded-none bg-card">
             <div className="flex w-full items-left justify-between gap-3">
               <div className="flex items-center gap-3">
                 <EyeIcon className="size-5 text-muted-foreground" />
@@ -638,15 +765,15 @@ export default function ProjectReport(): ReactElement {
             </div>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
-            <ReportHeader 
-              projectId={projectId} 
+            <ReportHeader
+              projectId={projectId}
               title={formState.title}
               client={formState.client}
               date={new Date(formState.date + "T12:00:00")}
             />
             {sectionsEnabled["summary"] && (
-              <ExecutiveSummary 
-                projectId={projectId} 
+              <ExecutiveSummary
+                projectId={projectId}
                 customSummary={formState.summary}
                 highRisks={riskSummary?.highRisks}
                 mediumRisks={riskSummary?.mediumRisks}
