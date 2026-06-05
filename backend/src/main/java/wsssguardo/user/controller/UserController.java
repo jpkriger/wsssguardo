@@ -35,6 +35,9 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         var current = authenticatedUser.get();
+        if (current == null) {
+            throw new ApiException("Não autenticado", HttpStatus.UNAUTHORIZED);
+        }
         boolean isSelf = current.getId().equals(id);
         boolean isManager = current.getRole() == UserRole.MANAGER;
         if (!isSelf && !isManager) {

@@ -44,6 +44,7 @@ public class CompanyController {
     })
     @GetMapping
     public ResponseEntity<List<CompanyWithProjectsDTO>> list() {
+        projectAccessService.assertManager();
         return ResponseEntity.ok(service.listWithProjects());
     }
 
