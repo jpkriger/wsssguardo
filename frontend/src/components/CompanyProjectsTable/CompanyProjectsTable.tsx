@@ -1,5 +1,7 @@
 import { useMemo, type ReactElement } from "react";
-import { Plus, FolderOpen, Pencil, Trash2, CheckCheck, XCircle } from "lucide-react";
+import { useNavigate } from "react-router";
+// ArrowRight
+import { Plus, FolderOpen, Pencil, Trash2, CheckCheck, XCircle, ArrowRight } from "lucide-react";
 import type { ProjectStatus as ApiProjectStatus } from "@/api/project";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +62,7 @@ export function CompanyProjectsTable({
   onCancelProject,
   cardClassName = "mx-5 mt-4 mb-4 ml-16",
 }: CompanyProjectsTableProps): ReactElement {
+  const navigate = useNavigate();
   const columns: ColumnDefinition<CompanyProject>[] = useMemo(
     () => [
       {
@@ -104,12 +107,21 @@ export function CompanyProjectsTable({
         id: "actions",
         label: "Ações",
         isRequired: true,
-        headClassName: "text-right",
-        cellClassName: "text-right",
+        width: "200px",
+        headClassName: "text-center justify-center w-70",
+        cellClassName: "text-center justify-center w-70",
         renderCell: (p) => (
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex gap-1 relative right-3">
             {p.rawStatus !== "COMPLETED" && p.rawStatus !== "CANCELLED" && (
               <>
+                <button
+                  type="button"
+                  className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                  title="Ir para o projeto"
+                  onClick={(e) => { e.stopPropagation(); void navigate(`/project/${p.id}`); }}
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
                 <button
                   type="button"
                   className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
@@ -148,7 +160,7 @@ export function CompanyProjectsTable({
         ),
       },
     ],
-    [onCompleteProject, onCancelProject, onEditProject, onDeleteProject],
+    [onCompleteProject, onCancelProject, onEditProject, onDeleteProject, navigate],
   );
 
   return (
