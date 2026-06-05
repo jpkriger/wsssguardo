@@ -39,6 +39,7 @@ import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+import wsssguardo.shared.security.ProjectAccessService;
 import wsssguardo.user.User;
 import wsssguardo.user.repository.UserRepository;
 
@@ -54,6 +55,7 @@ public class ProjectService {
     private final FindRepository findRepository;
     private final RiskRepository riskRepository;
     private final ProjectMapper mapper;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> listAllProjects() {
