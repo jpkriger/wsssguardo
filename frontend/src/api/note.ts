@@ -1,5 +1,5 @@
+import apiClient from "@/lib/api-client";
 import { ArtifactContentTypes } from "./artifact";
-import { parseApiErrorResponse } from "./errors";
 
 export interface NoteCreateRequest {
   title: string;
@@ -14,18 +14,16 @@ export interface NoteResponse {
   createdAt: string;
 }
 
-const BASE = "/api/artifacts";
+const BASE = "artifacts";
 
-export async function createNote(body: NoteCreateRequest): Promise<NoteResponse> {
-  const res = await fetch(BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: body.title,
-      description: body.content,
-      contentType: ArtifactContentTypes.Note,
-    }),
-  });
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-  return res.json() as Promise<NoteResponse>;
+export function createNote(body: NoteCreateRequest): Promise<NoteResponse> {
+  return apiClient
+    .post(BASE, {
+      json: {
+        name: body.title,
+        description: body.content,
+        contentType: ArtifactContentTypes.Note,
+      },
+    })
+    .json<NoteResponse>();
 }

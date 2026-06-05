@@ -15,5 +15,7 @@
     <include file="db/changelog/migrations/0008-add-find-columns.xml" />
     <include file="db/changelog/migrations/0009-add-seed-severity.xml" />
     <include file="db/changelog/migrations/0010-sprint3-database-update.xml" />
+    <include file="db/changelog/migrations/0011-add-cognito-sub-to-users.xml" />
+    <include file="db/changelog/migrations/0012-add-manager-seed-user.xml" />
 
 </databaseChangeLog>

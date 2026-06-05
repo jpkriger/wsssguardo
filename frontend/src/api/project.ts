@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 import type { RiskConfigDTO } from "./projectConfiguration";
 
 export type ProjectStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
@@ -10,6 +10,7 @@ export interface ProjectResponse {
   startDate: string | null;
   endDate: string | null;
   status: ProjectStatus;
+  consultantIds: string[];
 }
 
 export interface CreateProjectRequest {
@@ -18,6 +19,7 @@ export interface CreateProjectRequest {
   startDate: string | null;
   endDate: string | null;
   riskConfig: RiskConfigDTO;
+  consultantIds?: string[];
 }
 
 export interface UpdateProjectRequest {
@@ -25,77 +27,40 @@ export interface UpdateProjectRequest {
   startDate?: string | null;
   endDate?: string | null;
   status?: ProjectStatus;
+  consultantIds?: string[];
 }
 
-const BASE = "/api/projects";
+const BASE = "projects";
 
-export async function listProjects(): Promise<ProjectResponse[]> {
-  const res = await fetch(BASE);
-
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-  return res.json() as Promise<ProjectResponse[]>;
+export function listProjects(): Promise<ProjectResponse[]> {
+  return apiClient.get(BASE).json<ProjectResponse[]>();
 }
 
-export async function projectsById(ids: string[]): Promise<ProjectResponse[]> {
+export function projectsById(ids: string[]): Promise<ProjectResponse[]> {
   if (ids.length === 0) {
-    return [];
+    return Promise.resolve([]);
   }
 
   const params = new URLSearchParams();
+  ids.forEach((id) => params.append("ids", String(id)));
 
-  ids.forEach((id) => {
-    params.append("ids", String(id));
-  });
-
-  const url = params.toString() ? `${BASE}?${params.toString()}` : BASE;
-  const res = await fetch(url);
-
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-  return res.json() as Promise<ProjectResponse[]>;
+  return apiClient.get(BASE, { searchParams: params }).json<ProjectResponse[]>();
 }
 
-export async function projectsByUserId(userId: string): Promise<string[]> {
-  const params = new URLSearchParams({ userId });
-  const url = `${BASE}?${params.toString()}`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-  return res.json() as Promise<string[]>;
+export function projectsByUserId(userId: string): Promise<string[]> {
+  return apiClient.get(BASE, { searchParams: { userId } }).json<string[]>();
 }
 
-export async function createProject(request: CreateProjectRequest): Promise<ProjectResponse> {
-  const res = await fetch(BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-  return res.json() as Promise<ProjectResponse>;
+export function createProject(request: CreateProjectRequest): Promise<ProjectResponse> {
+  return apiClient.post(BASE, { json: request }).json<ProjectResponse>();
 }
 
-export async function updateProject(id: string, request: UpdateProjectRequest): Promise<ProjectResponse> {
-  const url = `${BASE}/${id}`;
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-  return res.json() as Promise<ProjectResponse>;
+export function updateProject(id: string, request: UpdateProjectRequest): Promise<ProjectResponse> {
+  return apiClient.patch(`${BASE}/${id}`, { json: request }).json<ProjectResponse>();
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const url = `${BASE}/${id}`;
-  const res = await fetch(url, { method: "DELETE" });
-
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
+  await apiClient.delete(`${BASE}/${id}`);
 }
 
 export interface ProjectSummaryDTO {
@@ -110,9 +75,6 @@ export interface ProjectSummaryDTO {
   daysRemaining: number | null;
 }
 
-export async function getProjectSummary(projectId: string): Promise<ProjectSummaryDTO> {
-  const url = `${BASE}/${projectId}/summary`;
-  const res = await fetch(url);
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
-  return res.json() as Promise<ProjectSummaryDTO>;
+export function getProjectSummary(projectId: string): Promise<ProjectSummaryDTO> {
+  return apiClient.get(`${BASE}/${projectId}/summary`).json<ProjectSummaryDTO>();
 }

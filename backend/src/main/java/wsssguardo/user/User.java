@@ -22,16 +22,19 @@ import wsssguardo.user.domain.UserRole;
 @Setter
 public class User extends BaseEntity {
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+    @Column(name = "first_name", length = 100)
+    private String firstName;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    @Column(name = "last_name", length = 100)
+    private String lastName;
+
+    @Column(length = 320, unique = true)
+    private String email;
+
+    @Column(name = "cognito_sub", length = 36, unique = true)
+    private String cognitoSub;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
-
-    @Column(name = "auth_sub")
-    private String authSub;
 }

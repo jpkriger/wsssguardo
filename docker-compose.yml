@@ -71,10 +71,17 @@ services:
       DB_PASSWORD: wss
       DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       OTLP_ENABLED: "false"
-      SECURITY_AUTH_DISABLED: "true"
+      SECURITY_AUTH_DISABLED: "${SECURITY_AUTH_DISABLED:-true}"
+      AUTH_COOKIE_SECURE: "false"
+      COGNITO_REGION: "${COGNITO_REGION:-us-east-2}"
+      COGNITO_USER_POOL_ID: "${COGNITO_USER_POOL_ID:-placeholder}"
+      COGNITO_CLIENT_ID: "${COGNITO_CLIENT_ID:-placeholder}"
+      COGNITO_CLIENT_SECRET: "${COGNITO_CLIENT_SECRET:-placeholder}"
+      AWS_PROFILE: "${AWS_PROFILE:-wsssguardo}"
       SPRING_LIQUIBASE_CONTEXTS: seed
     volumes:
       - maven_cache:/root/.m2
+      - ~/.aws:/root/.aws:ro
     depends_on:
       db:
         condition: service_healthy

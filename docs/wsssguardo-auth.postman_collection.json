@@ -1,0 +1,417 @@
+{
+  "info": {
+    "name": "WSSSguardo — Auth",
+    "description": "Fluxo completo de autenticação via AWS Cognito (backend proxy + httpOnly cookies).\n\n## Fluxo do primeiro acesso\n1. Login → recebe NEW_PASSWORD_REQUIRED\n2. New Password → recebe MFA_SETUP_REQUIRED\n3. MFA Setup Start → recebe QR code (otpauthUri)\n4. MFA Setup Complete → recebe tokens (cookies)\n5. Chamadas autenticadas funcionam normalmente\n\n## Fluxo dos logins subsequentes\n1. Login → recebe MFA_REQUIRED\n2. MFA Verify → recebe tokens (cookies)\n\nOs scripts 'Tests' capturam automaticamente session e tokens. Os tokens são salvos em variáveis de coleção e enviados manualmente nos headers das requests autenticadas (Postman não faz path-matching de cookies igual ao browser).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "description": "URL base do backend. Troque para a URL de produção quando necessário."
+    },
+    {
+      "key": "email",
+      "value": "usuario@exemplo.com",
+      "description": "Email do usuário criado no Cognito pelo admin."
+    },
+    {
+      "key": "password",
+      "value": "",
+      "description": "Senha temporária gerada pelo admin ao criar o usuário."
+    },
+    {
+      "key": "newPassword",
+      "value": "",
+      "description": "Nova senha permanente (mín. 12 chars, maiúscula, minúscula, número, símbolo)."
+    },
+    {
+      "key": "session",
+      "value": "",
+      "description": "Preenchido automaticamente pelos scripts de cada request."
+    },
+    {
+      "key": "totpCode",
+      "value": "000000",
+      "description": "Código de 6 dígitos do Google Authenticator. Atualize manualmente antes de usar MFA Verify ou MFA Setup Complete."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "Preenchido automaticamente após login completo (extraído do Set-Cookie)."
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "description": "Preenchido automaticamente após login completo (extraído do Set-Cookie)."
+    }
+  ],
+  "item": [
+    {
+      "name": "Fluxo 1 — Primeiro Acesso",
+      "description": "Executar na ordem: 1 → 2 → 3 → 4",
+      "item": [
+        {
+          "name": "1. Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Primeiro login com a senha temporária criada pelo admin.\n\nEspera receber: `{ \"status\": \"NEW_PASSWORD_REQUIRED\", \"session\": \"...\" }`\n\nO script captura o session automaticamente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test(\"Status esperado\", () => {",
+                  "    pm.expect([\"NEW_PASSWORD_REQUIRED\", \"MFA_REQUIRED\", \"MFA_SETUP_REQUIRED\", \"SUCCESS\"])",
+                  "        .to.include(res.status);",
+                  "});",
+                  "if (res.session) {",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
+                  "    console.log(\"session salvo:\", res.session.substring(0, 20) + \"...\");",
+                  "}",
+                  "console.log(\"status:\", res.status);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. New Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session\": \"{{session}}\",\n  \"email\": \"{{email}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/new-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "new-password"]
+            },
+            "description": "Troca a senha temporária pela senha permanente.\n\nEspera receber: `{ \"status\": \"MFA_SETUP_REQUIRED\", \"session\": \"...\" }`"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test(\"Status esperado\", () => {",
+                  "    pm.expect([\"MFA_SETUP_REQUIRED\", \"SUCCESS\"])",
+                  "        .to.include(res.status);",
+                  "});",
+                  "if (res.session) {",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
+                  "    console.log(\"session atualizado\");",
+                  "}",
+                  "console.log(\"status:\", res.status);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. MFA Setup — Start (gera QR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session\": \"{{session}}\",\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/mfa-setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "mfa-setup"]
+            },
+            "description": "Inicia o setup do Google Authenticator.\n\nRetorna `otpauthUri` — uma URI no formato `otpauth://totp/...`. \nCopie esse valor e cole em https://stefansundin.github.io/2fa-qr/ para gerar o QR code e escanear com o Google Authenticator.\n\nO script captura o novo session automaticamente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test(\"Recebeu otpauthUri\", () => {",
+                  "    pm.expect(res.otpauthUri).to.include(\"otpauth://totp/\");",
+                  "});",
+                  "if (res.session) {",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
+                  "    console.log(\"session atualizado para mfa-setup/complete\");",
+                  "}",
+                  "console.log(\"otpauthUri:\", res.otpauthUri);",
+                  "console.log(\"→ Cole a URI acima em https://stefansundin.github.io/2fa-qr/ para gerar o QR code\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. MFA Setup — Complete (confirma QR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session\": \"{{session}}\",\n  \"email\": \"{{email}}\",\n  \"code\": \"{{totpCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/mfa-setup/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "mfa-setup", "complete"]
+            },
+            "description": "Confirma que o QR foi escaneado com sucesso.\n\n**Antes de enviar:** atualize a variável `totpCode` com o código de 6 dígitos que aparece no Google Authenticator.\n\nEm caso de sucesso (HTTP 200), os tokens são extraídos dos headers Set-Cookie e salvos nas variáveis `accessToken` e `refreshToken`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Setup concluído com sucesso (200)\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "// Extrai tokens dos headers Set-Cookie (Postman não faz path-matching automático)",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken salvo');",
+                  "    }",
+                  "    if (parts.startsWith('refresh_token=')) {",
+                  "        pm.collectionVariables.set('refreshToken', parts.replace('refresh_token=', ''));",
+                  "        console.log('✓ refreshToken salvo');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fluxo 2 — Login Normal (após setup)",
+      "description": "Executar na ordem: 1 → 2",
+      "item": [
+        {
+          "name": "1. Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login normal com a senha permanente.\n\nEspera receber: `{ \"status\": \"MFA_REQUIRED\", \"session\": \"...\" }`"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test(\"MFA_REQUIRED\", () => pm.expect(res.status).to.eql(\"MFA_REQUIRED\"));",
+                  "if (res.session) {",
+                  "    pm.collectionVariables.set(\"session\", res.session.trim());",
+                  "    console.log(\"session salvo — atualize totpCode e execute MFA Verify\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. MFA Verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session\": \"{{session}}\",\n  \"email\": \"{{email}}\",\n  \"code\": \"{{totpCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/mfa-verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "mfa-verify"]
+            },
+            "description": "**Antes de enviar:** atualize `totpCode` com o código atual do Google Authenticator.\n\nEm caso de sucesso, os tokens são extraídos dos headers Set-Cookie e salvos nas variáveis `accessToken` e `refreshToken`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login completo (200)\", () => pm.response.to.have.status(200));",
+                  "// Extrai tokens dos headers Set-Cookie (Postman não faz path-matching automático)",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken salvo');",
+                  "    }",
+                  "    if (parts.startsWith('refresh_token=')) {",
+                  "        pm.collectionVariables.set('refreshToken', parts.replace('refresh_token=', ''));",
+                  "        console.log('✓ refreshToken salvo');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Endpoints autenticados",
+      "description": "Requerem o cookie access_token. Os scripts pre-request adicionam o Cookie header automaticamente a partir da variável de coleção `accessToken`.",
+      "item": [
+        {
+          "name": "GET /api/users/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Retorna os dados do usuário autenticado sincronizados com o banco local.\n\nO backend lê o JWT do cookie `access_token`, valida com o JWKS do Cognito, extrai `sub` e faz upsert na tabela `users`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Retornou dados do usuário (200)\", () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test(\"Tem campos esperados\", () => {",
+                  "    pm.expect(res).to.have.property(\"id\");",
+                  "    pm.expect(res).to.have.property(\"email\");",
+                  "    pm.expect(res).to.have.property(\"firstName\");",
+                  "    pm.expect(res).to.have.property(\"role\");",
+                  "});",
+                  "console.log(\"usuário:\", JSON.stringify(res, null, 2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "refresh_token={{refreshToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh?email={{email}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{email}}",
+                  "description": "Necessário para calcular o SECRET_HASH do Cognito."
+                }
+              ]
+            },
+            "description": "Renova o `access_token` usando o `refresh_token` (válido por 30 dias).\n\nO novo `access_token` é extraído do Set-Cookie e salvo na variável `accessToken`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Refresh bem-sucedido (200)\", () => pm.response.to.have.status(200));",
+                  "// Atualiza o accessToken com o novo valor",
+                  "pm.response.headers.each(h => {",
+                  "    if (h.key !== 'Set-Cookie') return;",
+                  "    const parts = h.value.split(';')[0];",
+                  "    if (parts.startsWith('access_token=')) {",
+                  "        pm.collectionVariables.set('accessToken', parts.replace('access_token=', ''));",
+                  "        console.log('✓ accessToken renovado');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "access_token={{accessToken}}",
+                "description": "Token extraído automaticamente após login."
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Invalida a sessão no Cognito (GlobalSignOut — afeta TODOS os dispositivos) e apaga os cookies locais."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Logout bem-sucedido (200)\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', '');",
+                  "pm.collectionVariables.set('refreshToken', '');",
+                  "console.log(\"Sessão encerrada no Cognito e variáveis limpas.\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

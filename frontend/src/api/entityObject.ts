@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export interface EntityObjectResponse {
   id: string;
@@ -20,63 +20,25 @@ export interface EntityObjectUpdateRequest {
   reference: string;
 }
 
-const BASE = "/api/entity-objects";
+const BASE = "entity-objects";
 
-export async function listEntityObjects(): Promise<EntityObjectResponse[]> {
-  const res = await fetch(BASE);
-
-  if (!res.ok) {
-    throw await parseApiErrorResponse(res, BASE);
-  }
-
-  return res.json() as Promise<EntityObjectResponse[]>;
+export function listEntityObjects(): Promise<EntityObjectResponse[]> {
+  return apiClient.get(BASE).json<EntityObjectResponse[]>();
 }
 
-export async function getEntityObjectById(
-  id: string,
-): Promise<EntityObjectResponse> {
-  const endpoint = `${BASE}/${id}`;
-
-  const res = await fetch(endpoint);
-
-  if (!res.ok) {
-    throw await parseApiErrorResponse(res, endpoint);
-  }
-
-  return res.json() as Promise<EntityObjectResponse>;
+export function getEntityObjectById(id: string): Promise<EntityObjectResponse> {
+  return apiClient.get(`${BASE}/${id}`).json<EntityObjectResponse>();
 }
 
-export async function createEntityObject(
+export function createEntityObject(
   body: EntityObjectCreateRequest,
 ): Promise<EntityObjectResponse> {
-  const res = await fetch(BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    throw await parseApiErrorResponse(res, BASE);
-  }
-
-  return res.json() as Promise<EntityObjectResponse>;
+  return apiClient.post(BASE, { json: body }).json<EntityObjectResponse>();
 }
 
-export async function updateEntityObject(
+export function updateEntityObject(
   id: string,
   body: EntityObjectUpdateRequest,
 ): Promise<EntityObjectResponse> {
-  const endpoint = `${BASE}/${id}`;
-
-  const res = await fetch(endpoint, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    throw await parseApiErrorResponse(res, endpoint);
-  }
-
-  return res.json() as Promise<EntityObjectResponse>;
+  return apiClient.patch(`${BASE}/${id}`, { json: body }).json<EntityObjectResponse>();
 }

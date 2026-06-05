@@ -1,4 +1,6 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -65,6 +67,7 @@ function mapCompany(company: CompanyResponse): Company {
 }
 
 export default function Companies(): ReactElement {
+  const { user } = useAuth();
   const [apiCompanies, setApiCompanies] = useState<CompanyResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -160,6 +163,7 @@ export default function Companies(): ReactElement {
         name: data.name,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        consultantIds: data.consultantIds,
       });
     } else {
       if (!data.riskConfig) {
@@ -171,6 +175,7 @@ export default function Companies(): ReactElement {
         startDate: data.startDate || null,
         endDate: data.endDate || null,
         riskConfig: data.riskConfig,
+        consultantIds: data.consultantIds ?? [],
       });
     }
     await loadCompanies();
@@ -208,6 +213,10 @@ export default function Companies(): ReactElement {
       setDeleteLoading(false);
     }
   };
+
+  if (user?.role !== "MANAGER") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="flex flex-col gap-6">

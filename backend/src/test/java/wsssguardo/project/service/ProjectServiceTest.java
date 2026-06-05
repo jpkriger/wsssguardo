@@ -2,6 +2,7 @@ package wsssguardo.project.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -17,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
 
 import wsssguardo.company.Company;
 import wsssguardo.company.repository.CompanyRepository;
@@ -26,6 +26,8 @@ import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.dto.ProjectResponse;
 import wsssguardo.project.mapper.ProjectMapper;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.project.repository.ProjectUserRepository;
+import wsssguardo.shared.security.ProjectAccessService;
 import wsssguardo.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,10 +37,16 @@ class ProjectServiceTest {
     private ProjectRepository repository;
 
     @Mock
+    private ProjectUserRepository projectUserRepository;
+
+    @Mock
     private CompanyRepository companyRepository;
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ProjectAccessService projectAccessService;
 
     @Spy
     private ProjectMapper mapper = new ProjectMapper();
@@ -52,10 +60,13 @@ class ProjectServiceTest {
         UUID secondId = UUID.randomUUID();
         UUID companyId = UUID.randomUUID();
 
-        Project first = project(firstId, "Legacy", companyId, ProjectStatus.COMPLETED);
-        Project second = project(secondId, "Modern", companyId, ProjectStatus.IN_PROGRESS);
+        Project first = project(firstId, "Legacy", companyId, ProjectStatus.COMPLETED,
+                LocalDateTime.of(2026, 1, 1, 0, 0));
+        Project second = project(secondId, "Modern", companyId, ProjectStatus.IN_PROGRESS,
+                LocalDateTime.of(2026, 2, 1, 0, 0));
 
-        when(repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))).thenReturn(List.of(second, first));
+        when(projectAccessService.getAccessibleProjectIds()).thenReturn(List.of(firstId, secondId));
+        when(repository.findAllByIdIn(anyList())).thenReturn(List.of(first, second));
 
         List<ProjectResponse> responses = service.listAllProjects();
 
@@ -71,9 +82,12 @@ class ProjectServiceTest {
         UUID secondId = UUID.randomUUID();
         UUID companyId = UUID.randomUUID();
 
-        Project second = project(secondId, "Mobile App", companyId, ProjectStatus.IN_PROGRESS);
-        Project first = project(firstId, "Alpha Platform", companyId, ProjectStatus.COMPLETED);
+        Project second = project(secondId, "Mobile App", companyId, ProjectStatus.IN_PROGRESS,
+                LocalDateTime.now());
+        Project first = project(firstId, "Alpha Platform", companyId, ProjectStatus.COMPLETED,
+                LocalDateTime.now());
 
+        when(projectAccessService.getAccessibleProjectIds()).thenReturn(List.of(firstId, secondId));
         when(repository.findAllById(List.of(secondId, firstId))).thenReturn(List.of(first, second));
 
         List<ProjectResponse> responses = service.projectsById(List.of(secondId, firstId));
@@ -92,8 +106,10 @@ class ProjectServiceTest {
         UUID unknownId = UUID.randomUUID();
         UUID companyId = UUID.randomUUID();
 
-        Project known = project(knownId, "Known Project", companyId, ProjectStatus.ON_HOLD);
+        Project known = project(knownId, "Known Project", companyId, ProjectStatus.ON_HOLD,
+                LocalDateTime.now());
 
+        when(projectAccessService.getAccessibleProjectIds()).thenReturn(List.of(knownId, unknownId));
         when(repository.findAllById(List.of(unknownId, knownId))).thenReturn(List.of(known));
 
         List<ProjectResponse> responses = service.projectsById(List.of(unknownId, knownId));
@@ -113,6 +129,7 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         List<UUID> expected = List.of(UUID.randomUUID(), UUID.randomUUID());
 
+        when(projectAccessService.getAccessibleProjectIds()).thenReturn(expected);
         when(repository.findProjectIdsByUserId(userId)).thenReturn(expected);
 
         List<UUID> actual = service.projectsByUserId(userId);
@@ -125,6 +142,7 @@ class ProjectServiceTest {
     void projectsByUserIdShouldReturnEmptyListWhenNoProjectsAreFound() {
         UUID userId = UUID.randomUUID();
 
+        when(projectAccessService.getAccessibleProjectIds()).thenReturn(List.of());
         when(repository.findProjectIdsByUserId(userId)).thenReturn(List.of());
 
         List<UUID> actual = service.projectsByUserId(userId);
@@ -141,7 +159,8 @@ class ProjectServiceTest {
         verifyNoInteractions(repository);
     }
 
-    private static Project project(UUID id, String name, UUID companyId, ProjectStatus status) {
+    private static Project project(UUID id, String name, UUID companyId, ProjectStatus status,
+            LocalDateTime createdAt) {
         Company company = new Company();
         company.setId(companyId);
         company.setName("Company");
@@ -154,7 +173,7 @@ class ProjectServiceTest {
         project.setStartDate(LocalDate.of(2026, 3, 21));
         project.setEndDate(LocalDate.of(2026, 4, 21));
         project.setStatus(status);
-        project.setCreatedAt(LocalDateTime.now());
+        project.setCreatedAt(createdAt);
         return project;
     }
 }
