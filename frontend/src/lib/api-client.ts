@@ -45,7 +45,7 @@ function runRefresh(): Promise<boolean> {
 }
 
 const apiClient = ky.create({
-  prefixUrl: "/api/",
+  prefix: "/api",
   credentials: "include",
   headers: {
     "Content-Type": "application/json",
