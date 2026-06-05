@@ -1,11 +1,11 @@
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
+import { toast } from "sonner";
 import {
   ChevronLeft,
   Expand,
   ChevronDown,
   EyeIcon,
-  Download,
   File,
   Calendar as CalendarIcon,
 } from "lucide-react";
@@ -45,6 +45,13 @@ import {
 } from "../api/risk";
 import { listCompanies } from "../api/company";
 import { cn } from "../lib/utils";
+import { exportPreviewAsHtml } from "../lib/reportExport";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import ReportHeader from "@/components/ReportTemplate/ReportHeader/ReportHeader";
 import BusinessImpactAssessment from "@/components/ReportTemplate/BusinessImpactAssessment/BusinessImpactAssessment";
 
@@ -88,6 +95,10 @@ const REPORT_SECTIONS = [
   {
     key: "recommendations",
     label: "Recomendações",
+  },
+  {
+    key: "impactAssessment",
+    label: "Avaliação de Impacto",
   },
 ] as const;
 
@@ -150,6 +161,21 @@ export default function ProjectReport(): ReactElement {
   >({});
   const [riskTableExpanded, setRiskTableExpanded] = useState(false);
   const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const exportTitle = formState.title.trim() || project?.name || "Relatório";
+
+  function handleExportHtml(): void {
+    if (!previewRef.current) return;
+    try {
+      exportPreviewAsHtml(previewRef.current, exportTitle);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Falha ao exportar o relatório.";
+      toast.error(message);
+    }
+  }
 
   useEffect(() => {
     setFormState(buildInitialFormState(project, companyName));
@@ -312,6 +338,35 @@ export default function ProjectReport(): ReactElement {
     (risk) => selectedRiskIds[risk.id],
   ).length;
   const totalRisksCount = riskSummary?.total ?? projectRisks.length;
+
+  const previewBody = (
+    <>
+      <ReportHeader
+        projectId={projectId}
+        title={formState.title}
+        client={formState.client}
+        date={new Date(formState.date + "T12:00:00")}
+      />
+      {sectionsEnabled["summary"] && (
+        <ExecutiveSummary
+          projectId={projectId}
+          customSummary={formState.summary}
+          highRisks={riskSummary?.highRisks}
+          mediumRisks={riskSummary?.mediumRisks}
+        />
+      )}
+      {sectionsEnabled["riskTable"] && <RiskOverview projectId={projectId} />}
+      {sectionsEnabled["riskDetails"] && (
+        <RiskAnalysis
+          projectId={projectId}
+          selectedRiskIds={selectedRiskIds}
+          showAssetsArtifacts={!!sectionsEnabled["assetsArtifacts"]}
+          showRecommendations={!!sectionsEnabled["recommendations"]}
+        />
+      )}
+      {sectionsEnabled["impactAssessment"] && <BusinessImpactAssessment />}
+    </>
+  );
 
   return (
     <section className="flex h-full min-h-0 flex-col w-full">
@@ -714,16 +769,10 @@ export default function ProjectReport(): ReactElement {
           </CardContent>
 
           <CardFooter className="mt-auto border-t border-border p-5">
-            <div className="grid w-full grid-cols-2 gap-2">
-              <Button className="w-full">
-                <Download />
-                Exportar PDF
-              </Button>
-              <Button variant="outline" className="w-full">
-                <File />
-                Exportar HTML
-              </Button>
-            </div>
+            <Button className="w-full" onClick={handleExportHtml}>
+              <File />
+              Exportar HTML
+            </Button>
           </CardFooter>
         </Card>
 
@@ -742,6 +791,7 @@ export default function ProjectReport(): ReactElement {
                 variant="outline"
                 size="sm"
                 aria-label="Expandir preview"
+                onClick={() => setPreviewExpanded(true)}
                 className="text-muted-foreground border-muted-foreground hover:bg-muted/90"
               >
                 <Expand className="size-4 text-muted-foreground" />
@@ -749,36 +799,28 @@ export default function ProjectReport(): ReactElement {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0">
-            <ReportHeader
-              projectId={projectId}
-              title={formState.title}
-              client={formState.client}
-              date={new Date(formState.date + "T12:00:00")}
-            />
-            {sectionsEnabled["summary"] && (
-              <ExecutiveSummary
-                projectId={projectId}
-                customSummary={formState.summary}
-                highRisks={riskSummary?.highRisks}
-                mediumRisks={riskSummary?.mediumRisks}
-              />
-            )}
-            {sectionsEnabled["riskTable"] && (
-              <RiskOverview projectId={projectId} />
-            )}
-            {sectionsEnabled["riskDetails"] && (
-              <RiskAnalysis
-                projectId={projectId}
-                selectedRiskIds={selectedRiskIds}
-              />
-            )}
-            {sectionsEnabled["impactAssessment"] && (
-              <BusinessImpactAssessment />
-            )}
+          <CardContent
+            ref={previewRef}
+            className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0"
+          >
+            {previewBody}
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={previewExpanded} onOpenChange={setPreviewExpanded}>
+        <DialogContent className="flex h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 bg-white p-0">
+          <DialogHeader className="border-b border-border px-6 py-4">
+            <DialogTitle className="flex items-center gap-2 text-muted-foreground">
+              <EyeIcon className="size-5" />
+              Preview ao vivo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-6 pt-2">
+            {previewBody}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
