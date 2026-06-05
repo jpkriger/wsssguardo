@@ -1,13 +1,13 @@
 /* Generic Table Styles */
 
 .generic-table-card {
-  width: 95vw;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 117%;
+  margin-left: -8.5%;
   min-height: 500px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  padding: 0;
 }
 
 .generic-table-wrapper {
@@ -17,11 +17,12 @@
 }
 
 /* Nested variant: sized to its container (e.g. inside an expandable row)
-   instead of the page-level 95vw / 500px reservations. */
+   instead of page-level max-width / min-height reservations. */
 .generic-table-card--nested {
   width: 100%;
-  left: auto;
-  transform: none;
+  max-width: none;
+  margin: 0;
+  padding: 0;
   min-height: 0;
 }
 
@@ -82,15 +83,46 @@
 }
 
 /* Table Height and Responsiveness */
-@media (max-width: 1400px) {
+@media (max-width: 768px) {
   .generic-table-card {
-    width: 92%;
+    padding: 0;
+    min-height: 400px;
+  }
+
+  .generic-table-wrapper {
+    min-height: calc(5 * 45px + 48px);
+  }
+
+  .generic-table-card table td {
+    font-size: 13px;
+    padding: 10px 8px;
+  }
+
+  .generic-table-card table th {
+    font-size: 13px;
+    padding: 10px 8px;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .generic-table-card {
-    width: 95%;
+    padding: 0;
+    min-height: 350px;
+  }
+
+  .generic-table-wrapper {
+    min-height: calc(3 * 45px + 48px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .generic-table-card table {
+    font-size: 12px;
+  }
+
+  .generic-table-card table td,
+  .generic-table-card table th {
+    padding: 8px 6px;
   }
 }
 
