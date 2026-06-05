@@ -5,6 +5,8 @@ import type { Project } from "@/components/ProjectsTable/ProjectsTable";
 import type { CriticalWindowItem } from "@/components/CriticalWindowCard/CriticalWindowCard";
 import { listProjects, type ProjectResponse } from "@/api/project";
 import { getRiskSummary, type RiskSummaryResponse } from "@/api/risk";
+import { Link } from "react-router";
+import { ChevronLeft } from "lucide-react";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -192,7 +194,16 @@ export default function ProjectsHome(): ReactElement {
     ];
   }, [apiProjects, projects]);
 
-  return (
+return (
+  <>
+    <Link
+      to="/companies"
+      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+    >
+      <ChevronLeft className="size-4" />
+      Voltar para Empresas
+    </Link>
+
     <div className="flex flex-col gap-10">
       {/* Visão Geral */}
       <section className="w-full">
@@ -214,7 +225,7 @@ export default function ProjectsHome(): ReactElement {
         {error && <p className="mt-4 !text-[14px] text-destructive">{error}</p>}
 
         {!loading && !error && criticalWindows.length > 0 && (
-          <div className="flex flex-wrap gap-4 mt-6">
+          <div className="flex flex-wrap gap-4 mt-6 ">
             {criticalWindows.map((item) => (
               <CriticalWindowCard
                 key={item.id}
@@ -232,5 +243,6 @@ export default function ProjectsHome(): ReactElement {
         <ProjectsTable projects={projects} totalCount={projects.length} />
       </div>
     </div>
-  );
+  </>
+);
 }
