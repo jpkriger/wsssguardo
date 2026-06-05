@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="0012-add-manager-seed-user" author="sillysecret" context="seed">
+        <sql>
+            INSERT INTO users (id, created_at, updated_at, role, cognito_sub, first_name, last_name, email)
+            VALUES (
+                '019e957b-02c2-7df4-8fc4-86a77ec0844a',
+                '2026-06-05 01:52:07.364',
+                '2026-06-05 01:52:07.364',
+                'MANAGER',
+                '117be560-f0a1-709a-f626-6690a6a56077',
+                'Gerente',
+                'WSS',
+                'gerente@wsssguardo.com'
+            )
+            ON CONFLICT (id) DO NOTHING;
+        </sql>
+    </changeSet>
+</databaseChangeLog>
