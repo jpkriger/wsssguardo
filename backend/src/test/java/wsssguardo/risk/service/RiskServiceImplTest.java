@@ -73,7 +73,7 @@ class RiskServiceImplTest {
     when(repository.save(risk)).thenReturn(savedRisk);
     doReturn(expectedResponse).when(mapper).toResponse(savedRisk);
 
-    RiskResponseDTO actualResponse = service.createRisk(request, username);
+    RiskResponseDTO actualResponse = service.createRisk(projectId, request, username);
 
     assertEquals(expectedResponse, actualResponse);
     verify(projectRepository).findById(projectId);
@@ -88,7 +88,7 @@ class RiskServiceImplTest {
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
-    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(request, "testUser"));
+    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request, "testUser"));
     verify(projectRepository).findById(projectId);
     verifyNoInteractions(findRepository);
     verifyNoInteractions(repository);
@@ -106,7 +106,7 @@ class RiskServiceImplTest {
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of());
 
-    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(request, "testUser"));
+    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request, "testUser"));
     verifyNoInteractions(repository);
   }
 

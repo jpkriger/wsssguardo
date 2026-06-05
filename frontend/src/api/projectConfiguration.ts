@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export interface RiskCategoryDTO {
   label: string;
@@ -16,11 +16,8 @@ export interface ProjectConfigurationDTO {
   riskConfig: RiskConfigDTO;
 }
 
-const BASE = "/api/projects";
+const BASE = "projects";
 
-export async function getProjectConfiguration(projectId: string): Promise<ProjectConfigurationDTO> {
-  const url = `${BASE}/${projectId}/configuration`;
-  const res = await fetch(url);
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
-  return res.json() as Promise<ProjectConfigurationDTO>;
+export function getProjectConfiguration(projectId: string): Promise<ProjectConfigurationDTO> {
+  return apiClient.get(`${BASE}/${projectId}/configuration`).json<ProjectConfigurationDTO>();
 }

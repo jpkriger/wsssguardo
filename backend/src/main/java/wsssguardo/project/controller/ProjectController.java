@@ -25,6 +25,7 @@ import wsssguardo.project.dto.ProjectSummaryDTO;
 import wsssguardo.project.dto.ProjectUpdateRequest;
 import wsssguardo.project.service.ProjectService;
 import wsssguardo.shared.openapi.ApiListAll;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Project", description = "Project operations")
 @RestController
@@ -33,6 +34,7 @@ import wsssguardo.shared.openapi.ApiListAll;
 public class ProjectController {
 
     private final ProjectService service;
+    private final ProjectAccessService projectAccessService;
 
     @ApiListAll
     @Operation(summary = "List all projects")
@@ -55,12 +57,14 @@ public class ProjectController {
     @Operation(summary = "Resumo do projeto")
     @GetMapping("/{id}/summary")
     public ResponseEntity<ProjectSummaryDTO> getSummary(@PathVariable UUID id) {
+        projectAccessService.assertAccess(id);
         return ResponseEntity.ok(service.getSummary(id));
     }
 
     @Operation(summary = "Criar projeto")
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
+        projectAccessService.assertManager();
         ProjectResponse response = service.createProject(request);
         URI location = URI.create("/api/projects/" + response.id());
         return ResponseEntity.created(location).body(response);
@@ -70,12 +74,14 @@ public class ProjectController {
     @PatchMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@PathVariable UUID id,
             @Valid @RequestBody ProjectUpdateRequest request) {
+        projectAccessService.assertManager();
         return ResponseEntity.ok(service.updateProject(id, request));
     }
 
     @Operation(summary = "Deletar projeto")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
+        projectAccessService.assertManager();
         service.deleteProject(id);
         return ResponseEntity.noContent().build();
     }

@@ -25,50 +25,64 @@ import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskSummaryDTO;
 import wsssguardo.risk.service.RiskService;
+import wsssguardo.shared.security.AuthenticatedUser;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Risk", description = "Risk operations")
 @RestController
-@RequestMapping("/api/risks")
+@RequestMapping("/api/projects/{projectId}/risks")
 @RequiredArgsConstructor
 public class RiskController {
 
-  private final RiskService service;
+    private final RiskService service;
+    private final ProjectAccessService projectAccessService;
+    private final AuthenticatedUser authenticatedUser;
 
-  @Operation(summary = "Criar risco")
-  @PostMapping
-  public ResponseEntity<RiskResponseDTO> createRisk(@Valid @RequestBody RiskCreateRequestDTO request) {
-    var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
-    RiskResponseDTO response = service.createRisk(request, username);
-    URI location = URI.create("/api/risks/" + response.id());
-    return ResponseEntity.created(location).body(response);
-  }
+    @Operation(summary = "Listar riscos por projeto")
+    @GetMapping
+    public ResponseEntity<RiskPageResponseDTO> findAllByProject(
+            @PathVariable UUID projectId,
+            @ParameterObject Pageable pageable) {
+        projectAccessService.assertAccess(projectId);
+        return ResponseEntity.ok(service.findAllByProject(projectId, pageable));
+    }
 
-  @Operation(summary = "Resumo de riscos por projeto")
-  @GetMapping("/project/{project-id}/summary")
-  public ResponseEntity<RiskSummaryDTO> getRiskSummary(@PathVariable("project-id") UUID projectId) {
-    return ResponseEntity.ok(service.getRiskSummary(projectId));
-  }
+    @Operation(summary = "Resumo de riscos por projeto")
+    @GetMapping("/summary")
+    public ResponseEntity<RiskSummaryDTO> getRiskSummary(@PathVariable UUID projectId) {
+        projectAccessService.assertAccess(projectId);
+        return ResponseEntity.ok(service.getRiskSummary(projectId));
+    }
 
-  @Operation(summary = "Listar riscos por projeto")
-  @GetMapping("/project/{project-id}")
-  public ResponseEntity<RiskPageResponseDTO> findAllByProject(
-      @PathVariable("project-id") UUID projectId,
-      @ParameterObject Pageable pageable) {
-    return ResponseEntity.ok(service.findAllByProject(projectId, pageable));
-  }
+    @Operation(summary = "Criar risco")
+    @PostMapping
+    public ResponseEntity<RiskResponseDTO> createRisk(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody RiskCreateRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
+        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
+        RiskResponseDTO response = service.createRisk(projectId, request, createdBy);
+        URI location = URI.create("/api/projects/" + projectId + "/risks/" + response.id());
+        return ResponseEntity.created(location).body(response);
+    }
 
-  @Operation(summary = "Update a risk")
-  @PutMapping("/{id}")
-  public ResponseEntity<RiskResponseDTO> update(
-      @PathVariable UUID id,
-      @RequestBody @Valid RiskUpdateRequestDTO dto) {
-    return ResponseEntity.ok(service.update(id, dto));
-  }
+    @Operation(summary = "Atualizar risco")
+    @PutMapping("/{id}")
+    public ResponseEntity<RiskResponseDTO> update(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id,
+            @RequestBody @Valid RiskUpdateRequestDTO dto) {
+        projectAccessService.assertAccess(projectId);
+        return ResponseEntity.ok(service.update(projectId, id, dto));
+    }
 
-  @Operation(summary = "Delete a risk")
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable UUID id) {
-    service.delete(id);
-    return ResponseEntity.noContent().build();
-  }
+    @Operation(summary = "Deletar risco")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id) {
+        projectAccessService.assertAccess(projectId);
+        service.delete(projectId, id);
+        return ResponseEntity.noContent().build();
+    }
 }

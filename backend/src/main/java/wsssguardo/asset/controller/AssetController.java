@@ -24,47 +24,59 @@ import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.service.AssetService;
+import wsssguardo.shared.security.AuthenticatedUser;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/assets")
+@RequestMapping("/api/projects/{projectId}/assets")
 @Tag(name = "Assets", description = "Assets operations")
 public class AssetController {
 
     private final AssetService service;
+    private final ProjectAccessService projectAccessService;
+    private final AuthenticatedUser authenticatedUser;
 
     @Operation(summary = "Listar ativos por projeto")
-    @GetMapping("/project/{projectId}")
+    @GetMapping
     public ResponseEntity<AssetPageResponseDTO> findAllByProject(
             @PathVariable UUID projectId,
             @ParameterObject Pageable pageable) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.findAllByProject(projectId, pageable));
-    }
-
-    @Operation(summary = "Atualizar ativo")
-    @PatchMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> updateAsset(@PathVariable UUID id,
-            @Valid @RequestBody AssetUpdateRequestDTO request) {
-        var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
-        return ResponseEntity.ok(service.updateAsset(id, request, username));
     }
 
     @Operation(summary = "Criar novo ativo")
     @PostMapping
     public ResponseEntity<AssetResponseDTO> createAsset(
+            @PathVariable UUID projectId,
             @Valid @RequestBody AssetCreateRequestDTO request) {
-        var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
-        AssetResponseDTO response = service.createAsset(request, username);
-        URI location = URI.create("/api/assets/" + response.id());
+        projectAccessService.assertAccess(projectId);
+        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
+        AssetResponseDTO response = service.createAsset(projectId, request, createdBy);
+        URI location = URI.create("/api/projects/" + projectId + "/assets/" + response.id());
         return ResponseEntity.created(location).body(response);
+    }
+
+    @Operation(summary = "Atualizar ativo")
+    @PatchMapping("/{id}")
+    public ResponseEntity<AssetResponseDTO> updateAsset(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id,
+            @Valid @RequestBody AssetUpdateRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
+        String updatedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
+        return ResponseEntity.ok(service.updateAsset(projectId, id, request, updatedBy));
     }
 
     @Operation(summary = "Excluir ativo")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAsset(@PathVariable UUID id) {
-        var username = "authenticatedUser"; // TODO: Substituir por usuário autenticado (Principal)
-        service.deleteAsset(id, username);
+    public ResponseEntity<Void> deleteAsset(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id) {
+        projectAccessService.assertAccess(projectId);
+        String deletedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
+        service.deleteAsset(projectId, id, deletedBy);
         return ResponseEntity.noContent().build();
     }
-
 }

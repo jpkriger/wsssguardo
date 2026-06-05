@@ -27,8 +27,8 @@ log()  { echo ""; echo "==> $*"; }
 info() { echo "    $*"; }
 die()  { echo ""; echo "ERRO: $*" >&2; exit 1; }
 
-# ─── Secrets (via env ou .env.secrets local) ───────────────────────────────────
-SECRETS_FILE="${ROOT_DIR}/.env.secrets"
+# ─── Secrets (via .env local ou variável de ambiente) ──────────────────────────
+SECRETS_FILE="${ROOT_DIR}/.env"
 [[ -f "$SECRETS_FILE" ]] && source "$SECRETS_FILE"
 
 DB_NAME="${DB_NAME:-}"
@@ -36,10 +36,10 @@ DB_USERNAME="${DB_USERNAME:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-}"
 
-[[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
+[[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env ou como variável de ambiente."
 
 # ─── Pré-requisitos ────────────────────────────────────────────────────────────
 for cmd in aws terraform docker git dig bun; do
@@ -114,6 +114,10 @@ CF_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cloudfront_distribution_i
 FRONTEND_DOMAIN=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw frontend_domain)
 OBS_INSTANCE_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_instance_id)
 OBS_PRIVATE_IP=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_private_ip)
+COGNITO_REGION=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_region)
+COGNITO_USER_POOL_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_user_pool_id)
+COGNITO_CLIENT_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_client_id)
+COGNITO_CLIENT_SECRET=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_client_secret)
 
 info "ECR URL    : $ECR_URL"
 info "Backend IP : $BACKEND_IP"
@@ -229,7 +233,7 @@ mkdir -p /opt/${PROJECT}
 echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
 echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
 echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
-printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\n' \
+printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\nCOGNITO_REGION=${COGNITO_REGION}\nCOGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}\nCOGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}\nCOGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}\n' \
   > /opt/${PROJECT}/.env
 
 aws ecr get-login-password --region ${REGION} | \

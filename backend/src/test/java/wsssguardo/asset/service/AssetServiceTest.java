@@ -158,7 +158,7 @@ class AssetServiceTest {
     void createAsset_FoundProject_ReturnsResponse() {
         UUID projectId = UUID.randomUUID();
         String username = "testUser";
-        AssetCreateRequestDTO request = new AssetCreateRequestDTO(projectId, "Asset name", "Description", "Content");
+        AssetCreateRequestDTO request = new AssetCreateRequestDTO("Asset name", "Description", "Content");
         Project project = new Project();
         project.setId(projectId);
         Asset asset = new Asset();
@@ -171,7 +171,7 @@ class AssetServiceTest {
         when(repository.save(asset)).thenReturn(savedAsset);
         doReturn(expectedResponse).when(assetMapper).toResponse(savedAsset);
 
-        AssetResponseDTO actualResponse = service.createAsset(request, username);
+        AssetResponseDTO actualResponse = service.createAsset(projectId, request, username);
 
         assertEquals(expectedResponse, actualResponse);
         verify(projectRepository).findById(projectId);
@@ -184,11 +184,11 @@ class AssetServiceTest {
     void createAsset_ProjectNotFound_ThrowsException() {
         UUID projectId = UUID.randomUUID();
         String username = "testUser";
-        AssetCreateRequestDTO request = new AssetCreateRequestDTO(projectId, "Asset name", "Description", "Content");
+        AssetCreateRequestDTO request = new AssetCreateRequestDTO("Asset name", "Description", "Content");
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.createAsset(request, username));
+        assertThrows(ResourceNotFoundException.class, () -> service.createAsset(projectId, request, username));
         verify(projectRepository).findById(projectId);
         verifyNoInteractions(repository);
         verifyNoInteractions(assetMapper);
@@ -196,10 +196,14 @@ class AssetServiceTest {
 
     @Test
     void updateAsset_Found_ReturnsResponse() {
+        UUID projectId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String username = "testUser";
         AssetUpdateRequestDTO request = new AssetUpdateRequestDTO("name", "description", "type");
+        Project project = new Project();
+        project.setId(projectId);
         Asset asset = new Asset();
+        asset.setProject(project);
         Asset updatedAsset = new Asset();
         AssetResponseDTO expectedResponse = new AssetResponseDTO(UUID.randomUUID(), "name", "description", "content",
                 UUID.randomUUID(), null, null, null, 0L);
@@ -208,7 +212,7 @@ class AssetServiceTest {
         doReturn(updatedAsset).when(assetMapper).updateEntity(asset, request, username);
         doReturn(expectedResponse).when(assetMapper).toResponse(updatedAsset);
 
-        AssetResponseDTO actualResponse = service.updateAsset(id, request, username);
+        AssetResponseDTO actualResponse = service.updateAsset(projectId, id, request, username);
 
         assertEquals(expectedResponse, actualResponse);
         verify(repository).findById(id);
@@ -218,27 +222,32 @@ class AssetServiceTest {
 
     @Test
     void updateAsset_NotFound_ThrowsException() {
+        UUID projectId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String username = "testUser";
         AssetUpdateRequestDTO request = new AssetUpdateRequestDTO("name", "description", "type");
 
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.updateAsset(id, request, username));
+        assertThrows(ResourceNotFoundException.class, () -> service.updateAsset(projectId, id, request, username));
         verify(repository).findById(id);
         verifyNoInteractions(assetMapper);
     }
 
     @Test
     void deleteAsset_Found_DeletesEntity() {
+        UUID projectId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String username = "testUser";
+        Project project = new Project();
+        project.setId(projectId);
         Asset asset = new Asset();
+        asset.setProject(project);
 
         when(repository.findById(id)).thenReturn(Optional.of(asset));
         when(repository.existsActiveFindLink(id)).thenReturn(false);
 
-        service.deleteAsset(id, username);
+        service.deleteAsset(projectId, id, username);
 
         verify(repository).findById(id);
         verify(assetMapper).deleteEntity(asset, username);
@@ -246,14 +255,18 @@ class AssetServiceTest {
 
     @Test
     void deleteAsset_WithLinkedFindings_ThrowsConflict() {
+        UUID projectId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String username = "testUser";
+        Project project = new Project();
+        project.setId(projectId);
         Asset asset = new Asset();
+        asset.setProject(project);
 
         when(repository.findById(id)).thenReturn(Optional.of(asset));
         when(repository.existsActiveFindLink(id)).thenReturn(true);
 
-        assertThrows(ApiException.class, () -> service.deleteAsset(id, username));
+        assertThrows(ApiException.class, () -> service.deleteAsset(projectId, id, username));
 
         verify(repository).findById(id);
         verify(repository).existsActiveFindLink(id);
@@ -262,12 +275,13 @@ class AssetServiceTest {
 
     @Test
     void deleteAsset_NotFound_ThrowsException() {
+        UUID projectId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
         String username = "testUser";
 
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.deleteAsset(id, username));
+        assertThrows(ResourceNotFoundException.class, () -> service.deleteAsset(projectId, id, username));
         verify(repository).findById(id);
         verifyNoInteractions(assetMapper);
     }

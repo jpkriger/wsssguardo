@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export type FindingSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
 
@@ -41,54 +41,32 @@ export interface FindingUpdateRequest {
 }
 
 function base(projectId: string): string {
-  return `/api/projects/${projectId}/findings`;
+  return `projects/${projectId}/findings`;
 }
 
-export async function listFindings(projectId: string): Promise<FindingResponse[]> {
-  const endpoint = `${base(projectId)}/listByProject/`;
-  const res = await fetch(endpoint);
-  if (!res.ok) throw await parseApiErrorResponse(res, endpoint);
-  return res.json() as Promise<FindingResponse[]>;
+export function listFindings(projectId: string): Promise<FindingResponse[]> {
+  return apiClient.get(`${base(projectId)}/listByProject/`).json<FindingResponse[]>();
 }
 
-export async function getFinding(projectId: string, id: string): Promise<FindingResponse> {
-  const endpoint = `${base(projectId)}/get/${id}`;
-  const res = await fetch(endpoint);
-  if (!res.ok) throw await parseApiErrorResponse(res, endpoint);
-  return res.json() as Promise<FindingResponse>;
+export function getFinding(projectId: string, id: string): Promise<FindingResponse> {
+  return apiClient.get(`${base(projectId)}/get/${id}`).json<FindingResponse>();
 }
 
-export async function createFinding(
+export function createFinding(
   projectId: string,
   body: FindingCreateRequest,
 ): Promise<FindingResponse> {
-  const endpoint = `${base(projectId)}/create/`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw await parseApiErrorResponse(res, endpoint);
-  return res.json() as Promise<FindingResponse>;
+  return apiClient.post(`${base(projectId)}/create/`, { json: body }).json<FindingResponse>();
 }
 
-export async function updateFinding(
+export function updateFinding(
   projectId: string,
   id: string,
   body: FindingUpdateRequest,
 ): Promise<FindingResponse> {
-  const endpoint = `${base(projectId)}/${id}`;
-  const res = await fetch(endpoint, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw await parseApiErrorResponse(res, endpoint);
-  return res.json() as Promise<FindingResponse>;
+  return apiClient.put(`${base(projectId)}/${id}`, { json: body }).json<FindingResponse>();
 }
 
 export async function deleteFinding(projectId: string, id: string): Promise<void> {
-  const endpoint = `${base(projectId)}/delete/${id}`;
-  const res = await fetch(endpoint, { method: "DELETE" });
-  if (!res.ok) throw await parseApiErrorResponse(res, endpoint);
+  await apiClient.delete(`${base(projectId)}/delete/${id}`);
 }

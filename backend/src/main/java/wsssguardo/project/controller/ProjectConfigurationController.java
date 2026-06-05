@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import wsssguardo.project.dto.ProjectConfigurationDTO;
 import wsssguardo.project.dto.ProjectConfigurationUpdateDTO;
 import wsssguardo.project.service.ProjectConfigurationService;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Project Configuration", description = "Endpoints for managing project configurations")
 @RestController
@@ -24,9 +25,11 @@ import wsssguardo.project.service.ProjectConfigurationService;
 public class ProjectConfigurationController {
 
     private final ProjectConfigurationService service;
+    private final ProjectAccessService projectAccessService;
 
     @GetMapping
     public ResponseEntity<ProjectConfigurationDTO> getProjectConfiguration(@PathVariable UUID projectId) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.getProjectConfig(projectId));
     }
 
@@ -34,6 +37,7 @@ public class ProjectConfigurationController {
     public ResponseEntity<ProjectConfigurationDTO> updateProjectConfiguration(
             @PathVariable UUID projectId,
             @RequestBody @Valid ProjectConfigurationUpdateDTO dto) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.updateProjectConfig(projectId, dto));
     }
 }

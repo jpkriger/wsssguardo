@@ -3,6 +3,7 @@ package wsssguardo.project.service;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,9 +37,11 @@ import wsssguardo.project.dto.RiskCategoryDTO;
 import wsssguardo.project.dto.RiskConfigUpdateDTO;
 import wsssguardo.project.mapper.ProjectMapper;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.project.repository.ProjectUserRepository;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+import wsssguardo.shared.security.ProjectAccessService;
 import wsssguardo.user.User;
 import wsssguardo.user.repository.UserRepository;
 
@@ -47,6 +50,7 @@ import wsssguardo.user.repository.UserRepository;
 public class ProjectService {
 
     private final ProjectRepository repository;
+    private final ProjectUserRepository projectUserRepository;
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
@@ -54,10 +58,13 @@ public class ProjectService {
     private final FindRepository findRepository;
     private final RiskRepository riskRepository;
     private final ProjectMapper mapper;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> listAllProjects() {
-        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findAllByIdIn(accessible).stream()
+                .sorted(Comparator.comparing(Project::getCreatedAt).reversed())
                 .map(mapper::toResponse)
                 .toList();
     }
@@ -68,7 +75,9 @@ public class ProjectService {
             return List.of();
         }
 
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
         Map<UUID, Project> projectsById = repository.findAllById(ids).stream()
+                .filter(p -> accessible.contains(p.getId()))
                 .collect(Collectors.toMap(Project::getId, Function.identity()));
 
         return ids.stream()
@@ -83,8 +92,11 @@ public class ProjectService {
         if (userId == null) {
             return List.of();
         }
-
-        return repository.findProjectIdsByUserId(userId);
+        // Retorna somente a interseção com os projetos acessíveis ao usuário corrente.
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findProjectIdsByUserId(userId).stream()
+                .filter(accessible::contains)
+                .toList();
     }
 
     @Transactional
@@ -154,9 +166,7 @@ public class ProjectService {
         }
 
         if (request.consultantIds() != null) {
-            List<ProjectUser> projectUsers = buildProjectUsers(request.consultantIds());
-            projectUsers.forEach(projectUser -> projectUser.setProject(project));
-            project.setProjectUsers(projectUsers);
+            mergeProjectUsers(project, request.consultantIds());
         }
 
         if (request.status() != null) {
@@ -270,9 +280,52 @@ public class ProjectService {
         }
     }
 
+    private void mergeProjectUsers(Project project, List<UUID> consultantIds) {
+        List<UUID> uniqueIds = consultantIds.stream().distinct().toList();
+
+        List<User> users = userRepository.findAllById(uniqueIds);
+        Set<UUID> foundIds = users.stream().map(User::getId).collect(Collectors.toSet());
+        List<UUID> missingIds = uniqueIds.stream().filter(uid -> !foundIds.contains(uid)).toList();
+        if (!missingIds.isEmpty()) {
+            throw new ResourceNotFoundException("User", missingIds.get(0));
+        }
+        Map<UUID, User> usersById = users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
+
+        Set<UUID> newUserIds = new HashSet<>(uniqueIds);
+
+        // Carrega todos os ProjectUser do projeto, inclusive soft-deletados,
+        // para poder reativar registros já existentes sem violar a unique constraint.
+        Map<UUID, ProjectUser> existingByUserId = projectUserRepository
+                .findAllByProjectIdIncludingDeleted(project.getId())
+                .stream()
+                .collect(Collectors.toMap(pu -> pu.getUser().getId(), Function.identity()));
+
+        // Remove da coleção gerenciada quem não está na nova lista (orphanRemoval → soft-delete).
+        project.getProjectUsers().removeIf(pu -> !newUserIds.contains(pu.getUser().getId()));
+
+        for (UUID userId : uniqueIds) {
+            ProjectUser existing = existingByUserId.get(userId);
+            if (existing == null) {
+                // Usuário nunca esteve no projeto — cria novo registro.
+                ProjectUser newPu = ProjectUser.builder()
+                        .user(usersById.get(userId))
+                        .project(project)
+                        .build();
+                project.getProjectUsers().add(newPu);
+            } else if (existing.getDeletedAt() != null) {
+                // Usuário estava no projeto mas foi removido — reativa o registro existente.
+                existing.setDeletedAt(null);
+                existing.setDeletedBy(null);
+                ProjectUser reactivated = projectUserRepository.save(existing);
+                project.getProjectUsers().add(reactivated);
+            }
+            // else: já está ativo na coleção, sem ação necessária.
+        }
+    }
+
     private List<ProjectUser> buildProjectUsers(List<UUID> consultantIds) {
         if (consultantIds == null || consultantIds.isEmpty()) {
-            return List.of();
+            return new java.util.ArrayList<>();
         }
 
         List<UUID> uniqueConsultantIds = consultantIds.stream().distinct().toList();

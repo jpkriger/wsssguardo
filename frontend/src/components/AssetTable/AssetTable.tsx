@@ -68,7 +68,7 @@ export default function AssetTable(): ReactElement {
   async function handleDelete(id: string): Promise<void> {
     setDeleting(true);
     try {
-      await deleteAsset(id);
+      await deleteAsset(projectId, id);
       setAssets((prev) => prev.filter((a) => a.id !== id));
       setError(null);
       toast.success("Ativo excluido com sucesso.");
@@ -101,14 +101,13 @@ export default function AssetTable(): ReactElement {
     setError(null);
     try {
       if (modalMode === "create") {
-        await createAsset({
-          projectId,
+        await createAsset(projectId, {
           name: data.name,
           description: data.description,
           content: data.content,
         });
       } else if (modalMode === "edit" && data.id) {
-        await updateAsset(data.id, {
+        await updateAsset(projectId, data.id, {
           name: data.name,
           description: data.description,
           content: data.content,

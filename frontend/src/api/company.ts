@@ -1,7 +1,7 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 import type { ProjectResponse as ApiProjectResponse } from "./project";
 
-const BASE = "/api/companies";
+const BASE = "companies";
 
 export type ProjectStatus = ApiProjectResponse["status"];
 
@@ -29,35 +29,18 @@ export interface UpdateCompanyRequest {
   name: string;
 }
 
-export async function listCompanies(): Promise<CompanyResponse[]> {
-  const res = await fetch(BASE);
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-  return res.json() as Promise<CompanyResponse[]>;
+export function listCompanies(): Promise<CompanyResponse[]> {
+  return apiClient.get(BASE).json<CompanyResponse[]>();
 }
 
-export async function createCompany(request: CreateCompanyRequest): Promise<CompanyResponse> {
-  const res = await fetch(BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-  return res.json() as Promise<CompanyResponse>;
+export function createCompany(request: CreateCompanyRequest): Promise<CompanyResponse> {
+  return apiClient.post(BASE, { json: request }).json<CompanyResponse>();
 }
 
-export async function updateCompany(id: string, request: UpdateCompanyRequest): Promise<CompanyResponse> {
-  const url = `${BASE}/${id}`;
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
-  return res.json() as Promise<CompanyResponse>;
+export function updateCompany(id: string, request: UpdateCompanyRequest): Promise<CompanyResponse> {
+  return apiClient.patch(`${BASE}/${id}`, { json: request }).json<CompanyResponse>();
 }
 
 export async function deleteCompany(id: string): Promise<void> {
-  const url = `${BASE}/${id}`;
-  const res = await fetch(url, { method: "DELETE" });
-  if (!res.ok) throw await parseApiErrorResponse(res, url);
+  await apiClient.delete(`${BASE}/${id}`);
 }

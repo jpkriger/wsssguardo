@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export interface RiskResponse {
     id: string;
@@ -10,7 +10,6 @@ export interface RiskResponse {
     occurrenceProbability: number;
     impactProbability: number;
     damageOperations: string;
-    damageAssetIds: string[];
     damageIndividuals: string;
     damageOtherOrgs: string;
     recommendation: string;
@@ -31,7 +30,6 @@ export interface RiskPageResponse {
 }
 
 export interface RiskCreateRequest {
-    projectId: string;
     name: string;
     findIds: string[];
     description: string;
@@ -39,7 +37,6 @@ export interface RiskCreateRequest {
     occurrenceProbability: number;
     impactProbability: number;
     damageOperations: string;
-    damageAssetIds: string[];
     damageIndividuals: string;
     damageOtherOrgs: string;
     recommendation: string;
@@ -54,37 +51,28 @@ export interface RiskUpdateRequest {
     impactProbability?: number;
     damageOperations?: string;
     findIds?: string[];
-    assetIds?: string[];
     damageIndividuals?: string;
     damageOtherOrgs?: string;
     recommendation?: string;
     riskLevel?: number;
 }
 
-const BASE = "/api/risks";
+function base(projectId: string): string {
+    return `projects/${projectId}/risks`;
+}
 
-export async function fetchRisksByProject(
+export function fetchRisksByProject(
     projectId: string,
     page: number = 0,
     size: number = 5,
 ): Promise<RiskPageResponse> {
-    const params = new URLSearchParams({
-        page: String(page),
-        size: String(size),
-    });
-
-    const url = `${BASE}/project/${projectId}?${params.toString()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<RiskPageResponse>;
+    return apiClient
+        .get(base(projectId), {
+            searchParams: { page: String(page), size: String(size) },
+        })
+        .json<RiskPageResponse>();
 }
 
-/**
- * Fetches every risk of a project by paging through the server response.
- * Used by the client-mode table so sorting/search/filters operate on the full set.
- */
 export async function fetchAllRisksByProject(
     projectId: string,
 ): Promise<RiskResponse[]> {
@@ -100,36 +88,16 @@ export async function fetchAllRisksByProject(
     return all;
 }
 
-export async function createRisk(data: RiskCreateRequest): Promise<RiskResponse> {
-    const res = await fetch(BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-    return res.json() as Promise<RiskResponse>;
+export function createRisk(projectId: string, data: RiskCreateRequest): Promise<RiskResponse> {
+    return apiClient.post(base(projectId), { json: data }).json<RiskResponse>();
 }
 
-export async function updateRisk(id: string, data: RiskUpdateRequest): Promise<RiskResponse> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<RiskResponse>;
+export function updateRisk(projectId: string, id: string, data: RiskUpdateRequest): Promise<RiskResponse> {
+    return apiClient.put(`${base(projectId)}/${id}`, { json: data }).json<RiskResponse>();
 }
 
-export async function deleteRisk(id: string): Promise<void> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, { method: "DELETE" });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
+export async function deleteRisk(projectId: string, id: string): Promise<void> {
+    await apiClient.delete(`${base(projectId)}/${id}`);
 }
 
 export interface RiskSummaryResponse {
@@ -139,9 +107,6 @@ export interface RiskSummaryResponse {
     lowRisks: number;
 }
 
-export async function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
-    const url = `${BASE}/project/${projectId}/summary`;
-    const res = await fetch(url);
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-    return res.json() as Promise<RiskSummaryResponse>;
+export function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
+    return apiClient.get(`${base(projectId)}/summary`).json<RiskSummaryResponse>();
 }

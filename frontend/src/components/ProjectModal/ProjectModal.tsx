@@ -1,17 +1,19 @@
 import { type ReactElement, useEffect, useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import type { ProjectResponse } from "@/api/project";
 import type { RiskCategoryDTO, RiskConfigDTO } from "@/api/projectConfiguration";
+import { listUsers, type UserProfile } from "@/api/users";
 
 export interface ProjectFormData {
   name: string;
   startDate: string;
   endDate: string;
   riskConfig?: RiskConfigDTO;
+  consultantIds?: string[];
 }
 
 interface ProjectModalProps {
@@ -52,20 +54,42 @@ export default function ProjectModal({
   const [error, setError] = useState<string | null>(null);
 
   const [riskConfig, setRiskConfig] = useState<RiskConfigDTO>(createDefaultRiskConfig());
+  const [consultantIds, setConsultantIds] = useState<string[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [userSearch, setUserSearch] = useState("");
 
   useEffect(() => {
     if (project) {
       setName(project.name);
       setStartDate(project.startDate?.split("T")[0] ?? "");
       setEndDate(project.endDate?.split("T")[0] ?? "");
+      setConsultantIds(project.consultantIds ?? []);
     } else {
       setName("");
       setStartDate("");
       setEndDate("");
       setRiskConfig(createDefaultRiskConfig());
+      setConsultantIds([]);
     }
+    setUserSearch("");
+    void listUsers().then(setUsers).catch(() => setUsers([]));
     setError(null);
   }, [project, isOpen]);
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.toLowerCase();
+    return (
+      (u.firstName ?? "").toLowerCase().includes(q) ||
+      (u.lastName ?? "").toLowerCase().includes(q) ||
+      (u.email ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  function toggleConsultant(id: string): void {
+    setConsultantIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   if (!isOpen) return null;
 
@@ -183,6 +207,7 @@ export default function ProjectModal({
         name: name.trim(),
         startDate,
         endDate,
+        consultantIds,
         ...(isEdit ? {} : { riskConfig }),
       });
       onClose();
@@ -255,6 +280,65 @@ export default function ProjectModal({
               />
             </div>
           </div>
+
+          {users.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Consultores</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Selecione os consultores que terão acesso ao projeto.
+                  </p>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="pl-8 h-8 text-sm"
+                  />
+                </div>
+                <div className="max-h-36 overflow-y-auto rounded-md border border-border divide-y divide-border">
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">
+                      Nenhum usuário encontrado.
+                    </p>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const checked = consultantIds.includes(u.id);
+                      const label = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email || u.id;
+                      return (
+                        <label
+                          key={u.id}
+                          className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/30 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleConsultant(u.id)}
+                            className="h-3.5 w-3.5 rounded accent-[#d4a574]"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm text-foreground truncate">{label}</p>
+                            {u.email && (
+                              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                {consultantIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {consultantIds.length} consultor{consultantIds.length > 1 ? "es" : ""} selecionado{consultantIds.length > 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {!isEdit && (
             <>
