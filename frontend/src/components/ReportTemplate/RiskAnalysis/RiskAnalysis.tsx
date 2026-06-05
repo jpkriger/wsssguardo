@@ -25,6 +25,10 @@ import {
 interface RiskAnalysisProps {
   projectId?: string;
   selectedRiskIds?: Record<string, boolean>;
+  /** Show the asset/artifact evidence blocks within each risk card. */
+  showAssetsArtifacts?: boolean;
+  /** Show the recommended mitigation steps within each risk card. */
+  showRecommendations?: boolean;
 }
 
 type RiskLevelLabel = "Baixo" | "Médio" | "Alto" | "Crítico";
@@ -154,6 +158,8 @@ function getMockResponsibleArea(risk: RiskResponse): string {
 export default function RiskAnalysis({
   projectId,
   selectedRiskIds,
+  showAssetsArtifacts = true,
+  showRecommendations = true,
 }: RiskAnalysisProps): ReactElement {
   const [risks, setRisks] = useState<RiskResponse[]>([]);
   const [findings, setFindings] = useState<FindingResponse[]>([]);
@@ -278,13 +284,26 @@ export default function RiskAnalysis({
         <Separator className="bg-slate-200" />
       </div>
       {items.map((item) => (
-        <RiskCard key={item.risk.id} item={item} />
+        <RiskCard
+          key={item.risk.id}
+          item={item}
+          showAssetsArtifacts={showAssetsArtifacts}
+          showRecommendations={showRecommendations}
+        />
       ))}
     </div>
   );
 }
 
-function RiskCard({ item }: { item: RiskAnalysisItem }): ReactElement {
+function RiskCard({
+  item,
+  showAssetsArtifacts,
+  showRecommendations,
+}: {
+  item: RiskAnalysisItem;
+  showAssetsArtifacts: boolean;
+  showRecommendations: boolean;
+}): ReactElement {
   const consequences = item.potentialConsequences
     .split(/[.\n;]+/)
     .map((s) => s.trim())
@@ -326,30 +345,36 @@ function RiskCard({ item }: { item: RiskAnalysisItem }): ReactElement {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <MapPin size={13} className="text-slate-400" strokeWidth={1.5} />
-              <SectionLabel>Localização</SectionLabel>
+        {showAssetsArtifacts && (
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <MapPin
+                  size={13}
+                  className="text-slate-400"
+                  strokeWidth={1.5}
+                />
+                <SectionLabel>Localização</SectionLabel>
+              </div>
+              <p className="text-sm text-slate-600">
+                {item.linkedAssetNames[0] ?? "—"}
+              </p>
             </div>
-            <p className="text-sm text-slate-600">
-              {item.linkedAssetNames[0] ?? "—"}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <Database
-                size={13}
-                className="text-slate-400"
-                strokeWidth={1.5}
-              />
-              <SectionLabel>Ativo afetado</SectionLabel>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Database
+                  size={13}
+                  className="text-slate-400"
+                  strokeWidth={1.5}
+                />
+                <SectionLabel>Ativo afetado</SectionLabel>
+              </div>
+              <p className="text-sm text-slate-600">
+                {item.linkedAssetNames.join(", ") || "Nenhum ativo vinculado"}
+              </p>
             </div>
-            <p className="text-sm text-slate-600">
-              {item.linkedAssetNames.join(", ") || "Nenhum ativo vinculado"}
-            </p>
           </div>
-        </div>
+        )}
 
         <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-4">
           <div className="flex items-center gap-1.5 mb-3">
@@ -369,7 +394,11 @@ function RiskCard({ item }: { item: RiskAnalysisItem }): ReactElement {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div
+          className={`grid gap-6 ${
+            showAssetsArtifacts ? "grid-cols-2" : "grid-cols-1"
+          }`}
+        >
           <div>
             <SectionLabel>Achados relacionados</SectionLabel>
             <ul className="mt-2 space-y-1.5">
@@ -391,57 +420,59 @@ function RiskCard({ item }: { item: RiskAnalysisItem }): ReactElement {
             </ul>
           </div>
 
-          <div>
-            <SectionLabel>
-              Evidências de suporte (ativos + auditoria)
-            </SectionLabel>
-            {item.linkedArtifactNames.length > 0 && (
-              <div className="mt-2">
-                <p className="text-xs text-slate-400 mb-1">Documentos</p>
-                <ul className="space-y-1">
-                  {item.linkedArtifactNames.map((name) => (
-                    <li
-                      key={name}
-                      className="flex items-center gap-1.5 text-sm text-slate-600"
-                    >
-                      <FileText
-                        size={13}
-                        className="text-slate-400 shrink-0"
-                        strokeWidth={1.5}
-                      />
-                      {name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {item.linkedAssetNames.length > 1 && (
-              <div className="mt-3">
-                <p className="text-xs text-slate-400 mb-1">Reuniões</p>
-                <ul className="space-y-1">
-                  {item.linkedAssetNames.slice(1).map((name) => (
-                    <li
-                      key={name}
-                      className="flex items-center gap-1.5 text-sm text-slate-600"
-                    >
-                      <Users
-                        size={13}
-                        className="text-slate-400 shrink-0"
-                        strokeWidth={1.5}
-                      />
-                      {name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {item.linkedArtifactNames.length === 0 &&
-              item.linkedAssetNames.length <= 1 && (
-                <p className="mt-2 text-sm text-slate-400">
-                  Sem evidências vinculadas
-                </p>
+          {showAssetsArtifacts && (
+            <div>
+              <SectionLabel>
+                Evidências de suporte (ativos + auditoria)
+              </SectionLabel>
+              {item.linkedArtifactNames.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-slate-400 mb-1">Documentos</p>
+                  <ul className="space-y-1">
+                    {item.linkedArtifactNames.map((name) => (
+                      <li
+                        key={name}
+                        className="flex items-center gap-1.5 text-sm text-slate-600"
+                      >
+                        <FileText
+                          size={13}
+                          className="text-slate-400 shrink-0"
+                          strokeWidth={1.5}
+                        />
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-          </div>
+              {item.linkedAssetNames.length > 1 && (
+                <div className="mt-3">
+                  <p className="text-xs text-slate-400 mb-1">Reuniões</p>
+                  <ul className="space-y-1">
+                    {item.linkedAssetNames.slice(1).map((name) => (
+                      <li
+                        key={name}
+                        className="flex items-center gap-1.5 text-sm text-slate-600"
+                      >
+                        <Users
+                          size={13}
+                          className="text-slate-400 shrink-0"
+                          strokeWidth={1.5}
+                        />
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {item.linkedArtifactNames.length === 0 &&
+                item.linkedAssetNames.length <= 1 && (
+                  <p className="mt-2 text-sm text-slate-400">
+                    Sem evidências vinculadas
+                  </p>
+                )}
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4">
@@ -482,7 +513,7 @@ function RiskCard({ item }: { item: RiskAnalysisItem }): ReactElement {
           </div>
         )}
 
-        {mitigationSteps.length > 0 && (
+        {showRecommendations && mitigationSteps.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-3">
               <Wrench size={14} className="text-slate-500" strokeWidth={1.5} />
