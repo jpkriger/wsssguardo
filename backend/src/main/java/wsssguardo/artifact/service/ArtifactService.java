@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import wsssguardo.artifact.repository.ArtifactRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.projectConfiguration.RiskCategory;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -127,6 +129,9 @@ public class ArtifactService {
     @Transactional
     public void delete(UUID projectId, UUID id) {
         Artifact artifact = requireArtifactExists(projectId, id);
+        if (repository.existsActiveFindLink(id)) {
+            throw new ApiException("Artifact has linked findings and cannot be deleted", HttpStatus.CONFLICT);
+        }
         repository.delete(artifact);
     }
 
@@ -203,7 +208,7 @@ public class ArtifactService {
             else if (idx == sorted.size() - 1) high++;
             else if (idx > 0) medium++;
         }
-        return new long[]{low, medium, high};
+        return new long[] { low, medium, high };
     }
 
     private Project requireProjectExists(UUID projectId) {

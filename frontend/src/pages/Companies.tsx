@@ -46,6 +46,8 @@ function mapProject(project: CompanyProjectResponse): CompanyProject {
     name: project.name,
     startDate: formatDate(project.startDate),
     endDate: formatDate(project.endDate),
+    startDateRaw: project.startDate,
+    endDateRaw: project.endDate,
     status: deriveStatus(project.status, project.endDate),
     rawStatus: project.status,
   };
@@ -56,6 +58,7 @@ function mapCompany(company: CompanyResponse): Company {
     id: company.id,
     name: company.name,
     createdAt: formatDate(company.createdAt),
+    createdAtRaw: company.createdAt,
     totalProjects: company.projects.length,
     projects: company.projects.map(mapProject),
   };
@@ -159,11 +162,15 @@ export default function Companies(): ReactElement {
         endDate: data.endDate || null,
       });
     } else {
+      if (!data.riskConfig) {
+        throw new Error("Configuração de risco é obrigatória para criar um projeto.");
+      }
       await createProject({
         name: data.name,
-        customerId: targetCompanyId,
+        companyId: targetCompanyId,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        riskConfig: data.riskConfig,
       });
     }
     await loadCompanies();

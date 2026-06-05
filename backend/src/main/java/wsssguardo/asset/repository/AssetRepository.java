@@ -2,6 +2,7 @@ package wsssguardo.asset.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -21,6 +22,16 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
     long countByProjectId(UUID projectId);
 
     @Query(value = """
+            SELECT EXISTS (
+              SELECT 1 FROM finds_assets fa
+              JOIN finds f ON f.id = fa.find_id
+              WHERE fa.assets_id = :assetId
+                AND f.deleted_at IS NULL
+            )
+            """, nativeQuery = true)
+    boolean existsActiveFindLink(@Param("assetId") UUID assetId);
+
+    @Query(value = """
             SELECT fa.assets_id, COUNT(fa.find_id)
             FROM finds_assets fa
             JOIN finds f ON f.id = fa.find_id
@@ -30,4 +41,6 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
             GROUP BY fa.assets_id
             """, nativeQuery = true)
     List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
+
+    Optional<Asset> findByIdAndProjectId(UUID id, UUID projectId);
 }

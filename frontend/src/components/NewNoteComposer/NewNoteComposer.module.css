@@ -6,8 +6,8 @@
   min-height: 400px;
   max-width: 90vw;
   max-height: 90vh;
-  resize: both;
-  overflow: auto;
+  /* resize: both removido — agora usamos handle customizado */
+  overflow: hidden;
 }
 
 .header {
@@ -27,4 +27,32 @@
 
 .footer {
   flex-shrink: 0;
+}
+
+/* Handle de resize customizado no canto superior esquerdo */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nw-resize;
+  z-index: 10;
+}
+
+.resizeHandle::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--muted-foreground, #888);
+  border-left: 2px solid var(--muted-foreground, #888);
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.resizeHandle:hover::before {
+  opacity: 1;
 }

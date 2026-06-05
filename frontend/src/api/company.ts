@@ -1,14 +1,14 @@
 import { parseApiErrorResponse } from "./errors";
 import type { ProjectResponse as ApiProjectResponse } from "./project";
 
-const BASE = "/api/customers";
+const BASE = "/api/companies";
 
 export type ProjectStatus = ApiProjectResponse["status"];
 
 export interface ProjectResponse {
   id: string;
   name: string;
-  customerId: string;
+  companyId: string;
   startDate: string | null;
   endDate: string | null;
   status: ProjectStatus;

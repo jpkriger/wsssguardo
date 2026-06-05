@@ -35,8 +35,7 @@ export default function ReportHeader({
       try {
         const [project] = await projectsById([projectId]);
         if (cancelled) return;
-        setCompanyName(project?.customerId ?? "Empresa indisponível");
-      } catch {
+          setCompanyName(project?.companyId ?? "Empresa indisponível");      } catch {
         if (!cancelled) setCompanyName("Empresa indisponível");
       }
     }

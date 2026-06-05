@@ -107,13 +107,10 @@ function getTodayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildInitialFormState(
-  project: ProjectResponse | null,
-  companyName?: string,
-): FormState {
+function buildInitialFormState(project: ProjectResponse | null, companyName?: string): FormState {
   return {
     title: project?.name ?? "",
-    client: companyName ?? project?.customerId ?? "",
+    client: companyName ?? project?.companyId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
@@ -206,7 +203,7 @@ export default function ProjectReport(): ReactElement {
     let cancelled = false;
 
     async function loadCompanyNameData(): Promise<void> {
-      if (!project?.customerId) {
+      if (!project?.companyId) {
         setCompanyName(undefined);
         return;
       }
@@ -215,7 +212,7 @@ export default function ProjectReport(): ReactElement {
         const companies = await listCompanies();
         if (cancelled) return;
 
-        const company = companies.find((c) => c.id === project.customerId);
+        const company = companies.find((c) => c.id === project.companyId);
         setCompanyName(company?.name);
       } catch {
         if (!cancelled) {
@@ -229,7 +226,7 @@ export default function ProjectReport(): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [project?.customerId]);
+  }, [project?.companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -343,9 +340,7 @@ export default function ProjectReport(): ReactElement {
                     </span>
                   );
 
-                const endDate = startOfDay(
-                  parseProjectEndDate(project.endDate),
-                );
+                const endDate = startOfDay(parseProjectEndDate(project.endDate));
                 const today = startOfDay(new Date());
                 const daysRemaining = Math.floor(
                   (endDate.getTime() - today.getTime()) / 86_400_000,
@@ -364,9 +359,7 @@ export default function ProjectReport(): ReactElement {
                 else if (daysRemaining <= 15) colorText = "text-warning";
 
                 return (
-                  <span
-                    className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}
-                  >
+                  <span className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}>
                     {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
                   </span>
                 );
@@ -464,9 +457,7 @@ export default function ProjectReport(): ReactElement {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setRiskDetailsExpanded(
-                                      (current) => !current,
-                                    )
+                                    setRiskDetailsExpanded((current) => !current)
                                   }
                                   className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                   aria-label={
@@ -531,7 +522,7 @@ export default function ProjectReport(): ReactElement {
                               ) : (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
                                   Nenhum risco encontrado para este projeto.
-                                </div>
+                                 </div>
                               )}
                             </div>
                           ) : null}
@@ -641,36 +632,30 @@ export default function ProjectReport(): ReactElement {
                     <Popover>
                       <PopoverTrigger
                         id="report-date"
-                        className={cn(
-                          "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                          !formState.date && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 size-4" />
-                        {formState.date ? (
-                          format(
-                            new Date(formState.date + "T12:00:00"),
-                            "dd/MM/yyyy",
-                            { locale: ptBR },
-                          )
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
-                      </PopoverTrigger>
+                              className={cn(
+                                "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                                !formState.date && "text-muted-foreground",
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 size-4" />
+                              {formState.date ? (
+                                format(
+                                  new Date(formState.date + "T12:00:00"),
+                                  "dd/MM/yyyy",
+                                  { locale: ptBR },
+                                )
+                              ) : (
+                                <span>Selecione uma data</span>
+                              )}
+                            </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={
-                            formState.date
-                              ? new Date(formState.date + "T12:00:00")
-                              : undefined
-                          }
+                          selected={formState.date ? new Date(formState.date + "T12:00:00") : undefined}
                           onSelect={(newDate: Date | undefined) =>
                             setFormState((current) => ({
                               ...current,
-                              date: newDate
-                                ? format(newDate, "yyyy-MM-dd")
-                                : "",
+                              date: newDate ? format(newDate, "yyyy-MM-dd") : "",
                             }))
                           }
                           initialFocus

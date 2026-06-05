@@ -1,4 +1,4 @@
-package wsssguardo.customer.controller;
+package wsssguardo.company.controller;
 
 import java.net.URI;
 import java.util.List;
@@ -20,58 +20,58 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import wsssguardo.customer.dto.requestdto.CustomerRequestDTO;
-import wsssguardo.customer.dto.requestdto.CustomerUpdateRequestDTO;
-import wsssguardo.customer.dto.responsedto.CustomerResponseDTO;
-import wsssguardo.customer.dto.responsedto.CustomerWithProjectsDTO;
-import wsssguardo.customer.service.CustomerService;
+import wsssguardo.company.dto.requestdto.CompanyRequestDTO;
+import wsssguardo.company.dto.requestdto.CompanyUpdateRequestDTO;
+import wsssguardo.company.dto.responsedto.CompanyResponseDTO;
+import wsssguardo.company.dto.responsedto.CompanyWithProjectsDTO;
+import wsssguardo.company.service.CompanyService;
 import wsssguardo.shared.openapi.ApiCreate;
 
-@Tag(name = "Customer", description = "Endpoints for customer management")
+@Tag(name = "Company", description = "Endpoints for company management")
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/api/companies")
 @RequiredArgsConstructor
-public class CustomerController {
+public class CompanyController {
 
-    private final CustomerService service;
+    private final CompanyService service;
 
-    @Operation(summary = "List all customers with their projects")
+    @Operation(summary = "List all companies with their projects")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Customers with projects retrieved successfully"),
+            @ApiResponse(responseCode = "200", description = "Companies with projects retrieved successfully"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping
-    public ResponseEntity<List<CustomerWithProjectsDTO>> list() {
+    public ResponseEntity<List<CompanyWithProjectsDTO>> list() {
         return ResponseEntity.ok(service.listWithProjects());
     }
 
     @ApiCreate
     @PostMapping
-    public ResponseEntity<CustomerResponseDTO> create(
-            @Valid @RequestBody CustomerRequestDTO dto) {
-        CustomerResponseDTO created = service.create(dto);
-        URI location = URI.create("/api/customers/" + created.id());
+    public ResponseEntity<CompanyResponseDTO> create(
+            @Valid @RequestBody CompanyRequestDTO dto) {
+        CompanyResponseDTO created = service.create(dto);
+        URI location = URI.create("/api/companies/" + created.id());
         return ResponseEntity.created(location).body(created);
     }
 
-    @Operation(summary = "Update customer")
+    @Operation(summary = "Update company")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Updated successfully"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "404", description = "Customer not found"),
+            @ApiResponse(responseCode = "404", description = "Company not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<CustomerResponseDTO> update(
+    public ResponseEntity<CompanyResponseDTO> update(
             @PathVariable UUID id,
-            @Valid @RequestBody CustomerUpdateRequestDTO dto) {
+            @Valid @RequestBody CompanyUpdateRequestDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
-    @Operation(summary = "Delete customer")
+    @Operation(summary = "Delete company")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Customer not found"),
+            @ApiResponse(responseCode = "404", description = "Company not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @DeleteMapping("/{id}")
