@@ -105,6 +105,7 @@ services:
       VITE_PROXY_TARGET: http://backend-dev:8080
       VITE_USE_POLLING: "true"
       VITE_POLL_INTERVAL: "250"
+      VITE_AUTH_DISABLED: "${VITE_AUTH_DISABLED:-true}"
     volumes:
       - ./frontend:/app
       - /app/node_modules
