@@ -1,10 +1,7 @@
 /* Generic Table Styles */
 
 .generic-table-card {
-  width: 95vw;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
   min-height: 500px;
   display: flex;
   flex-direction: column;
@@ -81,18 +78,6 @@
   opacity: 0.6;
 }
 
-/* Table Height and Responsiveness */
-@media (max-width: 1400px) {
-  .generic-table-card {
-    width: 92%;
-  }
-}
-
-@media (max-width: 768px) {
-  .generic-table-card {
-    width: 95%;
-  }
-}
 
 /* Column Header Interactivity */
 .generic-table-card table thead th {
