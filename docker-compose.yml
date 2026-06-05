@@ -81,7 +81,7 @@ services:
       SPRING_LIQUIBASE_CONTEXTS: seed
     volumes:
       - maven_cache:/root/.m2
-      - ${HOME}/.aws:/root/.aws:ro
+      - ~/.aws:/root/.aws:ro
     depends_on:
       db:
         condition: service_healthy
