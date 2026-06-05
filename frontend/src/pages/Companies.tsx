@@ -239,7 +239,7 @@ export default function Companies(): ReactElement {
       </section>
 
       {!loading && !error && (
-        <div className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full flex flex-col gap-4">
+       <div className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -250,6 +250,7 @@ export default function Companies(): ReactElement {
                 className="pl-9 h-9 text-[13px] w-72 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-amber-500/40 focus-visible:border-amber-500/60"
               />
             </div>
+            <div className="relative left-24">
             <Button
               className="h-9 text-[13px] gap-1.5 font-medium px-4"
               style={{ background: "#d4a574", color: "#0f1117" }}
@@ -258,20 +259,23 @@ export default function Companies(): ReactElement {
               <Plus className="h-4 w-4" />
               Criar Empresa
             </Button>
+            </div>
           </div>
 
-          <CompaniesTable
-            companies={companies}
-            search={search}
-            onSearchChange={setSearch}
-            onEditCompany={handleEditCompany}
-            onDeleteCompany={handleDeleteCompany}
-            onCreateProject={handleCreateProject}
-            onEditProject={handleEditProject}
-            onDeleteProject={handleDeleteProject}
-            onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
-            onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
-          />
+          <div className="mx-auto px-6 lg:px-12 max-w-[1280px] w-full">
+            <CompaniesTable
+              companies={companies}
+              search={search}
+              onSearchChange={setSearch}
+              onEditCompany={handleEditCompany}
+              onDeleteCompany={handleDeleteCompany}
+              onCreateProject={handleCreateProject}
+              onEditProject={handleEditProject}
+              onDeleteProject={handleDeleteProject}
+              onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
+              onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
+            />
+          </div>
         </div>
       )}
 

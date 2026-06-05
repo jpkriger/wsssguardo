@@ -97,10 +97,10 @@ export function CompaniesTable({
         id: "actions",
         label: "Ações",
         isRequired: true,
-        headClassName: "text-right",
-        cellClassName: "text-right",
+        headClassName: "text-center",
+        cellClassName: "text-center",
         renderCell: (c) => (
-          <div className={cn("flex items-center justify-end gap-1")}>
+          <div className={cn("flex items-center justify-left gap-1")}>
             <button
               type="button"
               className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
