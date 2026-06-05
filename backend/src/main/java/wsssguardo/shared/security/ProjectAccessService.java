@@ -19,6 +19,16 @@ public class ProjectAccessService {
     private final ProjectRepository projectRepository;
 
     /**
+     * Lança 403 se o usuário corrente não for MANAGER.
+     */
+    public void assertManager() {
+        User user = authenticatedUser.get();
+        if (user == null || user.getRole() != UserRole.MANAGER) {
+            throw new ApiException("Apenas gestores podem realizar esta operação", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    /**
      * Lança 403 se o usuário corrente não tem acesso ao projeto.
      * MANAGER passa sempre; CONSULTANT precisa estar em project_users.
      */

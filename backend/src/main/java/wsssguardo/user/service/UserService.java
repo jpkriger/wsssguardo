@@ -9,6 +9,7 @@ import wsssguardo.user.domain.UserRole;
 import wsssguardo.user.dto.UserResponse;
 import wsssguardo.user.repository.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,12 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository repository;
+
+    public List<UserResponse> listAll() {
+        return repository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     public UserResponse findById(UUID id) {
         User user = repository.findById(id)

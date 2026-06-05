@@ -26,6 +26,7 @@ import wsssguardo.company.dto.responsedto.CompanyResponseDTO;
 import wsssguardo.company.dto.responsedto.CompanyWithProjectsDTO;
 import wsssguardo.company.service.CompanyService;
 import wsssguardo.shared.openapi.ApiCreate;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Company", description = "Endpoints for company management")
 @RestController
@@ -34,6 +35,7 @@ import wsssguardo.shared.openapi.ApiCreate;
 public class CompanyController {
 
     private final CompanyService service;
+    private final ProjectAccessService projectAccessService;
 
     @Operation(summary = "List all companies with their projects")
     @ApiResponses({
@@ -49,6 +51,7 @@ public class CompanyController {
     @PostMapping
     public ResponseEntity<CompanyResponseDTO> create(
             @Valid @RequestBody CompanyRequestDTO dto) {
+        projectAccessService.assertManager();
         CompanyResponseDTO created = service.create(dto);
         URI location = URI.create("/api/companies/" + created.id());
         return ResponseEntity.created(location).body(created);
@@ -65,6 +68,7 @@ public class CompanyController {
     public ResponseEntity<CompanyResponseDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody CompanyUpdateRequestDTO dto) {
+        projectAccessService.assertManager();
         return ResponseEntity.ok(service.update(id, dto));
     }
 
@@ -77,6 +81,7 @@ public class CompanyController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID id) {
+        projectAccessService.assertManager();
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

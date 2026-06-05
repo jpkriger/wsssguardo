@@ -18,6 +18,7 @@ export interface CreateProjectRequest {
   startDate: string | null;
   endDate: string | null;
   riskConfig: RiskConfigDTO;
+  consultantIds?: string[];
 }
 
 export interface UpdateProjectRequest {

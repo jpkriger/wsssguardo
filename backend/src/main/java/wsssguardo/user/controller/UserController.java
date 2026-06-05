@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.security.AuthenticatedUser;
+import wsssguardo.shared.security.ProjectAccessService;
 import wsssguardo.user.domain.UserRole;
 import wsssguardo.user.dto.UserResponse;
 import wsssguardo.user.service.UserService;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +24,13 @@ public class UserController {
 
     private final UserService service;
     private final AuthenticatedUser authenticatedUser;
+    private final ProjectAccessService projectAccessService;
+
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> listAll() {
+        projectAccessService.assertManager();
+        return ResponseEntity.ok(service.listAll());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
