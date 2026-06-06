@@ -56,6 +56,14 @@ public class ProjectAccessService {
         return projectRepository.findProjectIdsByUserId(user.getId());
     }
 
+    public String getUsername() {
+        User user = authenticatedUser.get();
+        if (user == null || user.getEmail() == null) {
+            return "system";
+        }
+        return user.getEmail();
+    }
+
     private boolean isMember(UUID userId, UUID projectId) {
         return projectRepository.existsMember(userId, projectId);
     }

@@ -127,12 +127,13 @@ public class ArtifactService {
     }
 
     @Transactional
-    public void delete(UUID projectId, UUID id) {
+    public void delete(UUID projectId, UUID id, String username) {
         Artifact artifact = requireArtifactExists(projectId, id);
         if (repository.existsActiveFindLink(id)) {
             throw new ApiException("Artifact has linked findings and cannot be deleted", HttpStatus.CONFLICT);
         }
-        repository.delete(artifact);
+        artifact.softDelete(username);
+        repository.save(artifact);
     }
 
     private Map<UUID, long[]> toFindingsMap(List<Object[]> raw) {
