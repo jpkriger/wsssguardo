@@ -548,7 +548,7 @@ export default function GenericTable<T>({
         </button>
 
         {showFilters && (
-          <div className="absolute right-0 mt-2 w-64 bg-background border border-border rounded-lg shadow-lg z-10 p-3 flex flex-col gap-3">
+          <div className="absolute right-0 mt-2 w-auto bg-background border border-border rounded-lg shadow-lg z-10 p-3 flex flex-col gap-3">
             {filters.map((f) => (
               <div key={f.id} className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-muted-foreground">
