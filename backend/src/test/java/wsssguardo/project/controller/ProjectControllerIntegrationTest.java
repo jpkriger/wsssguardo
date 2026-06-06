@@ -25,12 +25,14 @@ import wsssguardo.AbstractIntegrationTest;
 import wsssguardo.company.Company;
 import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.ProjectDeletionAudit;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
 import wsssguardo.project.dto.ProjectCreateRequest;
 import wsssguardo.project.dto.ProjectUpdateRequest;
 import wsssguardo.project.dto.RiskCategoryDTO;
 import wsssguardo.project.dto.RiskConfigUpdateDTO;
+import wsssguardo.project.repository.ProjectDeletionAuditRepository;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
@@ -63,6 +65,9 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private ProjectDeletionAuditRepository projectDeletionAuditRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -300,6 +305,15 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
                 .queryParam("ids", projectId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+
+        List<ProjectDeletionAudit> audits = projectDeletionAuditRepository.findAll();
+        org.junit.jupiter.api.Assertions.assertEquals(1, audits.size());
+        ProjectDeletionAudit audit = audits.get(0);
+        org.junit.jupiter.api.Assertions.assertEquals("Project To Delete", audit.getProjectName());
+        org.junit.jupiter.api.Assertions.assertEquals("Tech Corp", audit.getCompanyName());
+        org.junit.jupiter.api.Assertions.assertEquals(ProjectStatus.IN_PROGRESS, audit.getProjectStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("system", audit.getDeletedBy());
+        org.junit.jupiter.api.Assertions.assertNotNull(audit.getDeletedAt());
     }
 
     private RiskConfigUpdateDTO createDefaultRiskConfig() {
