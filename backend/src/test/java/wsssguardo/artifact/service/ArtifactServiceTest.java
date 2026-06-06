@@ -1,27 +1,24 @@
 package wsssguardo.artifact.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import wsssguardo.artifact.Artifact;
 import wsssguardo.artifact.mapper.ArtifactMapper;
 import wsssguardo.artifact.repository.ArtifactRepository;
-import wsssguardo.project.Project;
-import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
@@ -30,9 +27,6 @@ class ArtifactServiceTest {
 
     @Mock
     private ArtifactRepository repository;
-
-    @Mock
-    private ProjectRepository projectRepository;
 
     @Mock
     private ArtifactMapper mapper;
