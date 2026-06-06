@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -104,19 +105,22 @@ class CompanyServiceTest {
     }
 
     @Test
-    void deleteFoundShouldDeleteEntity() {
+    void deleteFoundShouldSoftDeleteEntity() {
         UUID id = UUID.randomUUID();
+        String username = "testUser";
         Company entity = new Company();
         entity.setId(id);
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(projectRepository.findByCompanyId(id)).thenReturn(Collections.emptyList());
 
-        service.delete(id);
+        service.delete(id, username);
 
         verify(repository).findById(id);
         verify(projectRepository).findByCompanyId(id);
-        verify(repository).delete(entity);
+        assertNotNull(entity.getDeletedAt());
+        assertEquals(username, entity.getDeletedBy());
+        verify(repository).save(entity);
     }
 
     @Test
@@ -128,7 +132,7 @@ class CompanyServiceTest {
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(projectRepository.findByCompanyId(id)).thenReturn(List.of(new Project()));
 
-        assertThrows(ApiException.class, () -> service.delete(id));
+        assertThrows(ApiException.class, () -> service.delete(id, "testUser"));
 
         verify(repository).findById(id);
         verify(projectRepository).findByCompanyId(id);
@@ -141,7 +145,7 @@ class CompanyServiceTest {
 
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.delete(id));
+        assertThrows(ResourceNotFoundException.class, () -> service.delete(id, "testUser"));
         verify(repository).findById(id);
         verifyNoInteractions(mapper);
     }

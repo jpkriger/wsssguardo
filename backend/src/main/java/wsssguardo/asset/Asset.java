@@ -22,7 +22,6 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE assets SET deleted_at = NOW() WHERE id = ?")
 public class Asset extends BaseEntity {
 
     @Column(nullable = false)

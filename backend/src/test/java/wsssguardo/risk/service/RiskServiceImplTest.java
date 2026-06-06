@@ -52,7 +52,6 @@ class RiskServiceImplTest {
   void createRiskShouldPersistAndReturnResponse() {
     UUID projectId = UUID.randomUUID();
     UUID findId = UUID.randomUUID();
-    String username = "testUser";
     RiskCreateRequestDTO request = request(List.of(findId));
 
     Project project = new Project();
@@ -65,15 +64,15 @@ class RiskServiceImplTest {
     RiskResponseDTO expectedResponse = new RiskResponseDTO(
         UUID.randomUUID(), projectId, "Risk name", List.of(findId), "Description", "Consequences",
         0.25F, 0.5F, "Operations", "Individuals", "Other orgs",
-        "Recommendation", 5000, username, null, null);
+        "Recommendation", 5000, null, null, null);
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of(find));
-    doReturn(risk).when(mapper).toEntity(request, project, List.of(find), username);
+    doReturn(risk).when(mapper).toEntity(request, project, List.of(find));
     when(repository.save(risk)).thenReturn(savedRisk);
     doReturn(expectedResponse).when(mapper).toResponse(savedRisk);
 
-    RiskResponseDTO actualResponse = service.createRisk(projectId, request, username);
+    RiskResponseDTO actualResponse = service.createRisk(projectId, request);
 
     assertEquals(expectedResponse, actualResponse);
     verify(projectRepository).findById(projectId);
@@ -88,7 +87,7 @@ class RiskServiceImplTest {
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
-    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request, "testUser"));
+    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request));
     verify(projectRepository).findById(projectId);
     verifyNoInteractions(findRepository);
     verifyNoInteractions(repository);
@@ -106,7 +105,7 @@ class RiskServiceImplTest {
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of());
 
-    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request, "testUser"));
+    assertThrows(ResourceNotFoundException.class, () -> service.createRisk(projectId, request));
     verifyNoInteractions(repository);
   }
 

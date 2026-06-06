@@ -25,7 +25,6 @@ import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.dto.responsedto.RiskSummaryDTO;
 import wsssguardo.risk.service.RiskService;
-import wsssguardo.shared.security.AuthenticatedUser;
 import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Risk", description = "Risk operations")
@@ -36,7 +35,6 @@ public class RiskController {
 
     private final RiskService service;
     private final ProjectAccessService projectAccessService;
-    private final AuthenticatedUser authenticatedUser;
 
     @Operation(summary = "Listar riscos por projeto")
     @GetMapping
@@ -60,8 +58,7 @@ public class RiskController {
             @PathVariable UUID projectId,
             @Valid @RequestBody RiskCreateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
-        RiskResponseDTO response = service.createRisk(projectId, request, createdBy);
+        RiskResponseDTO response = service.createRisk(projectId, request);
         URI location = URI.create("/api/projects/" + projectId + "/risks/" + response.id());
         return ResponseEntity.created(location).body(response);
     }
@@ -82,7 +79,7 @@ public class RiskController {
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
         projectAccessService.assertAccess(projectId);
-        service.delete(projectId, id);
+        service.delete(projectId, id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

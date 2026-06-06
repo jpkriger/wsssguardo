@@ -58,4 +58,9 @@ public abstract class BaseEntity {
     @Column(name = "deleted_by")
     private String deletedBy;
 
+    public void softDelete(String username) {
+        this.setDeletedAt(LocalDateTime.now());
+        this.setDeletedBy(username);
+    }
+
 }
