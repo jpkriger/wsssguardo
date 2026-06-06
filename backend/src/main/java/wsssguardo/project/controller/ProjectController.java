@@ -82,7 +82,7 @@ public class ProjectController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
         projectAccessService.assertManager();
-        service.deleteProject(id);
+        service.deleteProject(id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }
