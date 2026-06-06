@@ -23,7 +23,6 @@ import {
   sortRows,
   totalClientPages,
 } from "./tableLogic";
-import "./GenericTable.css";
 
 /**
  * GenericTable - Reusable table component with sorting, pagination, search, and column visibility
@@ -306,7 +305,9 @@ export default function GenericTable<T>({
                 <div className="flex items-center gap-2">
                   <span>{col.label}</span>
                   {indicator && (
-                    <span className="sort-indicator">{indicator}</span>
+                    <span className="inline-flex items-center justify-center w-4.5 h-4.5 text-xs font-semibold opacity-60">
+                      {indicator}
+                    </span>
                   )}
                 </div>
               </th>
@@ -364,9 +365,9 @@ export default function GenericTable<T>({
                 {rowActions.map((action) => (
                   <button
                     key={action.label}
-                    className={`generic-table-action-button ${
+                    className={`opacity-80 hover:opacity-100 hover:bg-muted/5 transition-all p-1 rounded border-none bg-transparent cursor-pointer ${
                       action.variant === "destructive"
-                        ? "text-destructive hover:bg-destructive/10"
+                        ? "text-destructive"
                         : "text-foreground"
                     }`}
                     onClick={(e) => {
@@ -399,9 +400,9 @@ export default function GenericTable<T>({
 
   // Render empty state
   const renderEmptyState = (): ReactElement => (
-    <div className="generic-table-empty-state">
+    <div className="flex flex-col items-center justify-center min-h-[calc(6*45px)] p-8 text-muted-foreground">
       <svg
-        className="generic-table-empty-state-icon"
+        className="w-12 h-12 mb-4 opacity-50"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -419,8 +420,8 @@ export default function GenericTable<T>({
 
   // Render loading state
   const renderLoadingState = (): ReactElement => (
-    <div className="generic-table-loading">
-      <div className="generic-table-loading-spinner">
+    <div className="flex items-center justify-center min-h-[calc(6*45px)]">
+      <div className="w-8 h-8 animate-spin">
         <svg
           className="w-full h-full"
           viewBox="0 0 24 24"
@@ -617,15 +618,15 @@ export default function GenericTable<T>({
 
   // Render pagination
   const renderPagination = (): ReactElement => (
-    <div className="generic-table-pagination" style={{ padding: "12px 8px" }}>
-      <div className="generic-table-pagination-info">
+    <div className="flex items-center justify-between gap-4 border-t border-border p-3">
+      <div className="text-sm text-muted-foreground">
         Mostrando{" "}
         <strong>
           {effectivePage * pageSize + 1}-{Math.min((effectivePage + 1) * pageSize, effectiveTotalElements)}
         </strong>{" "}
         de <strong>{effectiveTotalElements}</strong> registros
       </div>
-      <div className="generic-table-pagination-controls">
+      <div className="flex items-center gap-2">
         <button
           className="p-2 hover:bg-muted rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onClick={() => handlePageChange(effectivePage - 1)}
@@ -665,7 +666,7 @@ export default function GenericTable<T>({
   );
 
   return (
-    <div className={`generic-table-card ${cardClassName}`}>
+    <div className={`w-full min-h-[500px] flex flex-col ${cardClassName}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-2 py-4 border-b">
         <div className="flex-1 -ml-2">
@@ -677,14 +678,14 @@ export default function GenericTable<T>({
 
         <div className="flex items-center gap-2">
           {enableSearch && (
-            <div className="generic-table-search-input">
+            <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-md bg-background">
               <Search className="w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Buscar..."
                 value={tableState.searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-32"
+                className="w-32 border-none bg-none outline-none flex-1 text-sm"
               />
             </div>
           )}
@@ -710,7 +711,7 @@ export default function GenericTable<T>({
       </div>
 
       {/* Table */}
-      <div className="generic-table-wrapper flex-1">
+      <div className="min-h-[calc(6*45px+48px)] overflow-x-auto overflow-y-auto flex-1">
         <table className={`w-full border-collapse ${className}`}>
           {renderTableHeader()}
           {renderTableBody()}

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import styles from "./ProjectsTable.module.css";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
 
@@ -93,8 +92,15 @@ function ProgressBar({ value, total }: { value: number; total: number }): ReactE
   const pct = Math.min(100, Math.round(((total - value) / total) * 100));
   return (
     <div className="flex flex-col gap-1 w-40">
-      <div className={styles["progress-track"]}>
-        <div className={styles["progress-bar"]} style={{ width: `${pct}%` }} />
+      {/* Track: color-mix(in srgb, var(--color-primary) 20%, transparent) → via inline style */}
+      <div
+        className="rounded-full h-[6px] w-full overflow-hidden"
+        style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 20%, transparent)" }}
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-[400ms] ease-in-out"
+          style={{ width: `${pct}%`, backgroundColor: "#A17B4D" }}
+        />
       </div>
       <span className="!text-[14px] text-muted-foreground">Restam {value} dias</span>
     </div>
@@ -103,22 +109,37 @@ function ProgressBar({ value, total }: { value: number; total: number }): ReactE
 
 function RiskBadges({ risks }: { risks: Project["risks"] }): ReactElement {
   const hasThreeRisks = risks.length === 3;
+
   return (
-    <div className={cn(styles["risk-badges"], hasThreeRisks && styles["risk-badges--three"])}>
-      {risks.map((risk) => {
-        const cfg = riskConfig[risk.level];
-        return (
-          <Badge
-            key={risk.level}
-            className={cn(
-              "!w-[55px] !h-[24px] flex items-center justify-center !text-[12px] !rounded-[6px] whitespace-nowrap px-2",
-              cfg.className,
-            )}
-          >
-            {risk.count} {cfg.label}{risk.count !== 1 ? "s" : ""}
-          </Badge>
-        );
-      })}
+    <div className="@container w-fit">
+      <div
+        className={cn(
+          "grid gap-[6px] w-fit",
+          hasThreeRisks
+            ? 
+              "grid-cols-[repeat(2,max-content)] @[130px]:grid-cols-1"
+            :
+              "grid-cols-[repeat(2,max-content)]",
+        )}
+      >
+        {risks.map((risk, index) => {
+          const cfg = riskConfig[risk.level];
+          const isThird = hasThreeRisks && index === 2;
+
+          return (
+            <Badge
+              key={risk.level}
+              className={cn(
+                "!w-[55px] !h-[24px] flex items-center justify-center !text-[12px] !rounded-[6px] whitespace-nowrap px-2",
+                isThird && "col-span-full justify-self-center @[130px]:col-auto @[130px]:justify-self-start",
+                cfg.className,
+              )}
+            >
+              {risk.count} {cfg.label}{risk.count !== 1 ? "s" : ""}
+            </Badge>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -141,7 +162,6 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
         id: "name",
         label: "Projeto",
         isRequired: true,
-        // Include code in getSortValue so clientSearch matches both name and code
         getSortValue: (p) => `${p.name} ${p.code}`,
         renderCell: (p) => (
           <div>
@@ -171,8 +191,14 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
           if (p.daysRemaining === 0) {
             return (
               <div className="flex flex-col gap-1 w-40">
-                <div className={styles["progress-track"]}>
-                  <div className={styles["progress-bar"]} style={{ width: "100%" }} />
+                <div
+                  className="rounded-full h-[6px] w-full overflow-hidden"
+                  style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 20%, transparent)" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-[400ms] ease-in-out"
+                    style={{ width: "100%", backgroundColor: "#A17B4D" }}
+                  />
                 </div>
                 <span className="!text-[14px] text-muted-foreground">Prazo encerrado</span>
               </div>
@@ -195,7 +221,7 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
       {
         id: "risks",
         label: "Riscos",
-        cellClassName: styles["risk-cell"],
+        cellClassName: "@container",
         renderCell: (p) => <RiskBadges risks={p.risks} />,
       },
       {

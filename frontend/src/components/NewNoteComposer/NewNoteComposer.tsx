@@ -3,8 +3,6 @@ import { X } from "lucide-react";
 import { createNote, type NoteCreateRequest } from "../../api/note";
 import { ApiErrorResponse } from "../../api/errors";
 import NoteEditor from "../NoteEditor/NoteEditor";
-import { cn } from "../../lib/utils";
-import styles from "./NewNoteComposer.module.css";
 import { toast } from "sonner";
 
 interface NewNoteComposerProps {
@@ -198,10 +196,7 @@ export default function NewNoteComposer({
 
   return (
     <div
-      className={cn(
-        styles.modal,
-        "bg-card border border-border rounded-xl shadow-2xl flex flex-col"
-      )}
+      className="fixed z-[100] w-[480px] min-w-[380px] min-h-[400px] max-w-[90vw] max-h-[90vh] overflow-hidden bg-card border border-border rounded-xl shadow-2xl flex flex-col"
       style={{
         left: position.x,
         top: position.y,
@@ -209,19 +204,18 @@ export default function NewNoteComposer({
         height: size.height,
       }}
     >
-      {/* Handle de resize — canto superior direito */}
+      {/* Handle de resize — canto superior esquerdo */}
       <div
-        className={styles.resizeHandle}
+        className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 group"
         onMouseDown={handleResizeMouseDown}
         title="Redimensionar"
-      />
+      >
+        <div className="absolute top-1 left-1 w-2 h-2 border-t-2 border-l-2 border-muted-foreground opacity-50 group-hover:opacity-100" />
+      </div>
 
       {/* Header */}
       <div
-        className={cn(
-          styles.header,
-          "flex items-center justify-between px-4 py-3 border-b border-border rounded-t-xl"
-        )}
+        className="flex items-center justify-between px-4 py-3 border-b border-border rounded-t-xl cursor-grab select-none flex-shrink-0"
         onMouseDown={handleHeaderMouseDown}
       >
         <span className="text-sm font-semibold text-foreground">Nova nota</span>
@@ -236,7 +230,7 @@ export default function NewNoteComposer({
       </div>
 
       {/* Body */}
-      <div className={cn(styles.body, "flex flex-col")}>
+      <div className="flex flex-col flex-1 overflow-y-auto">
         <input
           className="px-4 py-3 bg-transparent border-none border-b border-border text-foreground text-sm font-medium outline-none w-full placeholder:text-muted-foreground"
           style={{ borderBottom: "1px solid var(--border)" }}
@@ -262,12 +256,7 @@ export default function NewNoteComposer({
       </div>
 
       {/* Footer */}
-      <div
-        className={cn(
-          styles.footer,
-          "flex items-center justify-end gap-2 px-4 py-3 border-t border-border"
-        )}
-      >
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border flex-shrink-0">
         {error && (
           <span className="flex-1 text-destructive text-xs">{error}</span>
         )}
