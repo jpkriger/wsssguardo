@@ -152,12 +152,6 @@ describe("project api", () => {
       status: "IN_PROGRESS",
     };
 
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify(payload), { status: 201 }),
-      );
-
     const riskConfig = {
       minRange: 0,
       maxRange: 10,
@@ -176,12 +170,20 @@ describe("project api", () => {
       riskConfig,
     };
 
+    let sentBody: unknown;
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        sentBody = await (input as Request).clone().json();
+        return new Response(JSON.stringify(payload), { status: 201 });
+      });
+
     await expect(createProject(request)).resolves.toEqual(payload);
 
-    expect(fetchSpy).toHaveBeenCalledWith("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    });
+    const sent = requestOf(fetchSpy);
+    expect(new URL(sent.url).pathname).toBe("/api/projects");
+    expect(sent.method).toBe("POST");
+    expect(sent.headers.get("Content-Type")).toBe("application/json");
+    expect(sentBody).toEqual(request);
   });
 });

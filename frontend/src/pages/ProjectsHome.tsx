@@ -7,6 +7,7 @@ import { listProjects, type ProjectResponse } from "@/api/project";
 import { getRiskSummary, type RiskSummaryResponse } from "@/api/risk";
 import { Link } from "react-router";
 import { ChevronLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -97,10 +98,12 @@ function mapProjectToTable(
 }
 
 export default function ProjectsHome(): ReactElement {
+  const { user } = useAuth();
   const [apiProjects, setApiProjects] = useState<ProjectResponse[]>([]);
   const [riskSummaries, setRiskSummaries] = useState<Map<string, RiskSummaryResponse>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const canAccessCompanies = user?.role === "MANAGER";
 
   useEffect(() => {
     let cancelled = false;
@@ -196,13 +199,15 @@ export default function ProjectsHome(): ReactElement {
 
 return (
   <>
-    <Link
-      to="/companies"
-      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <ChevronLeft className="size-4" />
-      Voltar para Empresas
-    </Link>
+    {canAccessCompanies && (
+      <Link
+        to="/companies"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronLeft className="size-4" />
+        Voltar para Empresas
+      </Link>
+    )}
 
     <div className="flex flex-col gap-10">
       {/* Visão Geral */}
