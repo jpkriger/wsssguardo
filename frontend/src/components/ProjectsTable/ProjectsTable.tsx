@@ -42,21 +42,25 @@ export interface Project {
   endDate: string | null;
   daysRemaining: number;
   totalDays: number;
-  consultant: {
+  consultants: {
     name: string;
     avatarUrl?: string;
-  };
+  }[];
   risks: ProjectRisk[];
 }
 
 // Helpers
 
 function getInitials(name: string): string {
-  return name
+  const parts = name
     .split(" ")
+    .map((n) => n.trim())
+    .filter(Boolean);
+
+  return (parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts)
     .map((n) => n[0])
-    .slice(0, 2)
     .join("")
+    .slice(0, 2)
     .toUpperCase();
 }
 
@@ -79,13 +83,34 @@ const riskConfig: Record<RiskLevel, { label: string; className: string }> = {
 
 function Avatar({ name, avatarUrl }: { name: string; avatarUrl?: string }): ReactElement {
   return (
-    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted border border-border">
+    <div
+      className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted border border-border"
+      title={name}
+      aria-label={name}
+    >
       {avatarUrl ? (
         <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
       ) : (
         <span className="text-[11px] font-bold text-muted-foreground">{getInitials(name)}</span>
       )}
     </div>
+  );
+}
+
+function getConsultantNames(project: Project): string {
+  return project.consultants.map((consultant) => consultant.name).join(", ") || "Sem consultor";
+}
+
+function ConsultantWarning(): ReactElement {
+  return (
+    <Badge
+      variant="outline"
+      className="h-8 w-8 rounded-full p-0 flex items-center justify-center border-red-300/40 bg-red-500/10 text-red-600 dark:text-red-400"
+      title="Sem consultor atribuído"
+      aria-label="Sem consultor atribuído"
+    >
+      !
+    </Badge>
   );
 }
 
@@ -110,12 +135,10 @@ function RiskBadges({ risks }: { risks: Project["risks"] }): ReactElement {
         return (
           <Badge
             key={risk.level}
-            className={cn(
-              "!w-[55px] !h-[24px] flex items-center justify-center !text-[12px] !rounded-[6px] whitespace-nowrap px-2",
-              cfg.className,
-            )}
+            className={cn("!w-[55px] !h-[24px] flex items-center justify-center !text-[12px] !rounded-[6px] whitespace-nowrap px-2", cfg.className)}
           >
-            {risk.count} {cfg.label}{risk.count !== 1 ? "s" : ""}
+            {risk.count} {cfg.label}
+            {risk.count !== 1 ? "s" : ""}
           </Badge>
         );
       })}
@@ -157,10 +180,7 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
         renderCell: (p) => {
           if (p.status !== "IN_PROGRESS") {
             return (
-              <Badge
-                variant="outline"
-                className={cn("text-xs font-medium", STATUS_LABEL[p.status].className)}
-              >
+              <Badge variant="outline" className={cn("text-xs font-medium", STATUS_LABEL[p.status].className)}>
                 {STATUS_LABEL[p.status].label}
               </Badge>
             );
@@ -184,13 +204,22 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
       {
         id: "consultant",
         label: "Consultor",
-        getSortValue: (p) => p.consultant.name,
-        renderCell: (p) => (
-          <div className="flex items-center gap-2">
-            <Avatar name={p.consultant.name} avatarUrl={p.consultant.avatarUrl} />
-            <span className="!text-[18px] text-foreground">{p.consultant.name}</span>
-          </div>
-        ),
+        getSortValue: getConsultantNames,
+        renderCell: (p) => {
+          if (p.consultants.length === 0) return <ConsultantWarning />;
+
+          return (
+            <div className="flex items-center -space-x-2">
+              {p.consultants.map((consultant, index) => (
+                <Avatar
+                  key={`${consultant.name}-${index}`}
+                  name={consultant.name}
+                  avatarUrl={consultant.avatarUrl}
+                />
+              ))}
+            </div>
+          );
+        },
       },
       {
         id: "risks",
@@ -238,7 +267,7 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
           id: "consultant",
           label: "Consultor",
           type: "select",
-          getValue: (p) => p.consultant.name,
+          getValue: getConsultantNames,
         },
       ]}
       emptyMessage="Nenhum projeto encontrado."
