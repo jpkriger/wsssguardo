@@ -42,3 +42,6 @@ terraform.tfstate.backup
 
 *.pem
 *.key
+
+# Arquivos de arquivamento gerados (saida binaria encriptada)
+*.p7m

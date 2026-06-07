@@ -17,9 +17,6 @@
     <include file="db/changelog/migrations/0010-sprint3-database-update.xml" />
     <include file="db/changelog/migrations/0011-add-cognito-sub-to-users.xml" />
     <include file="db/changelog/migrations/0012-add-manager-seed-user.xml" />
-    <include file="db/changelog/migrations/0013-create-project-deletion-audits.xml" />
-    <include file="db/changelog/migrations/0014-create-archive-manifests.xml" />
-    <include file="db/changelog/migrations/0015-refactor-risk-scoring.xml" />
-    <include file="db/changelog/migrations/0016-normalize-risk-seed-scores.xml" />
+    <include file="db/changelog/migrations/0013-create-archive-manifests.xml" />
 
 </databaseChangeLog>

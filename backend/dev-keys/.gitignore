@@ -1,0 +1,6 @@
+# Chaves locais de arquivamento — NUNCA commitar
+*.p12
+*.pem
+*.crt
+*.key
+!.gitignore
