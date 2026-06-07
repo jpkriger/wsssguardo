@@ -28,28 +28,28 @@ export default function ChangePasswordCard(): ReactElement {
     }
 
     return (
-        <Card className="w-full max-w-sm py-0 gap-5">
-            <CardHeader className="px-8 pt-6 pb-3">
+        <Card className="w-full max-w-sm py-0 gap-5 rounded">
+            <CardHeader className="px-8 pt-6 pb-3 rounded">
                 <h3 className="text-lg font-medium">Alterar senha</h3>
             </CardHeader>
             <CardContent className="px-8 pb-8">
                 <form className="grid gap-4" onSubmit={handleSubmit}>
                     <div className="grid gap-2">
                         <Label htmlFor="current">Senha atual</Label>
-                        <Input id="current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+                        <Input className="rounded"id="current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="new">Nova senha</Label>
-                        <Input id="new" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <Input className="rounded" id="new" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="confirm">Confirmar senha</Label>
-                        <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                        <Input className="rounded" id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
                     </div>
 
-                    <Button type="submit" className="w-full mt-1" disabled={loading} style={{ background: "#d4a574", color: "#0f1117" }}>
+                    <Button type="submit" className="w-full mt-1 rounded" disabled={loading} style={{ background: "#d4a574", color: "#0f1117" }}>
                         Alterar senha
                     </Button>
                 </form>
