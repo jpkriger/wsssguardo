@@ -17,6 +17,7 @@ import { type NoteCreateRequest } from "../../api/note";
 import { toast } from "sonner";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "../../lib/format-date";
 
 const PAGE_SIZE = 5;
 
@@ -211,6 +212,38 @@ export default function ArtifactList({
           a.findings ? a.findings.high + a.findings.medium + a.findings.low : 0,
         renderCell: (a) =>
           String(a.findings ? a.findings.high + a.findings.medium + a.findings.low : 0),
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (a) => a.author,
+        renderCell: (a) => (
+          <span className="text-foreground whitespace-nowrap">
+            {a.author ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (a) => a.createdAt,
+        renderCell: (a) => (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {formatDateTime(a.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (a) => a.lastEditedAt ?? a.updatedAt ?? a.createdAt,
+        renderCell: (a) => (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {formatDateTime(a.lastEditedAt ?? a.updatedAt ?? a.createdAt)}
+          </span>
+        ),
       },
     ],
     [],

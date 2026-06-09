@@ -16,6 +16,10 @@ import {
   type RiskResponse,
 } from "@/api/risk";
 import { listFindings, type FindingResponse } from "@/api/finding";
+import {
+  getProjectConfiguration,
+  type RiskCategoryDTO,
+} from "@/api/projectConfiguration";
 import RiskModal, {
   type RiskModalSubmitData,
   type RiskModalRisk,
@@ -24,12 +28,52 @@ import RiskModal, {
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "@/lib/format-date";
 import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
-import { priorityConfig, priorityOptions } from "@/lib/priority";
+import { formatProbability } from "../RiskExpandedContent/format";
 
 const PAGE_SIZE = 5;
 
 // ── Helpers ──────────────────────────────────────────────────────────
+
+type RiskLevelLabel = "Alta" | "Média" | "Baixa";
+
+interface RiskLevelConfig {
+  label: RiskLevelLabel;
+  className: string;
+}
+
+const CATEGORY_STYLES: Record<string, string> = {
+  default: "bg-green-600 text-white",
+};
+
+const RISK_LEVEL_FALLBACK: RiskLevelConfig = {
+  label: "Baixa",
+  className: "bg-green-600 text-white",
+};
+
+function categoryClassName(index: number, total: number): string {
+  if (index === total - 1) return "bg-red-600 text-white";
+  if (index === total - 2) return "bg-yellow-500 text-white";
+  return CATEGORY_STYLES.default;
+}
+
+function buildGetRiskLevelConfig(
+  categories: RiskCategoryDTO[],
+): (riskLevel: number | null | undefined) => RiskLevelConfig {
+  const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
+  return (riskLevel) => {
+    if (riskLevel == null) return RISK_LEVEL_FALLBACK;
+    const idx = sorted.findIndex(
+      (c) => riskLevel >= c.minRange && riskLevel <= c.maxRange,
+    );
+    if (idx === -1) return RISK_LEVEL_FALLBACK;
+    return {
+      label: sorted[idx].label as RiskLevelLabel,
+      className: categoryClassName(idx, sorted.length),
+    };
+  };
+}
 
 function truncateText(text: string | null | undefined, maxLen: number): string {
   if (!text) return "—";
@@ -51,10 +95,15 @@ export default function RiskTable(): ReactElement {
   const [modalLoading, setModalLoading] = useState(false);
 
   const [findings, setFindings] = useState<RiskModalOption[]>([]);
-  const probabilityRange = {
+  const [riskCategories, setRiskCategories] = useState<RiskCategoryDTO[]>([
+    { label: "Baixo", minRange: 0, maxRange: 32 },
+    { label: "Médio", minRange: 33, maxRange: 65 },
+    { label: "Alto", minRange: 66, maxRange: 100 },
+  ]);
+  const [probabilityRange, setProbabilityRange] = useState({
     min: 0,
     max: 100,
-  };
+  });
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [riskToDelete, setRiskToDelete] = useState<RiskResponse | null>(null);
@@ -89,10 +138,31 @@ export default function RiskTable(): ReactElement {
     }
   }, [projectId]);
 
+  const loadConfiguration = useCallback(async () => {
+    try {
+      const config = await getProjectConfiguration(projectId);
+      if (config.riskConfig.categories.length > 0) {
+        setRiskCategories(config.riskConfig.categories);
+      }
+      setProbabilityRange({
+        min: config.riskConfig.minRange,
+        max: config.riskConfig.maxRange,
+      });
+    } catch {
+      // fallback mantido no estado inicial
+    }
+  }, [projectId]);
+
+  const getRiskLevelConfig = useMemo(
+    () => buildGetRiskLevelConfig(riskCategories),
+    [riskCategories],
+  );
+
   useEffect(() => {
     void loadRisks();
     void loadFindings();
-  }, [loadRisks, loadFindings]);
+    void loadConfiguration();
+  }, [loadRisks, loadFindings, loadConfiguration]);
 
   async function handleDelete(id: string): Promise<void> {
     setDeleting(true);
@@ -119,9 +189,8 @@ export default function RiskTable(): ReactElement {
       damageOperations: risk.damageOperations,
       damageIndividuals: risk.damageIndividuals,
       damageOtherOrgs: risk.damageOtherOrgs,
-      damageAssets: risk.damageAssets,
       recommendation: risk.recommendation,
-      priority: risk.priority,
+      riskLevel: risk.riskLevel,
       findIds: risk.findIds,
     });
     setModalMode("edit");
@@ -139,34 +208,44 @@ export default function RiskTable(): ReactElement {
     setError(null);
     try {
       if (modalMode === "create") {
+        const occurrenceP = data.occurrenceProbability;
+        const impactP = data.impactProbability;
+        const riskLevel = Math.round(
+          (occurrenceP * impactP) / probabilityRange.max,
+        );
+
         await createRisk(projectId, {
           name: data.name,
           findIds: data.findIds,
           description: data.description,
           consequences: data.consequences,
-          occurrenceProbability: data.occurrenceProbability,
-          impactProbability: data.impactProbability,
+          occurrenceProbability: occurrenceP,
+          impactProbability: impactP,
           damageOperations: data.damageOperations,
           damageIndividuals: data.damageIndividuals,
           damageOtherOrgs: data.damageOtherOrgs,
-          damageAssets: data.damageAssets,
           recommendation: data.recommendation,
-          priority: data.priority,
+          riskLevel,
         });
       } else if (modalMode === "edit" && data.id) {
+        const occurrenceP = data.occurrenceProbability;
+        const impactP = data.impactProbability;
+        const riskLevel = Math.round(
+          (occurrenceP * impactP) / probabilityRange.max,
+        );
+
         await updateRisk(projectId, data.id, {
           name: data.name,
           description: data.description,
           consequences: data.consequences,
-          occurrenceProbability: data.occurrenceProbability,
-          impactProbability: data.impactProbability,
+          occurrenceProbability: occurrenceP,
+          impactProbability: impactP,
           damageOperations: data.damageOperations,
           findIds: data.findIds,
           damageIndividuals: data.damageIndividuals,
           damageOtherOrgs: data.damageOtherOrgs,
-          damageAssets: data.damageAssets,
           recommendation: data.recommendation,
-          priority: data.priority,
+          riskLevel,
         });
       }
       setModalOpen(false);
@@ -189,24 +268,9 @@ export default function RiskTable(): ReactElement {
         isRequired: true,
         renderCell: (risk) => (
           <span className="text-sm text-foreground font-medium">
-            {truncateText(risk.name, 40)}
+            {truncateText(risk.name, 28)}
           </span>
         ),
-      },
-      {
-        id: "priority",
-        label: "Prioridade",
-        getSortValue: (r) => r.priority,
-        renderCell: (risk) => {
-          const config = priorityConfig[risk.priority] ?? priorityConfig.P3;
-          return (
-            <span
-              className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${config.className}`}
-            >
-              {config.label}
-            </span>
-          );
-        },
       },
       {
         id: "description",
@@ -214,7 +278,7 @@ export default function RiskTable(): ReactElement {
         getSortValue: (r) => r.description,
         renderCell: (risk) => (
           <span className="text-sm text-foreground">
-            {truncateText(risk.description, 50)}
+            {truncateText(risk.description, 28)}
           </span>
         ),
       },
@@ -223,12 +287,79 @@ export default function RiskTable(): ReactElement {
         label: "Consequências",
         renderCell: (risk) => (
           <span className="text-sm text-muted-foreground">
-            {truncateText(risk.consequences, 50)}
+            {truncateText(risk.consequences, 28)}
+          </span>
+        ),
+      },
+      {
+        id: "occurrenceProbability",
+        label: "Prob. Ocorrência",
+        renderCell: (risk) => (
+          <span className="text-sm text-center block text-foreground">
+            {formatProbability(
+              risk.occurrenceProbability,
+              probabilityRange.max,
+            )}
+          </span>
+        ),
+      },
+      {
+        id: "impactProbability",
+        label: "Prob. Impacto",
+        renderCell: (risk) => (
+          <span className="text-sm text-center block text-foreground">
+            {formatProbability(risk.impactProbability, probabilityRange.max)}
+          </span>
+        ),
+      },
+      {
+        id: "riskLevel",
+        label: "Nível de Risco",
+        renderCell: (risk) => {
+          const levelConfig = getRiskLevelConfig(risk.riskLevel);
+          return (
+            <span
+              className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${levelConfig.className}`}
+            >
+              {levelConfig.label}
+            </span>
+          );
+        },
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (r) => r.createdBy,
+        renderCell: (risk) => (
+          <span className="text-sm text-foreground whitespace-nowrap">
+            {risk.createdBy ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (r) => r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (r) => r.updatedAt ?? r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.updatedAt ?? risk.createdAt)}
           </span>
         ),
       },
     ],
-    [],
+    [getRiskLevelConfig, probabilityRange.max],
   );
 
   return (
@@ -250,13 +381,6 @@ export default function RiskTable(): ReactElement {
             getValue: (r) => r.createdBy,
           },
           {
-            id: "priority",
-            label: "Prioridade",
-            type: "select",
-            options: priorityOptions,
-            getValue: (r) => r.priority,
-          },
-          {
             id: "createdAt",
             label: "Data de criação",
             type: "dateRange",
@@ -275,6 +399,7 @@ export default function RiskTable(): ReactElement {
         expandableContent={(risk) => (
           <RiskExpandedContent
             risk={risk}
+            levelConfig={getRiskLevelConfig(risk.riskLevel)}
             probabilityMax={probabilityRange.max}
             findings={findings}
             onEdit={handleEdit}

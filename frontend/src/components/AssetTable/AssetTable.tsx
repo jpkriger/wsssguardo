@@ -23,6 +23,7 @@ import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import { toast } from "sonner";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "@/lib/format-date";
 
 const PAGE_SIZE = 5;
 
@@ -188,6 +189,38 @@ export default function AssetTable(): ReactElement {
         renderCell: (asset) => (
           <span className="text-sm text-center block">
             {asset.findingsCount}
+          </span>
+        ),
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (a) => a.createdBy,
+        renderCell: (asset) => (
+          <span className="text-sm text-foreground whitespace-nowrap">
+            {asset.createdBy ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (a) => a.createdAt,
+        renderCell: (asset) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(asset.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (a) => a.updatedAt ?? a.createdAt,
+        renderCell: (asset) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(asset.updatedAt ?? asset.createdAt)}
           </span>
         ),
       },
