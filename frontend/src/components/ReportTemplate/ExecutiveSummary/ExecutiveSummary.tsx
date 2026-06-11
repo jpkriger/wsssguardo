@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { File, TriangleAlert, Shield } from "lucide-react";
+import { File, TriangleAlert, CircleAlert } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -10,17 +10,13 @@ interface ExecutiveSummaryProps {
   customSummary?: string;
   highRisks?: number;
   mediumRisks?: number;
-  mockWssScore?: number;
 }
-
-const DEFAULT_MOCK_WSS_SCORE = 8.7;
 
 export default function ExecutiveSummary({
   projectId,
   customSummary,
   highRisks = 0,
   mediumRisks = 0,
-  mockWssScore = DEFAULT_MOCK_WSS_SCORE,
 }: ExecutiveSummaryProps): ReactElement {
   const [summary, setSummary] = useState<ProjectSummaryDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,27 +81,24 @@ export default function ExecutiveSummary({
             </p>
           ) : (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <StatTile
                   icon={<File className="size-4 text-slate-600" />}
                   label="RISCOS TOTAIS"
                   value={summary.riskCount}
+                  borderColor="slate-200"
                 />
                 <StatTile
-                  icon={<TriangleAlert className="size-4 text-red-500" />}
-                  label="RISCOS ALTOS"
+                  icon={<CircleAlert className="size-4 text-red-500" />}
+                  label="RISCOS CRÍTICOS"
                   value={highRisks}
+                  borderColor="red-200"
                 />
                 <StatTile
                   icon={<TriangleAlert className="size-4 text-yellow-500" />}
-                  label="RISCOS MÉDIOS"
+                  label="RISCOS ALTOS"
                   value={mediumRisks}
-                />
-                <StatTile
-                  icon={<Shield className="size-4" />}
-                  label="WSS SCORE"
-                  value={mockWssScore}
-                  valueFormat="decimal"
+                  borderColor="slate-200"
                 />
               </div>
 
@@ -114,7 +107,7 @@ export default function ExecutiveSummary({
                   <CardContent className="p-4 text-left">
                     <div className="flex flex-col gap-2 items-start">
                       <div className="text-sm font-medium text-slate-900">
-                        RESUMO
+                        RESUMO GERADO POR LLM
                       </div>
                       <p className="text-sm text-slate-600 whitespace-pre-wrap">
                         {customSummary}
@@ -136,14 +129,16 @@ function StatTile({
   label,
   value,
   valueFormat = "integer",
+  borderColor,
 }: {
   icon: ReactElement;
   label: string;
   value: number;
   valueFormat?: "integer" | "decimal";
+  borderColor: string;
 }): ReactElement {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4">
+    <div className={`flex items-start gap-3 rounded-lg border border-${borderColor} bg-white p-4`}>
       <div className="mt-0.5 p-2">{icon}</div>
       <div>
         <div className="text-sm text-slate-600">{label}</div>
