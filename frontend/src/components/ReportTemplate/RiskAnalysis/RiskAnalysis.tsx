@@ -278,7 +278,7 @@ export default function RiskAnalysis({
   return (
     <div className="my-8 space-y-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-slate-700">
+        <h2 className="text-2xl font-semibold text-slate-600">
           Análise dos Riscos
         </h2>
         <Separator className="bg-slate-200" />

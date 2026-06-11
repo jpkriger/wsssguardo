@@ -91,9 +91,8 @@ export default function BusinessImpactAssessment(): ReactElement {
   return (
     <div className="my-8 space-y-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-slate-800">
-          Avaliação de Impacto no Negócio{" "}
-          <span className="font-normal text-slate-500">(projeto total)</span>
+        <h2 className="text-2xl font-semibold text-slate-600">
+          Avaliação de Impacto no Negócio
         </h2>
         <Separator className="bg-slate-200" />
       </div>
