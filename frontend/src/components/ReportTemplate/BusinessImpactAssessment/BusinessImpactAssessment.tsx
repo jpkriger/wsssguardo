@@ -114,13 +114,36 @@ const SEVERITY_STYLES: Record<Severity, string> = {
   Baixo: "bg-green-50 text-green-700 border border-green-300",
 };
 
-function RiskBar(): ReactElement {
+function RiskBar({
+  distribution,
+}: {
+  distribution: ImpactCategory["distribution"];
+}): ReactElement {
+  const { low, medium, high, critical } = distribution;
+  const total = low + medium + high + critical;
+
+  if (total === 0) {
+    return <div className="h-2 w-full rounded-full overflow-hidden bg-slate-100" />;
+  }
+
+  const segments = [
+    { value: low, className: "bg-green-500" },
+    { value: medium, className: "bg-yellow-400" },
+    { value: high, className: "bg-orange-400" },
+    { value: critical, className: "bg-red-500" },
+  ];
+
   return (
     <div className="h-2 w-full rounded-full overflow-hidden flex">
-      <div className="bg-green-500" style={{ width: "20%" }} />
-      <div className="bg-yellow-400" style={{ width: "20%" }} />
-      <div className="bg-orange-400" style={{ width: "30%" }} />
-      <div className="bg-red-500" style={{ width: "30%" }} />
+      {segments
+        .filter((segment) => segment.value > 0)
+        .map((segment, i) => (
+          <div
+            key={i}
+            className={segment.className}
+            style={{ width: `${(segment.value / total) * 100}%` }}
+          />
+        ))}
     </div>
   );
 }
@@ -163,7 +186,7 @@ function ImpactCard({ item }: { item: ImpactCategory }): ReactElement {
 
       {/* Progress bar */}
       <div>
-        <RiskBar />
+        <RiskBar distribution={item.distribution} />
         <p className="text-xs text-slate-400 mt-1.5">
           Distribuição: {low} Baixo &bull; {medium} Médio &bull; {high} Alto &bull; {critical}{" "}
           Crítico
@@ -197,13 +220,13 @@ function ImpactCard({ item }: { item: ImpactCategory }): ReactElement {
           <SectionLabel>Ação recomendada</SectionLabel>
         </div>
         <ol className="space-y-1.5">
-          {item.actions.map((action, i) => (
+          {item.actions.map((action) => (
             <li
               key={action}
               className="flex items-start gap-3 text-sm text-slate-600"
             >
               <span className="shrink-0 text-slate-400">
-                <ArrowRight className="h-4 w-4"/>
+                <ArrowRight className="h-4 w-4" />
               </span>
               {action}
             </li>
