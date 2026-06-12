@@ -8,6 +8,7 @@ import ProjectReport from "./pages/ProjectReport.tsx";
 import ProjectsHome from "./pages/ProjectsHome";
 import Companies from "./pages/Companies";
 import GenericTableDemo from "./pages/GenericTableDemo";
+import Profile from "./pages/Profile";
 import { ProjectProvider } from "./contexts/ProjectProvider";
 import { AuthProvider } from "./contexts/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -29,6 +30,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/projects" element={<ProjectsHome />} />
                 <Route path="/companies" element={<Companies />} />
                 <Route path="/generic-table-demo" element={<GenericTableDemo />} />
+                <Route path="/profile" element={<Profile />} />
                 {/* Adicionar novas rotas aqui */}
               </Route>
             </Route>
