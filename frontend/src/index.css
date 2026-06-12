@@ -8,6 +8,10 @@
 @custom-variant active (&:is(:active, [data-active]));
 
 /* ============================================
+   Global CSS Reset (Tailwind Preflight)
+   ============================================ */
+
+/* ============================================
    WSS SGUARDO — Design Tokens
    Brandbook: Gold/Black Identity
    Font: Lato | Primary: #A48661 (Gold/Bronze)

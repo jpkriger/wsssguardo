@@ -1,8 +1,0 @@
-.card {
-    transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-2px);
-}
