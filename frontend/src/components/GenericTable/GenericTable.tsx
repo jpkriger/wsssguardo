@@ -666,7 +666,7 @@ export default function GenericTable<T>({
   );
 
   return (
-    <div className={`w-full min-h-[500px] flex flex-col ${cardClassName}`}>
+    <div className={`w-full  flex flex-col ${cardClassName}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-2 py-4 border-b">
         <div className="flex-1 -ml-2">
