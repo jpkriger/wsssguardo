@@ -824,7 +824,7 @@ export default function ProjectReport(): ReactElement {
       </div>
 
       <Dialog open={previewExpanded} onOpenChange={setPreviewExpanded}>
-        <DialogContent className="flex h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 bg-white p-0">
+        <DialogContent className="flex h-[90vh] w-[95vw] !max-w-[95vw] flex-col gap-0 bg-white p-0">
           <DialogHeader className="border-b border-border px-6 py-4">
             <DialogTitle className="flex items-center gap-2 text-muted-foreground">
               <EyeIcon className="size-5" />

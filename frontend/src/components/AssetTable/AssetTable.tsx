@@ -5,7 +5,6 @@ import {
   useMemo,
   type ReactElement,
 } from "react";
-import "./AssetTable.css";
 import { LinkIcon, PlusIcon, Pencil, Trash2 } from "lucide-react";
 
 import { useProject } from "@/contexts/ProjectContext";
@@ -162,8 +161,8 @@ export default function AssetTable(): ReactElement {
         label: "Referência",
         width: "20%",
         renderCell: (asset) => (
-          <div className="ref-cell flex items-center gap-2">
-            <span className="ref-cell-text text-sm">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground blur-[2.5px] select-none">
               {asset.content && asset.content.length > 20
                 ? `${asset.content.slice(0, 20)}…`
                 : (asset.content ?? "—")}
@@ -174,7 +173,7 @@ export default function AssetTable(): ReactElement {
                   e.stopPropagation();
                   window.open(asset.content, "_blank");
                 }}
-                className="icon-button inline-flex items-center justify-center p-1 rounded hover:bg-muted transition-colors bg-transparent border-none cursor-pointer"
+                className="inline-flex items-center justify-center p-1 rounded opacity-80 hover:opacity-100 hover:bg-muted transition-all bg-transparent border-none cursor-pointer"
               >
                 <LinkIcon className="h-3.5 w-3.5" />
               </button>
