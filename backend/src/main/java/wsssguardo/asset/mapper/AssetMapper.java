@@ -1,6 +1,5 @@
 package wsssguardo.asset.mapper;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,14 +16,13 @@ import wsssguardo.project.Project;
 @Component
 public class AssetMapper {
 
-    public Asset toEntity(AssetCreateRequestDTO request, Project project, String username) {
+    public Asset toEntity(AssetCreateRequestDTO request, Project project) {
         Asset asset = Asset.builder()
                 .name(request.name())
                 .description(request.description())
                 .content(request.content())
                 .project(project)
                 .build();
-        asset.setCreatedBy(username);
         return asset;
     }
 
@@ -64,23 +62,13 @@ public class AssetMapper {
      * isolado.
      * Atualiza auditoria apenas se ao menos um campo foi alterado.
      */
-    public Asset updateEntity(Asset asset, AssetUpdateRequestDTO request, String username) {
-        boolean changed = false;
+    public Asset updateEntity(Asset asset, AssetUpdateRequestDTO request) {
 
-        changed |= applyName(asset, request.name());
-        changed |= applyDescription(asset, request.description());
-        changed |= applyContent(asset, request.content());
-
-        if (changed) {
-            applyAudit(asset, username);
-        }
+        applyName(asset, request.name());
+        applyDescription(asset, request.description());
+        applyContent(asset, request.content());
 
         return asset;
-    }
-
-    public void deleteEntity(Asset asset, String deletedBy) {
-        asset.setDeletedAt(LocalDateTime.now());
-        asset.setDeletedBy(deletedBy);
     }
 
     // --- métodos de campo: responsabilidade única, retornam se houve mudança ---
@@ -109,8 +97,4 @@ public class AssetMapper {
         return true;
     }
 
-    void applyAudit(Asset asset, String username) {
-        asset.setUpdatedAt(LocalDateTime.now());
-        asset.setLastModifiedBy(username);
-    }
 }

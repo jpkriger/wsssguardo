@@ -1,6 +1,7 @@
 package wsssguardo.project.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
@@ -10,10 +11,12 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -22,9 +25,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import wsssguardo.company.Company;
 import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.ProjectDeletionAudit;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.dto.ProjectResponse;
 import wsssguardo.project.mapper.ProjectMapper;
+import wsssguardo.project.repository.ProjectDeletionAuditRepository;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.project.repository.ProjectUserRepository;
 import wsssguardo.shared.security.ProjectAccessService;
@@ -47,6 +52,9 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectAccessService projectAccessService;
+
+    @Mock
+    private ProjectDeletionAuditRepository projectDeletionAuditRepository;
 
     @Spy
     private ProjectMapper mapper = new ProjectMapper();
@@ -157,6 +165,32 @@ class ProjectServiceTest {
 
         assertTrue(actual.isEmpty());
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    void deleteProjectShouldAuditAndHardDeleteProject() {
+        UUID projectId = UUID.randomUUID();
+        UUID companyId = UUID.randomUUID();
+        String deletedBy = "manager@test.com";
+        Project project = project(projectId, "Pentest Cliente X", companyId, ProjectStatus.IN_PROGRESS,
+                LocalDateTime.of(2026, 2, 1, 10, 0));
+
+        when(repository.findById(projectId)).thenReturn(Optional.of(project));
+
+        service.deleteProject(projectId, deletedBy);
+
+        ArgumentCaptor<ProjectDeletionAudit> auditCaptor = ArgumentCaptor.forClass(ProjectDeletionAudit.class);
+        verify(projectDeletionAuditRepository).save(auditCaptor.capture());
+        verify(repository).delete(project);
+
+        ProjectDeletionAudit audit = auditCaptor.getValue();
+        assertEquals("Pentest Cliente X", audit.getProjectName());
+        assertEquals("Company", audit.getCompanyName());
+        assertEquals(ProjectStatus.IN_PROGRESS, audit.getProjectStatus());
+        assertEquals(LocalDate.of(2026, 3, 21), audit.getProjectStartDate());
+        assertEquals(LocalDate.of(2026, 4, 21), audit.getProjectEndDate());
+        assertEquals(deletedBy, audit.getDeletedBy());
+        assertNotNull(audit.getDeletedAt());
     }
 
     private static Project project(UUID id, String name, UUID companyId, ProjectStatus status,

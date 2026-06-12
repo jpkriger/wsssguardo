@@ -3,8 +3,6 @@ package wsssguardo.risk;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.SQLDelete;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,7 +27,6 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE risks SET deleted_at = NOW() WHERE id = ?")
 public class Risk extends BaseEntity {
 
       @Column(nullable = false)

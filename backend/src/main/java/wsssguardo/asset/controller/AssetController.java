@@ -24,7 +24,6 @@ import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
 import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
 import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.service.AssetService;
-import wsssguardo.shared.security.AuthenticatedUser;
 import wsssguardo.shared.security.ProjectAccessService;
 
 @RestController
@@ -35,7 +34,6 @@ public class AssetController {
 
     private final AssetService service;
     private final ProjectAccessService projectAccessService;
-    private final AuthenticatedUser authenticatedUser;
 
     @Operation(summary = "Listar ativos por projeto")
     @GetMapping
@@ -52,8 +50,7 @@ public class AssetController {
             @PathVariable UUID projectId,
             @Valid @RequestBody AssetCreateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String createdBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
-        AssetResponseDTO response = service.createAsset(projectId, request, createdBy);
+        AssetResponseDTO response = service.createAsset(projectId, request);
         URI location = URI.create("/api/projects/" + projectId + "/assets/" + response.id());
         return ResponseEntity.created(location).body(response);
     }
@@ -65,8 +62,7 @@ public class AssetController {
             @PathVariable UUID id,
             @Valid @RequestBody AssetUpdateRequestDTO request) {
         projectAccessService.assertAccess(projectId);
-        String updatedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
-        return ResponseEntity.ok(service.updateAsset(projectId, id, request, updatedBy));
+        return ResponseEntity.ok(service.updateAsset(projectId, id, request));
     }
 
     @Operation(summary = "Excluir ativo")
@@ -75,8 +71,7 @@ public class AssetController {
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
         projectAccessService.assertAccess(projectId);
-        String deletedBy = authenticatedUser.get() != null ? authenticatedUser.get().getEmail() : "system";
-        service.deleteAsset(projectId, id, deletedBy);
+        service.deleteAsset(projectId, id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

@@ -74,14 +74,14 @@ public class CompanyService {
     }
 
     @Transactional
-    public void delete(UUID id) {
+    public void delete(UUID id, String username) {
         Company company = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", id));
 
         if (!projectRepository.findByCompanyId(id).isEmpty()) {
             throw new ApiException("Cannot delete company with linked projects", HttpStatus.CONFLICT);
         }
-
-        repository.delete(company);
+        company.softDelete(username);
+        repository.save(company);
     }
 }
