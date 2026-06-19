@@ -17,6 +17,6 @@ public interface RiskRepository extends JpaRepository<Risk, UUID> {
 
     long countByProjectId(UUID projectId);
 
-    @Query("SELECT r.riskLevel FROM Risk r WHERE r.project.id = :projectId AND r.riskLevel IS NOT NULL")
-    List<Integer> findRiskLevelsByProjectId(@Param("projectId") UUID projectId);
+    @Query("SELECT r.generalRisk FROM Risk r WHERE r.project.id = :projectId AND r.generalRisk IS NOT NULL")
+    List<Float> findGeneralRisksByProjectId(@Param("projectId") UUID projectId);
 }

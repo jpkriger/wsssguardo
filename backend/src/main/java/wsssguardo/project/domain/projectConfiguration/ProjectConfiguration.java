@@ -20,24 +20,24 @@ public class ProjectConfiguration implements Serializable {
     RiskCategory baixo = RiskCategory.builder()
         .label("Baixo")
         .minRange(0)
-        .maxRange(32)
+        .maxRange(3)
         .build();
 
     RiskCategory medio = RiskCategory.builder()
         .label("Médio")
-        .minRange(33)
-        .maxRange(65)
+        .minRange(4)
+        .maxRange(7)
         .build();
 
     RiskCategory alto = RiskCategory.builder()
         .label("Alto")
-        .minRange(66)
-        .maxRange(100)
+        .minRange(8)
+        .maxRange(10)
         .build();
 
     RiskConfig riskConfig = RiskConfig.builder()
         .minRange(0)
-        .maxRange(100)
+        .maxRange(10)
         .categories(List.of(baixo, medio, alto))
         .build();
 
@@ -46,6 +46,5 @@ public class ProjectConfiguration implements Serializable {
         .build();
   }
 }
-
 
 
