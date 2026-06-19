@@ -6,25 +6,19 @@ import {
   type RiskCategoryDTO,
 } from "@/api/projectConfiguration";
 import { fetchRisksByProject, type RiskResponse } from "@/api/risk";
-import { listFindings, type FindingResponse } from "@/api/finding";
 import { Separator } from "@/components/ui/separator";
 
 interface RiskOverviewProps {
   projectId?: string;
 }
 
-type PriorityLabel = "Alta" | "Média" | "Baixa";
-
 interface RiskRow {
   id: string;
   name: string;
   riskLevelLabel: RiskLevelConfig;
   businessImpact: string;
-  linkedFindings: string;
-  priority: PriorityLabel;
+  riskLevel: number;
 }
-
-const PRIORITY_BY_INDEX: PriorityLabel[] = ["Alta", "Média", "Baixa"];
 
 type RiskLevelLabel = "Alta" | "Média" | "Baixa";
 
@@ -65,7 +59,6 @@ export default function RiskOverview({
   projectId,
 }: RiskOverviewProps): ReactElement {
   const [risks, setRisks] = useState<RiskResponse[]>([]);
-  const [findings, setFindings] = useState<FindingResponse[]>([]);
   const [riskCategories, setRiskCategories] = useState<RiskCategoryDTO[]>([
     { label: "Baixo", minRange: 0, maxRange: 32 },
     { label: "Médio", minRange: 33, maxRange: 65 },
@@ -80,7 +73,6 @@ export default function RiskOverview({
     async function loadRiskOverview(): Promise<void> {
       if (!projectId) {
         setRisks([]);
-        setFindings([]);
         setLoading(false);
         return;
       }
@@ -89,10 +81,9 @@ export default function RiskOverview({
       setError(null);
 
       try {
-        const [, riskPage, projectFindings] = await Promise.all([
+        const [, riskPage] = await Promise.all([
           getProjectSummary(projectId),
           fetchRisksByProject(projectId, 0, 1000),
-          listFindings(projectId),
         ]);
 
         const config = await getProjectConfiguration(projectId);
@@ -100,7 +91,6 @@ export default function RiskOverview({
         if (cancelled) return;
 
         setRisks(riskPage.content);
-        setFindings(projectFindings);
         if (config.riskConfig.categories.length > 0) {
           setRiskCategories(config.riskConfig.categories);
         }
@@ -108,7 +98,6 @@ export default function RiskOverview({
         if (cancelled) return;
 
         setRisks([]);
-        setFindings([]);
         setError(
           loadError instanceof Error
             ? loadError.message
@@ -134,27 +123,19 @@ export default function RiskOverview({
   );
 
   const rows = useMemo<RiskRow[]>(() => {
-    const findingMap = new Map(
-      findings.map((finding) => [finding.id, finding.name]),
-    );
-
-    return risks.map((risk, index) => ({
-      id: risk.id,
-      name: risk.name,
-      riskLevelLabel: getRiskLevelConfig(risk.generalRisk),
-      businessImpact:
-        risk.consequences?.trim() ||
-        risk.description?.trim() ||
-        "Sem descrição.",
-      linkedFindings:
-        risk.findIds.length > 0
-          ? risk.findIds
-              .map((findingId) => findingMap.get(findingId) ?? findingId)
-              .join(", ")
-          : "Nenhum achado vinculado",
-      priority: PRIORITY_BY_INDEX[index % PRIORITY_BY_INDEX.length],
-    }));
-  }, [findings, getRiskLevelConfig, risks]);
+    return risks
+      .map((risk) => ({
+        id: risk.id,
+        name: risk.name,
+        riskLevelLabel: getRiskLevelConfig(risk.riskLevel),
+        businessImpact:
+          risk.consequences?.trim() ||
+          risk.description?.trim() ||
+          "Sem descrição.",
+        riskLevel: risk.riskLevel ?? 0,
+      }))
+      .sort((a, b) => b.riskLevel - a.riskLevel);
+  }, [getRiskLevelConfig, risks]);
 
   return (
     <>
@@ -168,11 +149,9 @@ export default function RiskOverview({
         <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
           <thead className="bg-slate-50">
             <tr className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              <th className="px-4 py-3">Nome</th>
-              <th className="px-4 py-3">Nível de risco</th>
-              <th className="px-4 py-3">Impacto ao negócio</th>
-              <th className="px-4 py-3">Achado vinculado</th>
-              <th className="px-4 py-3">Prioridade</th>
+              <th className="w-[25%] px-4 py-3">NOME</th>
+              <th className="w-[15%] px-4 py-3">CRITICIDADE</th>
+              <th className="w-[60%] px-4 py-3">IMPACTO NO NEGÓCIO</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -198,7 +177,7 @@ export default function RiskOverview({
               rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`align-top ${index % 2 === 0 ? "bg-white" : "bg-slate-100"}`}
+                  className={`align-top ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
                 >
                   <td className="px-4 py-4 font-medium text-slate-900">
                     {row.name}
@@ -213,12 +192,6 @@ export default function RiskOverview({
                   <td className="px-4 py-4 text-slate-600">
                     {row.businessImpact}
                   </td>
-                  <td className="px-4 py-4 text-slate-600">
-                    {row.linkedFindings}
-                  </td>
-                  <td className="px-4 py-4">
-                    <PriorityPill priority={row.priority} />
-                  </td>
                 </tr>
               ))
             )}
@@ -226,22 +199,5 @@ export default function RiskOverview({
         </table>
       </div>
     </>
-  );
-}
-
-function PriorityPill({ priority }: { priority: PriorityLabel }): ReactElement {
-  const colorClasses =
-    priority === "Alta"
-      ? "border-red-200 bg-red-50 text-red-700"
-      : priority === "Média"
-        ? "border-amber-200 bg-amber-50 text-amber-700"
-        : "border-emerald-200 bg-emerald-50 text-emerald-700";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium ${colorClasses}`}
-    >
-      {priority}
-    </span>
   );
 }
