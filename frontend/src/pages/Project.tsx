@@ -1,5 +1,5 @@
 import { ReactElement, useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Link } from "react-router";
 import { ChevronLeft } from "lucide-react";
 import ArtifactList from "../components/ArtifactList/ArtifactList";
@@ -10,6 +10,7 @@ import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Button } from "../components/ui/button";
 import { projectsById, type ProjectResponse } from "../api/project";
+import ArchiveProjectButton from "../components/ArchiveProjectButton/ArchiveProjectButton";
 
 // Status and phase badges removed per design.
 
@@ -54,6 +55,7 @@ function startOfDay(date: Date): Date {
 export default function Project(): ReactElement {
   const [activeTab, setActiveTab] = useState<ProjectTab>(ProjectTabs.Summary);
   const { id: projectId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [projectError, setProjectError] = useState<string | null>(null);
@@ -164,8 +166,22 @@ export default function Project(): ReactElement {
         </div>
       </header>
 
-      <div className="mt-4 flex items-center justify-end">
-        <Button>Gerar relatório</Button>
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <ArchiveProjectButton
+          projectId={projectId ?? ""}
+          disabled={loadingProject || !!projectError || !projectId}
+        />
+        <Button
+          type="button"
+          disabled={loadingProject || !!projectError || !projectId}
+          onClick={() => {
+            if (projectId) {
+              void navigate(`/project/${projectId}/relatorio`);
+            }
+          }}
+        >
+          Gerar relatório
+        </Button>
       </div>
 
       <nav className="mt-8 rounded-full bg-secondary/80 p-1 transition-colors">
