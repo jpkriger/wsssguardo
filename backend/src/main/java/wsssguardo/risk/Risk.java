@@ -5,6 +5,8 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -38,6 +40,7 @@ public class Risk extends BaseEntity {
 
       @ManyToMany(fetch = FetchType.LAZY)
       @JoinTable(name = "risks_finds", joinColumns = @JoinColumn(name = "risk_id"), inverseJoinColumns = @JoinColumn(name = "finds_id"))
+      @Builder.Default
       private List<Find> finds = new ArrayList<>();
 
       private String description;
@@ -48,16 +51,28 @@ public class Risk extends BaseEntity {
 
       private Float impactProbability;
 
-      private String damageOperations;
+      @Column(nullable = false)
+      private Float damageOperations;
 
-      private String damageIndividuals;
+      @Column(nullable = false)
+      private Float damageIndividuals;
 
-      private String damageOtherOrgs;
+      @Column(nullable = false)
+      private Float damageOtherOrgs;
+
+      @Column(nullable = false)
+      private Float damageAssets;
+
+      @Column(nullable = false)
+      private Float generalRisk;
+
+      @Enumerated(EnumType.STRING)
+      @Column(nullable = false)
+      private RiskPriority priority;
+
+      @Column(length = 1000)
+      private String aiSummary;
 
       private String recommendation;
-
-      // Valor normalizado 0 - 10000 mapeia em runtime conforme configuração
-      @Column(name = "risk_level")
-      private Integer riskLevel;
 
 }

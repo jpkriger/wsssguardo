@@ -29,8 +29,9 @@ public class RiskMapper {
         .damageOperations(request.damageOperations())
         .damageIndividuals(request.damageIndividuals())
         .damageOtherOrgs(request.damageOtherOrgs())
+        .damageAssets(request.damageAssets())
         .recommendation(request.recommendation())
-        .riskLevel(request.riskLevel())
+        .priority(request.priority())
         .build();
     return risk;
   }
@@ -48,8 +49,11 @@ public class RiskMapper {
         risk.getDamageOperations(),
         risk.getDamageIndividuals(),
         risk.getDamageOtherOrgs(),
+        risk.getDamageAssets(),
+        risk.getGeneralRisk(),
+        risk.getPriority(),
+        risk.getAiSummary(),
         risk.getRecommendation(),
-        risk.getRiskLevel(),
         risk.getCreatedBy(),
         risk.getCreatedAt(),
         risk.getUpdatedAt());
@@ -78,8 +82,9 @@ public class RiskMapper {
     applyFinds(risk, finds);
     applyDamageIndividuals(risk, request.damageIndividuals());
     applyDamageOtherOrgs(risk, request.damageOtherOrgs());
+    applyDamageAssets(risk, request.damageAssets());
     applyRecommendation(risk, request.recommendation());
-    applyRiskLevel(risk, request.riskLevel());
+    applyPriority(risk, request.priority());
 
     return risk;
   }
@@ -100,7 +105,7 @@ public class RiskMapper {
   boolean applyConsequences(Risk r, String v)                { if (v == null) return false; r.setConsequences(v); return true; }
   boolean applyOccurrenceProbability(Risk r, Float v)        { if (v == null) return false; r.setOccurrenceProbability(v); return true; }
   boolean applyImpactProbability(Risk r, Float v)            { if (v == null) return false; r.setImpactProbability(v); return true; }
-  boolean applyDamageOperations(Risk r, String v)            { if (v == null) return false; r.setDamageOperations(v); return true; }
+  boolean applyDamageOperations(Risk r, Float v)             { if (v == null) return false; r.setDamageOperations(v); return true; }
   boolean applyFinds(Risk r, List<Find> v) {
     if (v == null) return false;
     r.getFinds().clear();
@@ -108,9 +113,10 @@ public class RiskMapper {
     return true;
   }
 
-  boolean applyDamageIndividuals(Risk r, String v)           { if (v == null) return false; r.setDamageIndividuals(v); return true; }
-  boolean applyDamageOtherOrgs(Risk r, String v)             { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
+  boolean applyDamageIndividuals(Risk r, Float v)            { if (v == null) return false; r.setDamageIndividuals(v); return true; }
+  boolean applyDamageOtherOrgs(Risk r, Float v)              { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
+  boolean applyDamageAssets(Risk r, Float v)                 { if (v == null) return false; r.setDamageAssets(v); return true; }
   boolean applyRecommendation(Risk r, String v)              { if (v == null) return false; r.setRecommendation(v); return true; }
-  boolean applyRiskLevel(Risk r, Integer v)                  { if (v == null) return false; r.setRiskLevel(v); return true; }
+  boolean applyPriority(Risk r, wsssguardo.risk.RiskPriority v) { if (v == null) return false; r.setPriority(v); return true; }
 
 }

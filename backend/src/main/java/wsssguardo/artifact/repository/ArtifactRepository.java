@@ -47,7 +47,7 @@ public interface ArtifactRepository extends JpaRepository<Artifact, UUID> {
         List<Object[]> findFindingsSummaryByProjectId(@Param("projectId") UUID projectId);
 
         @Query(value = """
-                        SELECT fa.artifacts_id, r.risk_level
+                        SELECT fa.artifacts_id, r.general_risk
                         FROM finds_artifacts fa
                         JOIN finds f ON f.id = fa.find_id
                         JOIN risks_finds rf ON rf.finds_id = f.id
@@ -56,9 +56,9 @@ public interface ArtifactRepository extends JpaRepository<Artifact, UUID> {
                         WHERE a.project_id = :projectId
                           AND f.deleted_at IS NULL
                           AND r.deleted_at IS NULL
-                          AND r.risk_level IS NOT NULL
+                          AND r.general_risk IS NOT NULL
                         """, nativeQuery = true)
-        List<Object[]> findRiskLevelsByArtifactAndProjectId(@Param("projectId") UUID projectId);
+        List<Object[]> findGeneralRisksByArtifactAndProjectId(@Param("projectId") UUID projectId);
 
         @Query(value = """
                         SELECT EXISTS (
