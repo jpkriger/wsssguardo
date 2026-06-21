@@ -50,4 +50,17 @@
             WHERE created_by = 'system_seed';
         </sql>
     </changeSet>
+    <changeSet id="0015-drop-unused-find-category-relations" author="codex">
+        <dropForeignKeyConstraint baseTableName="finds_categories"
+                                  constraintName="fk_fincat_on_find"/>
+        <dropForeignKeyConstraint baseTableName="finds_categories"
+                                  constraintName="fk_fincat_on_find_category"/>
+        <dropTable tableName="finds_categories"/>
+        <dropTable tableName="find_categories"/>
+    </changeSet>
+
+    <changeSet id="0015-drop-unused-find-columns" author="codex">
+        <dropColumn tableName="finds" columnName="quantitative_criticality"/>
+    </changeSet>
+
 </databaseChangeLog>
