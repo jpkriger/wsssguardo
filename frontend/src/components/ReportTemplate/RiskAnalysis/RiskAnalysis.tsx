@@ -1,17 +1,16 @@
+//RiskAnalysis.tsx
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertTriangle,
-  MapPin,
-  Database,
-  Scale,
-  Wrench,
-  LayoutGrid,
   ArrowRight,
   FileText,
-  Users,
+  Wrench,
   Building,
+  LayoutGrid,
+  Database,
+  BookOpen,
 } from "lucide-react";
 import { fetchRisksByProject, type RiskResponse } from "@/api/risk";
 import { listFindings, type FindingResponse } from "@/api/finding";
@@ -42,9 +41,11 @@ interface RiskLevelConfig {
 interface RiskAnalysisItem {
   risk: RiskResponse;
   riskLevel: RiskLevelConfig;
-  linkedFindingCount: number;
+  linkedFindings: FindingResponse[];
   linkedFindingNames: string[];
+  linkedAssets: AssetResponse[];
   linkedAssetNames: string[];
+  linkedArtifacts: ArtifactResponse[];
   linkedArtifactNames: string[];
   potentialConsequences: string;
 }
@@ -101,30 +102,19 @@ function buildGetRiskLevelConfig(
   };
 }
 
-function getUniqueNames(ids: string[], nameMap: Map<string, string>): string[] {
-  const seen = new Set<string>();
-  const values: string[] = [];
-  for (const id of ids) {
-    const value = nameMap.get(id) ?? id;
-    if (seen.has(value)) continue;
-    seen.add(value);
-    values.push(value);
-  }
-  return values;
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function getPotentialConsequences(risk: RiskResponse): string {
   if (risk.consequences?.trim()) return risk.consequences.trim();
   if (risk.description?.trim()) return risk.description.trim();
   return "Interrupção de operações críticas, perda de confidencialidade e impacto na disponibilidade.";
-}
-
-function getMockRegulatoryTags(risk: RiskResponse): string[] {
-  if (risk.riskLevel >= 75)
-    return ["LGPD", "ISO 27001", "Auditoria obrigatória"];
-  if (risk.riskLevel >= 50) return ["LGPD", "Controles internos"];
-  if (risk.riskLevel >= 25) return ["Boas práticas", "Monitoramento"];
-  return ["Acompanhamento preventivo"];
 }
 
 function getMockMitigationSteps(risk: RiskResponse): string[] {
@@ -153,6 +143,19 @@ function getMockResponsibleArea(risk: RiskResponse): string {
   if (risk.riskLevel >= 50) return "Operações e Tecnologia";
   if (risk.riskLevel >= 25) return "Gestão do Projeto";
   return "Área de Negócio";
+}
+
+function formatDate(dateStr: string | undefined | null): string | null {
+  if (!dateStr) return null;
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(dateStr));
+  } catch {
+    return null;
+  }
 }
 
 export default function RiskAnalysis({
@@ -232,8 +235,8 @@ export default function RiskAnalysis({
 
   const items = useMemo<RiskAnalysisItem[]>(() => {
     const findingMap = new Map(findings.map((f) => [f.id, f]));
-    const assetMap = new Map(assets.map((a) => [a.id, a.name]));
-    const artifactMap = new Map(artifacts.map((a) => [a.id, a.name]));
+    const assetMap = new Map(assets.map((a) => [a.id, a]));
+    const artifactMap = new Map(artifacts.map((a) => [a.id, a]));
 
     const filteredRisks =
       selectedRiskIds != null
@@ -244,25 +247,81 @@ export default function RiskAnalysis({
       const linkedFindings = risk.findIds
         .map((id) => findingMap.get(id))
         .filter((f): f is FindingResponse => f != null);
-      const linkedAssetIds = linkedFindings.flatMap((f) => f.linkedAssetIds);
-      const linkedArtifactIds = linkedFindings.flatMap(
-        (f) => f.linkedArtifactIds,
-      );
+
+      // Collect unique asset/artifact IDs from all linked findings
+      const linkedAssetIdSet = new Set<string>();
+      const linkedArtifactIdSet = new Set<string>();
+      linkedFindings.forEach((f) => {
+        f.linkedAssetIds.forEach((id) => linkedAssetIdSet.add(id));
+        f.linkedArtifactIds.forEach((id) => linkedArtifactIdSet.add(id));
+      });
+
+      const linkedAssets = [...linkedAssetIdSet]
+        .map((id) => assetMap.get(id))
+        .filter((a): a is AssetResponse => a != null)
+        .slice(0, 5);
+
+      const linkedArtifactsFull = [...linkedArtifactIdSet]
+        .map((id) => artifactMap.get(id))
+        .filter((a): a is ArtifactResponse => a != null)
+        .slice(0, 5);
 
       return {
         risk,
         riskLevel: getRiskLevelConfig(risk.riskLevel),
-        linkedFindingCount: linkedFindings.length,
-        linkedFindingNames: linkedFindings.slice(0, 3).map((f) => f.name),
-        linkedAssetNames: getUniqueNames(linkedAssetIds, assetMap).slice(0, 3),
-        linkedArtifactNames: getUniqueNames(
-          linkedArtifactIds,
-          artifactMap,
-        ).slice(0, 3),
+        linkedFindings: linkedFindings.slice(0, 5),
+        linkedFindingNames: linkedFindings.slice(0, 5).map((f) => f.name),
+        linkedAssets,
+        linkedAssetNames: linkedAssets.map((a) => a.name),
+        linkedArtifacts: linkedArtifactsFull,
+        linkedArtifactNames: linkedArtifactsFull.map((a) => a.name),
         potentialConsequences: getPotentialConsequences(risk),
       };
     });
   }, [assets, artifacts, findings, getRiskLevelConfig, risks, selectedRiskIds]);
+
+  // Collect all unique findings, artifacts, assets referenced in the report
+  const allLinkedFindings = useMemo<FindingResponse[]>(() => {
+    const seen = new Set<string>();
+    const result: FindingResponse[] = [];
+    for (const item of items) {
+      for (const f of item.linkedFindings) {
+        if (!seen.has(f.id)) {
+          seen.add(f.id);
+          result.push(f);
+        }
+      }
+    }
+    return result;
+  }, [items]);
+
+  const allLinkedArtifacts = useMemo<ArtifactResponse[]>(() => {
+    const seen = new Set<string>();
+    const result: ArtifactResponse[] = [];
+    for (const item of items) {
+      for (const a of item.linkedArtifacts) {
+        if (!seen.has(a.id)) {
+          seen.add(a.id);
+          result.push(a);
+        }
+      }
+    }
+    return result;
+  }, [items]);
+
+  const allLinkedAssets = useMemo<AssetResponse[]>(() => {
+    const seen = new Set<string>();
+    const result: AssetResponse[] = [];
+    for (const item of items) {
+      for (const a of item.linkedAssets) {
+        if (!seen.has(a.id)) {
+          seen.add(a.id);
+          result.push(a);
+        }
+      }
+    }
+    return result;
+  }, [items]);
 
   if (!projectId)
     return (
@@ -283,6 +342,7 @@ export default function RiskAnalysis({
         </h2>
         <Separator className="bg-slate-200" />
       </div>
+
       {items.map((item) => (
         <RiskCard
           key={item.risk.id}
@@ -291,6 +351,12 @@ export default function RiskAnalysis({
           showRecommendations={showRecommendations}
         />
       ))}
+
+      <SupportingDocumentation
+        findings={allLinkedFindings}
+        artifacts={allLinkedArtifacts}
+        assets={allLinkedAssets}
+      />
     </div>
   );
 }
@@ -304,17 +370,13 @@ function RiskCard({
   showAssetsArtifacts: boolean;
   showRecommendations: boolean;
 }): ReactElement {
-  const consequences = item.potentialConsequences
-    .split(/[.\n;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const regulatoryTags: string[] = getMockRegulatoryTags(item.risk);
   const mitigationSteps: string[] = getMockMitigationSteps(item.risk);
   const responsibleArea: string = getMockResponsibleArea(item.risk);
+  const riskAnchorId = `risk-${slugify(item.risk.name)}`;
 
   return (
     <div
+      id={riskAnchorId}
       className={`rounded-2xl border ${item.riskLevel.borderColor} bg-white overflow-hidden`}
     >
       <div className="flex items-start justify-between gap-4 px-6 py-5">
@@ -337,6 +399,7 @@ function RiskCard({
       </div>
 
       <div className="px-6 pb-6 space-y-5">
+        {/* Description */}
         <div>
           <SectionLabel>Descrição</SectionLabel>
           <p className="mt-1 text-sm text-slate-600 leading-relaxed">
@@ -345,37 +408,7 @@ function RiskCard({
           </p>
         </div>
 
-        {showAssetsArtifacts && (
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <MapPin
-                  size={13}
-                  className="text-slate-400"
-                  strokeWidth={1.5}
-                />
-                <SectionLabel>Localização</SectionLabel>
-              </div>
-              <p className="text-sm text-slate-600">
-                {item.linkedAssetNames[0] ?? "—"}
-              </p>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <Database
-                  size={13}
-                  className="text-slate-400"
-                  strokeWidth={1.5}
-                />
-                <SectionLabel>Ativo afetado</SectionLabel>
-              </div>
-              <p className="text-sm text-slate-600">
-                {item.linkedAssetNames.join(", ") || "Nenhum ativo vinculado"}
-              </p>
-            </div>
-          </div>
-        )}
-
+        {/* Risk relationships chain */}
         <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-4">
           <div className="flex items-center gap-1.5 mb-3">
             <LayoutGrid size={13} className="text-blue-600" strokeWidth={1.5} />
@@ -386,133 +419,96 @@ function RiskCard({
           <div className="flex items-center flex-wrap gap-2 text-sm">
             <RelPill label="Risco" isStart />
             <ArrowRight size={14} className="text-slate-400" />
-            <RelPill label={`${item.linkedFindingCount} Achados`} />
+            <RelPill label={`${item.linkedFindings.length} Achados`} />
             <ArrowRight size={14} className="text-slate-400" />
-            <RelPill label={`${item.linkedAssetNames.length} Ativos`} />
+            <RelPill label={`${item.linkedAssets.length} Ativos`} />
             <span className="text-slate-300">•</span>
-            <RelPill label={`${item.linkedArtifactNames.length} Documentos`} />
+            <RelPill label={`${item.linkedArtifacts.length} Documentos`} />
           </div>
         </div>
 
-        <div
-          className={`grid gap-6 ${
-            showAssetsArtifacts ? "grid-cols-2" : "grid-cols-1"
-          }`}
-        >
+        {/* Findings, Artifacts, Assets as anchor links */}
+        <div className={`grid gap-6 ${showAssetsArtifacts ? "grid-cols-3" : "grid-cols-1"}`}>
+          {/* Achados */}
           <div>
             <SectionLabel>Achados relacionados</SectionLabel>
             <ul className="mt-2 space-y-1.5">
-              {item.linkedFindingNames.length > 0 ? (
-                item.linkedFindingNames.map((name) => (
-                  <li
-                    key={name}
-                    className="flex items-start gap-2 text-sm text-slate-600"
-                  >
+              {item.linkedFindings.length > 0 ? (
+                item.linkedFindings.map((finding) => (
+                  <li key={finding.id} className="flex items-start gap-2 text-sm">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
-                    {name}
+                    <a
+                      href={`#finding-${slugify(finding.name)}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    >
+                      {finding.name}
+                    </a>
                   </li>
                 ))
               ) : (
-                <li className="text-sm text-slate-400">
-                  Sem achados vinculados
-                </li>
+                <li className="text-sm text-slate-400">Sem achados vinculados</li>
               )}
             </ul>
           </div>
 
           {showAssetsArtifacts && (
-            <div>
-              <SectionLabel>
-                Evidências de suporte (ativos + auditoria)
-              </SectionLabel>
-              {item.linkedArtifactNames.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs text-slate-400 mb-1">Documentos</p>
-                  <ul className="space-y-1">
-                    {item.linkedArtifactNames.map((name) => (
-                      <li
-                        key={name}
-                        className="flex items-center gap-1.5 text-sm text-slate-600"
-                      >
+            <>
+              {/* Artefatos */}
+              <div>
+                <SectionLabel>Artefatos</SectionLabel>
+                {item.linkedArtifacts.length > 0 ? (
+                  <ul className="mt-2 space-y-1.5">
+                    {item.linkedArtifacts.map((artifact) => (
+                      <li key={artifact.id} className="flex items-center gap-1.5 text-sm">
                         <FileText
                           size={13}
                           className="text-slate-400 shrink-0"
                           strokeWidth={1.5}
                         />
-                        {name}
+                        <a
+                          href={`#artifact-${slugify(artifact.name)}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                        >
+                          {artifact.name}
+                        </a>
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
-              {item.linkedAssetNames.length > 1 && (
-                <div className="mt-3">
-                  <p className="text-xs text-slate-400 mb-1">Reuniões</p>
-                  <ul className="space-y-1">
-                    {item.linkedAssetNames.slice(1).map((name) => (
-                      <li
-                        key={name}
-                        className="flex items-center gap-1.5 text-sm text-slate-600"
-                      >
-                        <Users
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">Sem artefatos vinculados</p>
+                )}
+              </div>
+
+              {/* Ativos */}
+              <div>
+                <SectionLabel>Ativos afetados</SectionLabel>
+                {item.linkedAssets.length > 0 ? (
+                  <ul className="mt-2 space-y-1.5">
+                    {item.linkedAssets.map((asset) => (
+                      <li key={asset.id} className="flex items-center gap-1.5 text-sm">
+                        <Database
                           size={13}
                           className="text-slate-400 shrink-0"
                           strokeWidth={1.5}
                         />
-                        {name}
+                        <a
+                          href={`#asset-${slugify(asset.name)}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                        >
+                          {asset.name}
+                        </a>
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
-              {item.linkedArtifactNames.length === 0 &&
-                item.linkedAssetNames.length <= 1 && (
-                  <p className="mt-2 text-sm text-slate-400">
-                    Sem evidências vinculadas
-                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">Sem ativos vinculados</p>
                 )}
-            </div>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4">
-          <SectionLabel className="text-red-700">
-            Consequências potenciais de negócio
-          </SectionLabel>
-          <ul className="mt-2 space-y-1.5">
-            {consequences.map((c, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-sm text-red-800"
-              >
-                <span className="mt-1 text-red-400">›</span>
-                {c}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {regulatoryTags.length > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <Scale size={14} className="text-amber-600" strokeWidth={1.5} />
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
-                Implicações regulatórias
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {regulatoryTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-800"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Mitigation steps */}
         {showRecommendations && mitigationSteps.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-3">
@@ -555,6 +551,141 @@ function RiskCard({
     </div>
   );
 }
+
+// ─── Supporting Documentation ──────────────────────────────────────────────
+
+function SupportingDocumentation({
+  findings,
+  artifacts,
+  assets,
+}: {
+  findings: FindingResponse[];
+  artifacts: ArtifactResponse[];
+  assets: AssetResponse[];
+}): ReactElement | null {
+  const hasContent =
+    findings.length > 0 || artifacts.length > 0 || assets.length > 0;
+
+  if (!hasContent) return null;
+
+  return (
+    <div className="mt-12 space-y-6">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <BookOpen size={20} className="text-slate-500" strokeWidth={1.5} />
+          <h2 className="text-2xl font-semibold text-slate-600">
+            Documentação de Suporte
+          </h2>
+        </div>
+        <Separator className="bg-slate-200" />
+      </div>
+
+      {findings.length > 0 && (
+        <DocSection title="Achados (Findings)">
+          {findings.map((finding) => (
+            <DocEntry
+              key={finding.id}
+              anchorId={`finding-${slugify(finding.name)}`}
+              title={finding.name}
+              description={finding.description ?? undefined}
+              date={finding.createdAt}
+              meta={
+                finding.categoricalSeverity
+                  ? `Severidade: ${finding.categoricalSeverity}`
+                  : undefined
+              }
+            />
+          ))}
+        </DocSection>
+      )}
+
+      {artifacts.length > 0 && (
+        <DocSection title="Artefatos">
+          {artifacts.map((artifact) => (
+            <DocEntry
+              key={artifact.id}
+              anchorId={`artifact-${slugify(artifact.name)}`}
+              title={artifact.name}
+              description={artifact.description ?? undefined}
+              date={artifact.createdAt}
+              meta={artifact.contentType ? `Tipo: ${artifact.contentType}` : undefined}
+            />
+          ))}
+        </DocSection>
+      )}
+
+      {assets.length > 0 && (
+        <DocSection title="Ativos">
+          {assets.map((asset) => (
+            <DocEntry
+              key={asset.id}
+              anchorId={`asset-${slugify(asset.name)}`}
+              title={asset.name}
+              description={asset.description ?? undefined}
+              date={asset.createdAt}
+              meta={asset.content ? `Referência: ${asset.content}` : undefined}
+            />
+          ))}
+        </DocSection>
+      )}
+    </div>
+  );
+}
+
+function DocSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): ReactElement {
+  return (
+    <div className="space-y-0">
+      <h3 className="text-base font-semibold text-slate-800 mb-3">{title}</h3>
+      <div className="divide-y divide-slate-100">{children}</div>
+    </div>
+  );
+}
+
+function DocEntry({
+  anchorId,
+  title,
+  description,
+  date,
+  meta,
+}: {
+  anchorId: string;
+  title: string;
+  description?: string;
+  date?: string;
+  meta?: string;
+}): ReactElement {
+  const formattedDate = formatDate(date);
+
+  return (
+    <div
+      id={anchorId}
+      className="py-4 pl-4 border-l-2 border-red-400 scroll-mt-8"
+    >
+      <p className="text-sm font-semibold text-blue-700">{title}</p>
+      {description && (
+        <p className="mt-0.5 text-sm text-slate-600 leading-relaxed">
+          {description}
+        </p>
+      )}
+      <div className="mt-1 flex items-center gap-3 flex-wrap">
+        {formattedDate && (
+          <span className="text-xs text-slate-400">{formattedDate}</span>
+        )}
+        {meta && (
+          <span className="text-xs text-slate-400">{meta}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Shared primitives ─────────────────────────────────────────────────────
 
 function SectionLabel({
   children,
