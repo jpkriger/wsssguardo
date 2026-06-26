@@ -21,5 +21,6 @@
     <include file="db/changelog/migrations/0014-create-archive-manifests.xml" />
     <include file="db/changelog/migrations/0015-refactor-risk-scoring.xml" />
     <include file="db/changelog/migrations/0016-normalize-risk-seed-scores.xml" />
+    <include file="db/changelog/migrations/0017-add-ai-fields.xml" />
 
 </databaseChangeLog>

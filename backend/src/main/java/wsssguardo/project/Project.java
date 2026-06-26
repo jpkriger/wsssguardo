@@ -77,4 +77,7 @@ public class Project extends BaseEntity {
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private ProjectConfiguration configuration = ProjectConfiguration.createDefault();
+
+    @Column(name = "ai_report_intro", columnDefinition = "TEXT")
+    private String aiReportIntro;
 }
