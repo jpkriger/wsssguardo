@@ -27,7 +27,7 @@ import type { ColumnDefinition } from "../GenericTable/types";
 import { formatDateTime } from "@/lib/format-date";
 import { formatProbability } from "../RiskExpandedContent/format";
 import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
-import { priorityConfig, priorityOptions } from "@/lib/priority";
+import { priorityConfig } from "@/lib/priority";
 
 const PAGE_SIZE = 5;
 
@@ -308,8 +308,7 @@ export default function RiskTable(): ReactElement {
             id: "priority",
             label: "Prioridade",
             type: "select",
-            options: priorityOptions,
-            getValue: (r) => r.priority,
+            getValue: (r) => priorityConfig[r.priority]?.label ?? r.priority,
           },
           {
             id: "createdAt",

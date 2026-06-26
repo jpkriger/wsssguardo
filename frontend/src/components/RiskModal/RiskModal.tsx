@@ -458,7 +458,8 @@ export default function RiskModal({
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handlePriorityChange(value: RiskPriority): void {
+  function handlePriorityChange(value: RiskPriority | null): void {
+    if (value === null) return;
     setForm((current) => ({ ...current, priority: value }));
   }
 
