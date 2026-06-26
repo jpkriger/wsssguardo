@@ -113,6 +113,8 @@ resource "aws_iam_role_policy" "backend_cognito" {
           "cognito-idp:VerifySoftwareToken",
           "cognito-idp:GlobalSignOut",
           "cognito-idp:ListUsers",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:GetUserPoolMfaConfig",
         ]
         Resource = aws_cognito_user_pool.main.arn
       }
