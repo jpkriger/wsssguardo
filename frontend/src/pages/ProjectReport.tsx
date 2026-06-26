@@ -113,6 +113,13 @@ const DETAIL_LEVELS: {
   { key: "tecnico", label: "Técnico", description: "Dados completos" },
 ];
 
+// Toggles de seção visíveis por nível de detalhe. Cada relatório é um documento
+// próprio, então só exibimos os controles das seções que aquele modo renderiza.
+const SECTIONS_BY_DETAIL_LEVEL: Record<DetailLevel, string[]> = {
+  executivo: ["summary", "riskTable", "impactAssessment"],
+  tecnico: ["riskDetails"],
+};
+
 interface FormState {
   title: string;
   client: string;
@@ -378,18 +385,11 @@ export default function ProjectReport(): ReactElement {
           )}
         </>
       ) : (
+        // Relatório Técnico (Figma 1262-8853): documento próprio, apenas a
+        // análise detalhada dos riscos + a documentação de suporte. Resumo
+        // Executivo, Visão Geral dos Riscos e Business Impact Assessment
+        // pertencem ao relatório Executivo e não entram aqui.
         <>
-          {sectionsEnabled["summary"] && (
-            <ExecutiveSummary
-              projectId={projectId}
-              customSummary={formState.summary}
-              highRisks={riskSummary?.highRisks}
-              mediumRisks={riskSummary?.mediumRisks}
-            />
-          )}
-          {sectionsEnabled["riskTable"] && (
-            <RiskOverview projectId={projectId} />
-          )}
           {sectionsEnabled["riskDetails"] && (
             <RiskAnalysis
               projectId={projectId}
@@ -397,9 +397,6 @@ export default function ProjectReport(): ReactElement {
               showAssetsArtifacts={!!sectionsEnabled["assetsArtifacts"]}
               showRecommendations={!!sectionsEnabled["recommendations"]}
             />
-          )}
-          {sectionsEnabled["impactAssessment"] && (
-            <BusinessImpactAssessment />
           )}
         </>
       )}
@@ -544,6 +541,11 @@ export default function ProjectReport(): ReactElement {
                         skey === "assetsArtifacts" || skey === "recommendations";
 
                       if (isRiskDetailChild) {
+                        return null;
+                      }
+
+                      // Mostra apenas as seções pertencentes ao modo atual.
+                      if (!SECTIONS_BY_DETAIL_LEVEL[detailLevel].includes(skey)) {
                         return null;
                       }
 
