@@ -9,15 +9,11 @@ import java.util.UUID;
  */
 public record ReferencesDTO(
         List<CompanyRef> companies,
-        List<UserRef> users,
-        List<FindCategoryRef> findCategories
+        List<UserRef> users
 ) {
     public record CompanyRef(UUID id, String name) {
     }
 
     public record UserRef(UUID id, String firstName, String lastName, String email, String role) {
-    }
-
-    public record FindCategoryRef(UUID id, String name) {
     }
 }
