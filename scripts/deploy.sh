@@ -36,10 +36,20 @@ DB_USERNAME="${DB_USERNAME:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-}"
 
+# Arquivamento: o servidor recebe só a keystore de assinatura (signer.p12) e a
+# pública do cofre (vault-public.crt) — NUNCA a privada do cofre (fica offline).
+ARCHIVE_KEYS_DIR="${ARCHIVE_KEYS_DIR:-$ROOT_DIR/prod-keys}"
+ARCHIVE_SIGNING_KEYSTORE_PASSWORD="${ARCHIVE_SIGNING_KEYSTORE_PASSWORD:-}"
+ARCHIVE_SIGNING_KEY_ALIAS="${ARCHIVE_SIGNING_KEY_ALIAS:-archive-signer}"
+ARCHIVE_SIGNING_KEY_PASSWORD="${ARCHIVE_SIGNING_KEY_PASSWORD:-$ARCHIVE_SIGNING_KEYSTORE_PASSWORD}"
+
 [[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env ou como variável de ambiente."
 [[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env ou como variável de ambiente."
 [[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env ou como variável de ambiente."
 [[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$ARCHIVE_SIGNING_KEYSTORE_PASSWORD" ]] && die "ARCHIVE_SIGNING_KEYSTORE_PASSWORD não definido. Configure em .env."
+[[ -f "$ARCHIVE_KEYS_DIR/signer.p12"       ]] || die "Falta $ARCHIVE_KEYS_DIR/signer.p12 (keystore de assinatura)."
+[[ -f "$ARCHIVE_KEYS_DIR/vault-public.crt" ]] || die "Falta $ARCHIVE_KEYS_DIR/vault-public.crt (pública do cofre)."
 
 # ─── Pré-requisitos ────────────────────────────────────────────────────────────
 for cmd in aws terraform docker git dig bun; do
@@ -197,6 +207,8 @@ done
 # Prepara arquivos em base64
 COMPOSE_B64=$(base64 -w 0 < "$ROOT_DIR/docker-compose.ec2.yml")
 NGINX_B64=$(sed "s/__OBS_PRIVATE_IP__/${OBS_PRIVATE_IP}/g" "$ROOT_DIR/nginx/default.conf" | base64 -w 0)
+SIGNER_P12_B64=$(base64 -w 0 < "$ARCHIVE_KEYS_DIR/signer.p12")
+VAULT_PUB_B64=$(base64 -w 0 < "$ARCHIVE_KEYS_DIR/vault-public.crt")
 
 PROMTAIL_YML=$(cat <<PROM
 server:
@@ -229,11 +241,15 @@ EC2_SCRIPT=$(cat <<SCRIPT
 set -euo pipefail
 
 mkdir -p /opt/${PROJECT}
+mkdir -p /opt/${PROJECT}/keys
 
 echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
 echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
 echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
-printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\nCOGNITO_REGION=${COGNITO_REGION}\nCOGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}\nCOGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}\nCOGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}\n' \
+echo '${SIGNER_P12_B64}' | base64 -d > /opt/${PROJECT}/keys/signer.p12
+echo '${VAULT_PUB_B64}'  | base64 -d > /opt/${PROJECT}/keys/vault-public.crt
+chmod 600 /opt/${PROJECT}/keys/signer.p12
+printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\nCOGNITO_REGION=${COGNITO_REGION}\nCOGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}\nCOGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}\nCOGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}\nARCHIVE_SIGNING_KEYSTORE_PASSWORD=${ARCHIVE_SIGNING_KEYSTORE_PASSWORD}\nARCHIVE_SIGNING_KEY_ALIAS=${ARCHIVE_SIGNING_KEY_ALIAS}\nARCHIVE_SIGNING_KEY_PASSWORD=${ARCHIVE_SIGNING_KEY_PASSWORD}\n' \
   > /opt/${PROJECT}/.env
 
 aws ecr get-login-password --region ${REGION} | \

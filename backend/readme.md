@@ -64,7 +64,68 @@ O endpoint de projetos aceita três modos de consulta no mesmo controller:
 ## Contratos documentados
 
 - [Contrato da API de relatório](../docs/report-api-contract.md)
-- O endpoint `POST /api/risks` continua documentado como referência de contrato já existente.
+- Os endpoints de risco usam a rota base `/api/projects/{projectId}/risks`:
+
+### Riscos
+
+`POST /api/projects/{projectId}/risks`
+
+Request:
+
+```json
+{
+  "name": "Unauthorized data exposure",
+  "findIds": ["uuid"],
+  "description": "Personal data exposed in public endpoint",
+  "consequences": "Privacy incident",
+  "occurrenceProbability": 0.7,
+  "impactProbability": 0.9,
+  "damageOperations": 8,
+  "damageAssets": 6,
+  "damageIndividuals": 9,
+  "damageOtherOrgs": 7,
+  "recommendation": "Restrict endpoint and add tests",
+  "priority": "P1"
+}
+```
+
+Response `201 Created`:
+
+```json
+{
+  "id": "uuid",
+  "projectId": "uuid",
+  "name": "Unauthorized data exposure",
+  "findIds": ["uuid"],
+  "description": "Personal data exposed in public endpoint",
+  "consequences": "Privacy incident",
+  "occurrenceProbability": 0.7,
+  "impactProbability": 0.9,
+  "damageOperations": 8,
+  "damageAssets": 6,
+  "damageIndividuals": 9,
+  "damageOtherOrgs": 7,
+  "generalRisk": 7.5,
+  "priority": "P1",
+  "aiSummary": null,
+  "recommendation": "Restrict endpoint and add tests",
+  "createdBy": "user",
+  "createdAt": "2026-06-19T00:00:00",
+  "updatedAt": null
+}
+```
+
+`PUT /api/projects/{projectId}/risks/{id}` aceita os mesmos campos de criação como atualização parcial. `priority` é manual e aceita `P1`, `P2`, `P3`, `P4` ou `P5`. `aiSummary` é persistido para preenchimento por outro fluxo e pode retornar `null`.
+
+`generalRisk` não é aceito no request. O backend calcula a média aritmética de `damageOperations`, `damageAssets`, `damageIndividuals` e `damageOtherOrgs` em criação e atualização. As quatro notas são obrigatórias no risco persistido e devem respeitar `riskConfig.minRange` e `riskConfig.maxRange` da configuração do projeto; valores fora da escala retornam `400 Bad Request`.
+
+Teste local:
+
+```bash
+./mvnw test
+./mvnw clean verify
+```
+
 - O endpoint `GET /api/finds/getFindingNameByProjectId/{projectId}` retorna uma lista enxuta para seleção:
 
 ```json

@@ -4,6 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { updateProfile } from "@/api/account";
+import { ApiErrorResponse } from "@/api/errors";
+import { AUTH_EMAIL_KEY } from "@/lib/api-client";
 import { toast } from "sonner";
 
 interface ProfileFormProps {
@@ -11,21 +14,43 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ onChangePassword }: ProfileFormProps): ReactElement {
-    const { user } = useAuth();
-    const [name, setName] = useState(
-        user ? [user.firstName, user.lastName].filter(Boolean).join(" ") : "",
-    );
+    const { user, refreshUser } = useAuth();
+    const [firstName, setFirstName] = useState(user?.firstName ?? "");
+    const [lastName, setLastName] = useState(user?.lastName ?? "");
+    const [email, setEmail] = useState(user?.email ?? "");
     const [loading, setLoading] = useState(false);
 
     if (!user) return <div />;
 
-    function handleSave(e?: React.FormEvent) {
+    const firstNameTrim = firstName.trim();
+    const lastNameTrim = lastName.trim();
+    const emailTrim = email.trim();
+    const nameChanged = firstNameTrim !== (user.firstName ?? "") || lastNameTrim !== (user.lastName ?? "");
+    const emailChanged = emailTrim !== (user.email ?? "");
+    const hasChanges = nameChanged || emailChanged;
+
+    async function handleSave(e?: React.FormEvent): Promise<void> {
         e?.preventDefault();
+        if (!hasChanges) return;
+        if (firstNameTrim === "") {
+            toast.error("O nome não pode ficar vazio");
+            return;
+        }
+        if (emailChanged && emailTrim === "") {
+            toast.error("O e-mail não pode ficar vazio");
+            return;
+        }
         setLoading(true);
-        setTimeout(() => {
+        try {
+            await updateProfile({ firstName: firstNameTrim, lastName: lastNameTrim, email: emailTrim });
+            if (emailChanged) localStorage.setItem(AUTH_EMAIL_KEY, emailTrim);
+            await refreshUser();
+            toast.success("Perfil atualizado com sucesso");
+        } catch (err) {
+            toast.error(err instanceof ApiErrorResponse ? err.message : "Não foi possível atualizar o perfil");
+        } finally {
             setLoading(false);
-            toast.success("Alterações salvas");
-        }, 700);
+        }
     }
 
     return (
@@ -42,15 +67,39 @@ export default function ProfileForm({ onChangePassword }: ProfileFormProps): Rea
             </CardHeader>
 
             <CardContent className="px-8 pb-8">
-                <form className="grid gap-4" onSubmit={handleSave}>
+                <form className="grid gap-4" onSubmit={(e) => void handleSave(e)}>
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Nome</Label>
-                        <Input id="name" className="rounded" value={name} onChange={(e) => setName(e.target.value)} />
+                        <Label htmlFor="firstName">Nome</Label>
+                        <Input
+                            id="firstName"
+                            className="rounded"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            disabled={loading}
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="lastName">Sobrenome</Label>
+                        <Input
+                            id="lastName"
+                            className="rounded"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="email">E-mail</Label>
-                        <Input id="email" className="rounded" value={user.email ?? ""} disabled />
+                        <Input
+                            id="email"
+                            type="email"
+                            className="rounded"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
 
                     <button
@@ -66,7 +115,7 @@ export default function ProfileForm({ onChangePassword }: ProfileFormProps): Rea
                             type="submit"
                             className="w-full mt-1 rounded"
                             style={{ background: "#d4a574", color: "#0f1117" }}
-                            disabled={loading}
+                            disabled={loading || !hasChanges}
                         >
                             Salvar alterações
                         </Button>

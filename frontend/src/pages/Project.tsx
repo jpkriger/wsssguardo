@@ -10,6 +10,7 @@ import ProjectSummary from "../components/ProjectSummary/ProjectSummary";
 import { ProjectProvider } from "../contexts/ProjectProvider";
 import { Button } from "../components/ui/button";
 import { projectsById, type ProjectResponse } from "../api/project";
+import ArchiveProjectButton from "../components/ArchiveProjectButton/ArchiveProjectButton";
 
 // Status and phase badges removed per design.
 
@@ -165,7 +166,11 @@ export default function Project(): ReactElement {
         </div>
       </header>
 
-      <div className="mt-4 flex items-center justify-end">
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <ArchiveProjectButton
+          projectId={projectId ?? ""}
+          disabled={loadingProject || !!projectError || !projectId}
+        />
         <Button
           type="button"
           disabled={loadingProject || !!projectError || !projectId}

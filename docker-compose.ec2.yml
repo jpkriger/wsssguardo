@@ -33,6 +33,13 @@ services:
       COGNITO_CLIENT_SECRET: ${COGNITO_CLIENT_SECRET}
       AUTH_COOKIE_SECURE: "true"
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      ARCHIVE_SIGNING_KEYSTORE_PATH: /keys/signer.p12
+      ARCHIVE_SIGNING_KEYSTORE_PASSWORD: ${ARCHIVE_SIGNING_KEYSTORE_PASSWORD}
+      ARCHIVE_SIGNING_KEY_ALIAS: ${ARCHIVE_SIGNING_KEY_ALIAS}
+      ARCHIVE_SIGNING_KEY_PASSWORD: ${ARCHIVE_SIGNING_KEY_PASSWORD}
+      ARCHIVE_RECIPIENT_CERTIFICATE_PATH: /keys/vault-public.crt
+    volumes:
+      - /opt/wsssguardo/keys:/keys:ro
     depends_on:
       db:
         condition: service_healthy

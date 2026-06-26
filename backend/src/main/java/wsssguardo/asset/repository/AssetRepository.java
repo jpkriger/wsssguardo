@@ -43,4 +43,8 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
     List<Object[]> findFindingsCountByProjectId(@Param("projectId") UUID projectId);
 
     Optional<Asset> findByIdAndProjectId(UUID id, UUID projectId);
+
+    // Export de arquivamento: inclui tombstones (ignora o @SQLRestriction do BaseEntity).
+    @Query(value = "SELECT * FROM assets WHERE project_id = :projectId", nativeQuery = true)
+    List<Asset> findAllByProjectIdIncludingDeleted(@Param("projectId") UUID projectId);
 }

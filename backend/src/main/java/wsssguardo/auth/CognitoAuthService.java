@@ -1,6 +1,7 @@
 package wsssguardo.auth;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CognitoAuthService {
@@ -23,6 +25,9 @@ public class CognitoAuthService {
 
     @Value("${cognito.client-secret}")
     private String clientSecret;
+
+    @Value("${cognito.user-pool-id:placeholder}")
+    private String userPoolId;
 
     public AuthResult login(String email, String password) {
         InitiateAuthResponse response = cognitoClient.initiateAuth(
@@ -96,7 +101,16 @@ public class CognitoAuthService {
                         .build()
         );
 
-        return toTokenPair(response.authenticationResult());
+        TokenPair tokens = toTokenPair(response.authenticationResult());
+        // O desafio MFA_SETUP sozinho não popula o UserMFASettingList; gravamos a preferência
+        // para manter o estado consistente. Best-effort: não quebra o login se falhar.
+        try {
+            setSoftwareTokenMfaPreferred(tokens.accessToken());
+        } catch (CognitoIdentityProviderException e) {
+            log.warn("Falha ao gravar preferência de MFA no setup do login: {}",
+                    e.awsErrorDetails().errorCode());
+        }
+        return tokens;
     }
 
     public TokenPair respondToMfaChallenge(String session, String email, String code) {
@@ -135,6 +149,105 @@ public class CognitoAuthService {
         cognitoClient.globalSignOut(
                 GlobalSignOutRequest.builder()
                         .accessToken(accessToken)
+                        .build()
+        );
+    }
+
+    // --- self-service (usuário autenticado, via access token) ---
+
+    public void changePassword(String accessToken, String currentPassword, String newPassword) {
+        cognitoClient.changePassword(
+                ChangePasswordRequest.builder()
+                        .accessToken(accessToken)
+                        .previousPassword(currentPassword)
+                        .proposedPassword(newPassword)
+                        .build()
+        );
+    }
+
+    // Troca o email direto (sem fluxo de verificação por código) e marca como verificado.
+    // Usa a API admin pois email_verified só pode ser definido por um administrador.
+    public void updateEmail(String cognitoUsername, String newEmail) {
+        cognitoClient.adminUpdateUserAttributes(
+                AdminUpdateUserAttributesRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(cognitoUsername)
+                        .userAttributes(
+                                AttributeType.builder().name("email").value(newEmail).build(),
+                                AttributeType.builder().name("email_verified").value("true").build()
+                        )
+                        .build()
+        );
+    }
+
+    // Atualiza nome/sobrenome no Cognito (given_name/family_name).
+    // Usa a API admin para manter o mesmo padrão de updateEmail (sem depender do access token aqui).
+    public void updateName(String cognitoUsername, String firstName, String lastName) {
+        cognitoClient.adminUpdateUserAttributes(
+                AdminUpdateUserAttributesRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(cognitoUsername)
+                        .userAttributes(
+                                AttributeType.builder().name("given_name").value(firstName).build(),
+                                AttributeType.builder().name("family_name")
+                                        .value(lastName == null ? "" : lastName).build()
+                        )
+                        .build()
+        );
+    }
+
+    public boolean isMfaEnabled(String accessToken) {
+        GetUserResponse response = cognitoClient.getUser(
+                GetUserRequest.builder().accessToken(accessToken).build()
+        );
+        if (response.userMFASettingList().contains("SOFTWARE_TOKEN_MFA")) {
+            return true;
+        }
+        // O UserMFASettingList só é populado por SetUserMFAPreference — e o fluxo de setup
+        // no login (completeMfaSetup) não o chama, então fica vazio mesmo com TOTP ativo.
+        // Se o pool exige MFA (ON), qualquer usuário autenticado já passou pelo desafio TOTP.
+        return isPoolMfaMandatory();
+    }
+
+    private boolean isPoolMfaMandatory() {
+        GetUserPoolMfaConfigResponse cfg = cognitoClient.getUserPoolMfaConfig(
+                GetUserPoolMfaConfigRequest.builder().userPoolId(userPoolId).build()
+        );
+        return cfg.mfaConfiguration() == UserPoolMfaType.ON;
+    }
+
+    // Inicia o registro de um novo dispositivo TOTP para o usuário logado.
+    public String startMfaDeviceSetup(String accessToken) {
+        AssociateSoftwareTokenResponse response = cognitoClient.associateSoftwareToken(
+                AssociateSoftwareTokenRequest.builder()
+                        .accessToken(accessToken)
+                        .build()
+        );
+        return response.secretCode();
+    }
+
+    // Valida o código do app autenticador e passa a exigir MFA por TOTP.
+    public void verifyAndEnableMfaDevice(String accessToken, String code) {
+        cognitoClient.verifySoftwareToken(
+                VerifySoftwareTokenRequest.builder()
+                        .accessToken(accessToken)
+                        .userCode(code)
+                        .build()
+        );
+        setSoftwareTokenMfaPreferred(accessToken);
+    }
+
+    // Marca o TOTP como MFA habilitado e preferido — popula o UserMFASettingList do usuário.
+    private void setSoftwareTokenMfaPreferred(String accessToken) {
+        cognitoClient.setUserMFAPreference(
+                SetUserMfaPreferenceRequest.builder()
+                        .accessToken(accessToken)
+                        .softwareTokenMfaSettings(
+                                SoftwareTokenMfaSettingsType.builder()
+                                        .enabled(true)
+                                        .preferredMfa(true)
+                                        .build()
+                        )
                         .build()
         );
     }
