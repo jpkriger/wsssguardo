@@ -1,125 +1,265 @@
 import type { ReactElement } from "react";
-import { DollarSign, Settings, Scale, Award } from "lucide-react";
+import { DollarSign, Scale, Activity, TrendingUp, Users, ArrowRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
-interface ImpactMetric {
+type Severity = "Crítico" | "Alto" | "Médio" | "Baixo";
+
+interface ImpactCategory {
   icon: ReactElement;
   label: string;
-  score: number;
-  maxScore: number;
+  severity: Severity;
+  distribution: { low: number; medium: number; high: number; critical: number };
   description: string;
+  businessImpact: string[];
+  actions: string[];
 }
 
-const MOCK_METRICS: ImpactMetric[] = [
+const MOCK_DATA: ImpactCategory[] = [
   {
     icon: <DollarSign size={18} strokeWidth={1.5} />,
-    label: "Impacto Financeiro",
-    score: 10,
-    maxScore: 10,
-    description: "Potenciais multas regulatórias e perda de receita",
+    label: "Financial Impact",
+    severity: "Crítico",
+    distribution: { low: 1, medium: 2, high: 4, critical: 3 },
+    description:
+      "Alto risco de multas regulatórias (LGPD/GDPR) e potencial perda de receita devido a interrupções de serviço.",
+    businessImpact: [
+      "Potencial perda financeira de R$ 2M–5M",
+      "Risco de sanções regulatórias e multas",
+      "Perda de receita por interrupção de serviços",
+    ],
+    actions: [
+      "Implementar controles de proteção de dados",
+      "Realizar assessment de conformidade LGPD/GDPR",
+      "Estabelecer budget de emergência para incidentes",
+    ],
   },
   {
     icon: <Scale size={18} strokeWidth={1.5} />,
-    label: "Conformidade Legal",
-    score: 8.2,
-    maxScore: 10,
-    description: "Violações de conformidade LGPD/GDPR, risco de ação legal",
+    label: "Legal & Compliance",
+    severity: "Alto",
+    distribution: { low: 0, medium: 3, high: 5, critical: 2 },
+    description:
+      "Não conformidade com LGPD, GDPR e SOC 2 identificada em múltiplos controles.",
+    businessImpact: [
+      "Risco de ações judiciais e processos regulatórios",
+      "Possível suspensão de operações internacionais",
+      "Impacto em certificações e auditorias",
+    ],
+    actions: [
+      "Atualizar política de privacidade e DPO",
+      "Remediar gaps de conformidade SOC 2",
+      "Implementar programa de awareness legal",
+    ],
   },
   {
-    icon: <Settings size={18} strokeWidth={1.5} />,
-    label: "Impacto Operacional",
-    score: 6.8,
-    maxScore: 10,
-    description: "Interrupção de serviços e preocupações com continuidade operacional",
+    icon: <Activity size={18} strokeWidth={1.5} />,
+    label: "Operational Impact",
+    severity: "Alto",
+    distribution: { low: 2, medium: 4, high: 3, critical: 1 },
+    description:
+      "Continuidade operacional em risco devido a gaps em disaster recovery e incident response.",
+    businessImpact: [
+      "Possível interrupção de serviços críticos",
+      "MTTR acima de SLAs acordados",
+      "Impacto em disponibilidade e performance",
+    ],
+    actions: [
+      "Revisar e testar plano de DR/BC",
+      "Implementar playbooks de incident response",
+      "Estabelecer métricas de RTO/RPO",
+    ],
   },
   {
-    icon: <Award size={18} strokeWidth={1.5} />,
-    label: "Reputação & Marca",
-    score: 8.5,
-    maxScore: 10,
-    description: "Impacto significativo na marca e confiança do cliente",
+    icon: <TrendingUp size={18} strokeWidth={1.5} />,
+    label: "Reputation & Brand",
+    severity: "Alto",
+    distribution: { low: 1, medium: 2, high: 5, critical: 2 },
+    description:
+      "Exposição significativa à mídia negativa em caso de breach de segurança.",
+    businessImpact: [
+      "Perda de confiança de clientes e investidores",
+      "Impacto em NPS e taxa de churn",
+      "Redução em aquisição de novos clientes",
+    ],
+    actions: [
+      "Desenvolver plano de comunicação de crise",
+      "Estabelecer protocolo de relações públicas",
+      "Implementar monitoramento de mídia/redes sociais",
+    ],
+  },
+  {
+    icon: <Users size={18} strokeWidth={1.5} />,
+    label: "Terceiros e Parceiros",
+    severity: "Alto",
+    distribution: { low: 1, medium: 3, high: 4, critical: 1 },
+    description:
+      "Cadeia de fornecedores com avaliação de segurança inadequada.",
+    businessImpact: [
+      "Risco de comprometimento via supply chain",
+      "Exposição a vulnerabilidades de terceiros",
+      "Falta de visibilidade em controles externos",
+    ],
+    actions: [
+      "Implementar programa de TPRM (Third-Party Risk)",
+      "Estabelecer SLAs de segurança com vendors",
+      "Realizar security assessments de fornecedores críticos",
+    ],
   },
 ];
 
-function barColor(score: number, max: number): string {
-  const pct = score / max;
-  if (pct >= 0.9) return "bg-orange-500";
-  if (pct >= 0.7) return "bg-red-500";
-  return "bg-orange-400";
-}
+const SEVERITY_STYLES: Record<Severity, string> = {
+  Crítico: "bg-red-50 text-red-700 border border-red-300",
+  Alto: "bg-amber-50 text-amber-700 border border-amber-300",
+  Médio: "bg-yellow-50 text-yellow-700 border border-yellow-300",
+  Baixo: "bg-green-50 text-green-700 border border-green-300",
+};
 
-function scoreLabel(score: number, maxScore: number): string {
-  return score === maxScore ? `${score}` : `${score}/${maxScore}`;
-}
+function RiskBar({
+  distribution,
+}: {
+  distribution: ImpactCategory["distribution"];
+}): ReactElement {
+  const { low, medium, high, critical } = distribution;
+  const total = low + medium + high + critical;
 
-function ImpactCard({ metric }: { metric: ImpactMetric }): ReactElement {
-  const pct = Math.min((metric.score / metric.maxScore) * 100, 100);
-  const color = barColor(metric.score, metric.maxScore);
-  const isMax = metric.score === metric.maxScore;
+  if (total === 0) {
+    return <div className="h-2 w-full rounded-full overflow-hidden bg-slate-100" />;
+  }
+
+  const segments = [
+    { value: low, className: "bg-green-500" },
+    { value: medium, className: "bg-yellow-400" },
+    { value: high, className: "bg-orange-400" },
+    { value: critical, className: "bg-red-500" },
+  ];
 
   return (
-    <div className="space-y-2 py-2">
-      {/* Progress bar */}
-      <div className="h-3 w-full rounded-full bg-slate-200 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all duration-700`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+    <div className="h-2 w-full rounded-full overflow-hidden flex">
+      {segments
+        .filter((segment) => segment.value > 0)
+        .map((segment, i) => (
+          <div
+            key={i}
+            className={segment.className}
+            style={{ width: `${(segment.value / total) * 100}%` }}
+          />
+        ))}
+    </div>
+  );
+}
 
-      {/* Label row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-slate-700">
-          <span className="text-slate-400">{metric.icon}</span>
-          <span className="font-semibold text-base text-slate-800">{metric.label}</span>
+function SectionLabel({
+  children,
+  className = "text-slate-700",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}): ReactElement {
+  return (
+    <span
+      className={`text-xs font-bold uppercase tracking-widest ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function ImpactCard({ item }: { item: ImpactCategory }): ReactElement {
+  const { low, medium, high, critical } = item.distribution;
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col gap-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-slate-600">
+          <span className="text-slate-700">{item.icon}</span>
+          <span className="font-bold text-sm text-slate-700">
+            {item.label}
+          </span>
         </div>
-        <span className={`font-bold text-base tabular-nums ${isMax ? "text-slate-900" : "text-slate-800"}`}>
-          {scoreLabel(metric.score, metric.maxScore)}
+        <span
+          className={`text-xs font-medium px-3 py-1 rounded-md ${SEVERITY_STYLES[item.severity]}`}
+        >
+          {item.severity}
         </span>
       </div>
 
+      {/* Progress bar */}
+      <div>
+        <RiskBar distribution={item.distribution} />
+        <p className="text-xs text-slate-400 mt-1.5">
+          Distribuição: {low} Baixo &bull; {medium} Médio &bull; {high} Alto &bull; {critical}{" "}
+          Crítico
+        </p>
+      </div>
+
       {/* Description */}
-      <p className="text-sm text-slate-500 leading-relaxed">{metric.description}</p>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        {item.description}
+      </p>
+
+      {/* Business Impact */}
+      <div>
+        <SectionLabel>Impacto para o negócio</SectionLabel>
+        <ul className="mt-2 space-y-1.5">
+          {item.businessImpact.map((point) => (
+            <li
+              key={point}
+              className="flex items-start gap-2 text-sm text-slate-600"
+            >
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+              {point}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Actions */}
+      <div>
+        <div className="flex items-center gap-1.5 mb-1">
+          <SectionLabel>Ação recomendada</SectionLabel>
+        </div>
+        <ol className="space-y-1.5">
+          {item.actions.map((action) => (
+            <li
+              key={action}
+              className="flex items-start gap-3 text-sm text-slate-600"
+            >
+              <span className="shrink-0 text-slate-400">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+              {action}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
 
 export default function BusinessImpactAssessment(): ReactElement {
-  const left = [MOCK_METRICS[0], MOCK_METRICS[2]];
-  const right = [MOCK_METRICS[1], MOCK_METRICS[3]];
+  const grid = MOCK_DATA.slice(0, 4);
+  const full = MOCK_DATA[4];
 
   return (
     <div className="my-8 space-y-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-slate-800">
-          Avaliação de Impacto no Negócio{" "}
-          <span className="font-normal text-slate-500">(projeto total)</span>
+        <h2 className="text-2xl font-semibold text-slate-600">
+          Business Impact Assessment
         </h2>
         <Separator className="bg-slate-200" />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white px-8 py-6">
-        <div className="grid grid-cols-2 gap-x-12 gap-y-0 divide-x divide-slate-100">
-          {/* Left column */}
-          <div className="space-y-2 pr-12">
-            {left.map((metric, i) => (
-              <div key={metric.label}>
-                <ImpactCard metric={metric} />
-                {i < left.length - 1 && <Separator className="bg-slate-100 my-2" />}
-              </div>
-            ))}
-          </div>
-
-          {/* Right column */}
-          <div className="space-y-2 pl-12">
-            {right.map((metric, i) => (
-              <div key={metric.label}>
-                <ImpactCard metric={metric} />
-                {i < right.length - 1 && <Separator className="bg-slate-100 my-2" />}
-              </div>
-            ))}
-          </div>
+      <div className="space-y-3.5">
+        {/* 2-column grid */}
+        <div className="grid grid-cols-2 gap-3.5">
+          {grid.map((item) => (
+            <ImpactCard key={item.label} item={item} />
+          ))}
         </div>
+
+        {/* Full-width card */}
+        <ImpactCard item={full} />
       </div>
     </div>
   );

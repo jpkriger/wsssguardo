@@ -90,6 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
     [loadUser],
   );
 
+  const refreshUser = useCallback(async (): Promise<void> => {
+    if (AUTH_DISABLED) return;
+    await loadUser();
+  }, [loadUser]);
+
   const logout = useCallback(async (): Promise<void> => {
     if (AUTH_DISABLED) return;
     try {
@@ -110,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
         startMfaSetup,
         completeMfaSetup,
         verifyMfa,
+        refreshUser,
         logout,
       }}
     >

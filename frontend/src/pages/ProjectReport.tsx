@@ -102,6 +102,24 @@ const REPORT_SECTIONS = [
   },
 ] as const;
 
+type DetailLevel = "executivo" | "tecnico";
+
+const DETAIL_LEVELS: {
+  key: DetailLevel;
+  label: string;
+  description: string;
+}[] = [
+  { key: "executivo", label: "Executivo", description: "Visão resumida" },
+  { key: "tecnico", label: "Técnico", description: "Dados completos" },
+];
+
+// Toggles de seção visíveis por nível de detalhe. Cada relatório é um documento
+// próprio, então só exibimos os controles das seções que aquele modo renderiza.
+const SECTIONS_BY_DETAIL_LEVEL: Record<DetailLevel, string[]> = {
+  executivo: ["summary", "riskTable", "impactAssessment"],
+  tecnico: ["riskDetails"],
+};
+
 interface FormState {
   title: string;
   client: string;
@@ -152,6 +170,7 @@ export default function ProjectReport(): ReactElement {
   const [formState, setFormState] = useState<FormState>(() =>
     buildInitialFormState(null),
   );
+  const [detailLevel, setDetailLevel] = useState<DetailLevel>("executivo");
   const [sectionsEnabled, setSectionsEnabled] = useState<
     Record<string, boolean>
   >(() => buildSectionState());
@@ -347,24 +366,40 @@ export default function ProjectReport(): ReactElement {
         client={formState.client}
         date={new Date(formState.date + "T12:00:00")}
       />
-      {sectionsEnabled["summary"] && (
-        <ExecutiveSummary
-          projectId={projectId}
-          customSummary={formState.summary}
-          highRisks={riskSummary?.highRisks}
-          mediumRisks={riskSummary?.mediumRisks}
-        />
+
+      {detailLevel === "executivo" ? (
+        <>
+          {sectionsEnabled["summary"] && (
+            <ExecutiveSummary
+              projectId={projectId}
+              customSummary={formState.summary}
+              highRisks={riskSummary?.highRisks}
+              mediumRisks={riskSummary?.mediumRisks}
+            />
+          )}
+          {sectionsEnabled["impactAssessment"] && (
+            <BusinessImpactAssessment />
+          )}
+          {sectionsEnabled["riskTable"] && (
+            <RiskOverview projectId={projectId} />
+          )}
+        </>
+      ) : (
+        // Relatório Técnico (Figma 1262-8853): documento próprio, apenas a
+        // análise detalhada dos riscos + a documentação de suporte. Resumo
+        // Executivo, Visão Geral dos Riscos e Business Impact Assessment
+        // pertencem ao relatório Executivo e não entram aqui.
+        <>
+          {sectionsEnabled["riskDetails"] && (
+            <RiskAnalysis
+              projectId={projectId}
+              selectedRiskIds={selectedRiskIds}
+              showAssetsArtifacts={!!sectionsEnabled["assetsArtifacts"]}
+              showRecommendations={!!sectionsEnabled["recommendations"]}
+            />
+          )}
+        </>
       )}
-      {sectionsEnabled["riskTable"] && <RiskOverview projectId={projectId} />}
-      {sectionsEnabled["riskDetails"] && (
-        <RiskAnalysis
-          projectId={projectId}
-          selectedRiskIds={selectedRiskIds}
-          showAssetsArtifacts={!!sectionsEnabled["assetsArtifacts"]}
-          showRecommendations={!!sectionsEnabled["recommendations"]}
-        />
-      )}
-      {sectionsEnabled["impactAssessment"] && <BusinessImpactAssessment />}
     </>
   );
 
@@ -445,6 +480,48 @@ export default function ProjectReport(): ReactElement {
           <CardContent className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <div className="space-y-5">
               <section>
+                <CardTitle className="text-sm tracking-wider text-muted-foreground">
+                  NÍVEL DE DETALHE
+                </CardTitle>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 pb-1">
+                  {DETAIL_LEVELS.map((level) => {
+                    const isActive = detailLevel === level.key;
+
+                    return (
+                      <button
+                        key={level.key}
+                        type="button"
+                        onClick={() => setDetailLevel(level.key)}
+                        className={cn(
+                          "flex flex-col items-start gap-1.5 rounded-md border px-4 py-3 text-left transition-colors",
+                          isActive
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/40",
+                        )}
+                        aria-pressed={isActive}
+                      >
+                        <span className="text-base font-medium text-foreground">
+                          {level.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {level.description}
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-1 h-1 w-6 rounded-full transition-colors",
+                            isActive ? "bg-primary" : "bg-transparent",
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <Separator />
+
+              <section>
                 <div className="justify-between">
                   <div>
                     <CardTitle className="text-sm tracking-wider text-muted-foreground">
@@ -464,6 +541,11 @@ export default function ProjectReport(): ReactElement {
                         skey === "assetsArtifacts" || skey === "recommendations";
 
                       if (isRiskDetailChild) {
+                        return null;
+                      }
+
+                      // Mostra apenas as seções pertencentes ao modo atual.
+                      if (!SECTIONS_BY_DETAIL_LEVEL[detailLevel].includes(skey)) {
                         return null;
                       }
 
@@ -803,7 +885,11 @@ export default function ProjectReport(): ReactElement {
             ref={previewRef}
             className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0"
           >
-            {previewBody}
+            {/* Render the preview body in only one place at a time. When the
+                expanded dialog is open it owns the live copy; rendering both
+                would duplicate every anchor `id`, breaking in-document
+                navigation (links would jump to the hidden copy). */}
+            {!previewExpanded && previewBody}
           </CardContent>
         </Card>
       </div>

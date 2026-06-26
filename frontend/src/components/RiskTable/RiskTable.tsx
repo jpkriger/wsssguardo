@@ -24,6 +24,7 @@ import RiskModal, {
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "@/lib/format-date";
 import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
 import { priorityConfig, priorityOptions } from "@/lib/priority";
 
@@ -224,6 +225,59 @@ export default function RiskTable(): ReactElement {
         renderCell: (risk) => (
           <span className="text-sm text-muted-foreground">
             {truncateText(risk.consequences, 50)}
+          </span>
+        ),
+      },
+      {
+        id: "occurrenceProbability",
+        label: "Prob. Ocorrência",
+        renderCell: (risk) => (
+          <span className="text-sm text-center block text-foreground">
+            {formatProbability(
+              risk.occurrenceProbability,
+              probabilityRange.max,
+            )}
+          </span>
+        ),
+      },
+      {
+        id: "impactProbability",
+        label: "Prob. Impacto",
+        renderCell: (risk) => (
+          <span className="text-sm text-center block text-foreground">
+            {formatProbability(risk.impactProbability, probabilityRange.max)}
+          </span>
+        ),
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (r) => r.createdBy,
+        renderCell: (risk) => (
+          <span className="text-sm text-foreground whitespace-nowrap">
+            {risk.createdBy ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (r) => r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (r) => r.updatedAt ?? r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.updatedAt ?? risk.createdAt)}
           </span>
         ),
       },

@@ -77,24 +77,27 @@ export default function GenericTable<T>({
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >(() => {
-    // Load from localStorage or use defaults
-    try {
-      const saved = localStorage.getItem(`table-columns-${tableId}`);
-      if (saved) {
-        return JSON.parse(saved) as Record<string, boolean>;
-      }
-    } catch {
-      console.warn(`Failed to load column visibility for table ${tableId}`);
-    }
-
     // Use default config
-    return columns.reduce(
+    const defaults = columns.reduce<Record<string, boolean>>(
       (acc, col) => ({
         ...acc,
         [col.id]: defaultColumnConfig[col.id] !== false && !col.isRequired,
       }),
       {},
     );
+
+    // Load from localStorage, merging over defaults so columns added after a
+    // user saved their config still appear.
+    try {
+      const saved = localStorage.getItem(`table-columns-${tableId}`);
+      if (saved) {
+        return { ...defaults, ...(JSON.parse(saved) as Record<string, boolean>) };
+      }
+    } catch {
+      console.warn(`Failed to load column visibility for table ${tableId}`);
+    }
+
+    return defaults;
   });
 
   const [showColumnToggle, setShowColumnToggle] = useState(false);
