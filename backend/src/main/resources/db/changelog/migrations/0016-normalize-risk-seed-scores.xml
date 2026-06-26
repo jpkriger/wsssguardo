@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+
+    <changeSet id="0016-normalize-risk-seed-scores" author="codex">
+        <sql>
+            UPDATE risks
+            SET damage_operations = CASE damage_operations
+                    WHEN 100 THEN 10
+                    WHEN 80 THEN 8
+                    WHEN 50 THEN 5
+                    WHEN 20 THEN 2
+                    ELSE damage_operations
+                END,
+                damage_assets = CASE damage_assets
+                    WHEN 100 THEN 10
+                    WHEN 80 THEN 8
+                    WHEN 50 THEN 5
+                    WHEN 20 THEN 2
+                    ELSE damage_assets
+                END,
+                damage_individuals = CASE damage_individuals
+                    WHEN 100 THEN 10
+                    WHEN 80 THEN 8
+                    WHEN 50 THEN 5
+                    WHEN 20 THEN 2
+                    ELSE damage_individuals
+                END,
+                damage_other_orgs = CASE damage_other_orgs
+                    WHEN 100 THEN 10
+                    WHEN 80 THEN 8
+                    WHEN 50 THEN 5
+                    WHEN 20 THEN 2
+                    ELSE damage_other_orgs
+                END
+            WHERE created_by = 'system_seed'
+              AND (
+                  damage_operations IN (100, 80, 50, 20)
+                  OR damage_assets IN (100, 80, 50, 20)
+                  OR damage_individuals IN (100, 80, 50, 20)
+                  OR damage_other_orgs IN (100, 80, 50, 20)
+              );
+
+            UPDATE risks
+            SET general_risk = (damage_operations + damage_assets + damage_individuals + damage_other_orgs) / 4.0
+            WHERE created_by = 'system_seed';
+        </sql>
+    </changeSet>
+    <changeSet id="0016-drop-unused-find-category-relations" author="codex">
+        <dropForeignKeyConstraint baseTableName="finds_categories"
+                                  constraintName="fk_fincat_on_find"/>
+        <dropForeignKeyConstraint baseTableName="finds_categories"
+                                  constraintName="fk_fincat_on_find_category"/>
+        <dropTable tableName="finds_categories"/>
+        <dropTable tableName="find_categories"/>
+    </changeSet>
+
+    <changeSet id="0016-drop-unused-find-columns" author="codex">
+        <dropColumn tableName="finds" columnName="quantitative_criticality"/>
+    </changeSet>
+
+</databaseChangeLog>

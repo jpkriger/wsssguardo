@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
-import wsssguardo.find.domain.FindCategory;
 import wsssguardo.find.domain.FindSeverity;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
@@ -41,9 +40,6 @@ public class Find extends BaseEntity {
   private Project project;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  private List<FindCategory> categories;
-
-  @ManyToMany(fetch = FetchType.LAZY)
   private List<Asset> assets;
 
   @ManyToMany(fetch = FetchType.LAZY)
@@ -53,9 +49,6 @@ public class Find extends BaseEntity {
   private List<Risk> risks;
 
   private String sector;
-
-  @Column(name = "quantitative_criticality")
-  private Integer quantitativeCriticality;
 
   @Column(columnDefinition = "TEXT")
   private String description;

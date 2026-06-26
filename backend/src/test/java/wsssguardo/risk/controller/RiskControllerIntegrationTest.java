@@ -55,11 +55,12 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
           "consequences": "Privacy incident",
           "occurrenceProbability": 0.7,
           "impactProbability": 0.9,
-          "damageOperations": "Incident response required",
-          "damageIndividuals": "Personal data exposure",
-          "damageOtherOrgs": "Partner notification",
+          "damageOperations": 8,
+          "damageIndividuals": 9,
+          "damageOtherOrgs": 7,
+          "damageAssets": 6,
           "recommendation": "Restrict endpoint and add tests",
-          "riskLevel": 50
+          "priority": "P1"
         }
         """.formatted(project.getId(), find.getId());
 
@@ -72,7 +73,9 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.projectId", is(project.getId().toString())))
         .andExpect(jsonPath("$.name", is("Unauthorized data exposure")))
         .andExpect(jsonPath("$.findIds[0]", is(find.getId().toString())))
-        .andExpect(jsonPath("$.riskLevel", is(50)));
+        .andExpect(jsonPath("$.damageAssets", is(6.0)))
+        .andExpect(jsonPath("$.generalRisk", is(7.5)))
+        .andExpect(jsonPath("$.priority", is("P1")));
   }
 
   @Test

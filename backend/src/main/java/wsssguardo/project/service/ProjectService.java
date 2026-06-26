@@ -190,8 +190,8 @@ public class ProjectService {
         long riskCount     = riskRepository.countByProjectId(projectId);
 
         List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
-        List<Integer> riskLevels      = riskRepository.findRiskLevelsByProjectId(projectId);
-        long[] counts = classifyRisks(riskLevels, categories);
+        List<Float> generalRisks      = riskRepository.findGeneralRisksByProjectId(projectId);
+        long[] counts = classifyRisks(generalRisks, categories);
 
         LocalDate endDate       = project.getEndDate();
         Integer daysRemaining   = endDate != null
@@ -206,19 +206,18 @@ public class ProjectService {
     }
 
     /** Returns [low, medium, high] counts indexed by category position (sorted by minRange). */
-    private long[] classifyRisks(List<Integer> riskLevels, List<RiskCategory> categories) {
-        if (categories.isEmpty() || riskLevels.isEmpty()) return new long[]{0, 0, 0};
+    private long[] classifyRisks(List<Float> generalRisks, List<RiskCategory> categories) {
+        if (categories.isEmpty() || generalRisks.isEmpty()) return new long[]{0, 0, 0};
 
         List<RiskCategory> sorted = categories.stream()
                 .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
                 .toList();
 
         long low = 0, medium = 0, high = 0;
-        for (Integer level : riskLevels) {
+        for (Float level : generalRisks) {
             int idx = -1;
             for (int i = 0; i < sorted.size(); i++) {
-                RiskCategory cat = sorted.get(i);
-                if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+                if (isInRiskCategory(level, sorted, i)) {
                     idx = i;
                     break;
                 }
@@ -228,6 +227,15 @@ public class ProjectService {
             else if (idx > 0) medium++;
         }
         return new long[]{low, medium, high};
+    }
+
+    private boolean isInRiskCategory(Float level, List<RiskCategory> categories, int index) {
+        RiskCategory category = categories.get(index);
+        boolean isLast = index == categories.size() - 1;
+        if (isLast) {
+            return level >= category.getMinRange() && level <= category.getMaxRange();
+        }
+        return level >= category.getMinRange() && level < categories.get(index + 1).getMinRange();
     }
 
     @Transactional

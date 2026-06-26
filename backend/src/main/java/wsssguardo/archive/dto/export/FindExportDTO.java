@@ -8,7 +8,6 @@ public record FindExportDTO(
         String name,
         String description,
         String sector,
-        Integer quantitativeCriticality,
         Integer numericSeverity,
         String categoricalSeverity,
         String category,
@@ -17,7 +16,6 @@ public record FindExportDTO(
         String recommendation,
         List<UUID> assetIds,
         List<UUID> artifactIds,
-        List<UUID> categoryIds,
         AuditDTO audit
 ) {
 }

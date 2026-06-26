@@ -2,6 +2,7 @@ package wsssguardo.risk.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,13 +22,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.projectConfiguration.ProjectConfiguration;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.Risk;
+import wsssguardo.risk.RiskPriority;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
 import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 import wsssguardo.risk.mapper.RiskMapper;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.risk.service.impl.RiskServiceImpl;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,20 +60,19 @@ class RiskServiceImplTest {
 
     Project project = new Project();
     project.setId(projectId);
+    project.setConfiguration(ProjectConfiguration.createDefault());
     Find find = new Find();
     find.setId(findId);
     find.setProject(project);
-    Risk risk = new Risk();
     Risk savedRisk = new Risk();
     RiskResponseDTO expectedResponse = new RiskResponseDTO(
         UUID.randomUUID(), projectId, "Risk name", List.of(findId), "Description", "Consequences",
-        0.25F, 0.5F, "Operations", "Individuals", "Other orgs",
-        "Recommendation", 5000, null, null, null);
+        0.25F, 0.5F, 8F, 7F, 6F, 9F, 7.5F, RiskPriority.P1, null,
+        "Recommendation", null, null, null);
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of(find));
-    doReturn(risk).when(mapper).toEntity(request, project, List.of(find));
-    when(repository.save(risk)).thenReturn(savedRisk);
+    when(repository.save(any(Risk.class))).thenReturn(savedRisk);
     doReturn(expectedResponse).when(mapper).toResponse(savedRisk);
 
     RiskResponseDTO actualResponse = service.createRisk(projectId, request);
@@ -77,7 +80,61 @@ class RiskServiceImplTest {
     assertEquals(expectedResponse, actualResponse);
     verify(projectRepository).findById(projectId);
     verify(findRepository).findAllById(List.of(findId));
-    verify(repository).save(risk);
+    verify(repository).save(any(Risk.class));
+  }
+
+  @Test
+  void createRiskShouldCalculateGeneralRisk() {
+    UUID projectId = UUID.randomUUID();
+    UUID findId = UUID.randomUUID();
+    RiskCreateRequestDTO request = request(List.of(findId));
+
+    Project project = new Project();
+    project.setId(projectId);
+    project.setConfiguration(ProjectConfiguration.createDefault());
+    Find find = new Find();
+    find.setId(findId);
+    find.setProject(project);
+
+    when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+    when(findRepository.findAllById(List.of(findId))).thenReturn(List.of(find));
+    when(repository.save(any(Risk.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    RiskResponseDTO response = service.createRisk(projectId, request);
+
+    assertEquals(7.5F, response.generalRisk());
+  }
+
+  @Test
+  void createRiskShouldThrowWhenDamageScoreIsOutOfProjectScale() {
+    UUID projectId = UUID.randomUUID();
+    UUID findId = UUID.randomUUID();
+    RiskCreateRequestDTO request = new RiskCreateRequestDTO(
+        "Risk name",
+        List.of(findId),
+        "Description",
+        "Consequences",
+        0.25F,
+        0.5F,
+        11F,
+        7F,
+        6F,
+        9F,
+        "Recommendation",
+        RiskPriority.P1);
+
+    Project project = new Project();
+    project.setId(projectId);
+    project.setConfiguration(ProjectConfiguration.createDefault());
+    Find find = new Find();
+    find.setId(findId);
+    find.setProject(project);
+
+    when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+    when(findRepository.findAllById(List.of(findId))).thenReturn(List.of(find));
+
+    assertThrows(ApiException.class, () -> service.createRisk(projectId, request));
+    verifyNoInteractions(repository);
   }
 
   @Test
@@ -101,6 +158,7 @@ class RiskServiceImplTest {
 
     Project project = new Project();
     project.setId(projectId);
+    project.setConfiguration(ProjectConfiguration.createDefault());
 
     when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
     when(findRepository.findAllById(List.of(findId))).thenReturn(List.of());
@@ -117,10 +175,11 @@ class RiskServiceImplTest {
         "Consequences",
         0.25F,
         0.5F,
-        "Operations",
-        "Individuals",
-        "Other orgs",
+        8F,
+        7F,
+        6F,
+        9F,
         "Recommendation",
-        5000);
+        RiskPriority.P1);
   }
 }
