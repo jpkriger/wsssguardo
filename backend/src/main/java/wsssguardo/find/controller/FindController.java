@@ -84,7 +84,7 @@ public class FindController {
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
         projectAccessService.assertAccess(projectId);
-        service.delete(projectId, id);
+        service.delete(projectId, id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

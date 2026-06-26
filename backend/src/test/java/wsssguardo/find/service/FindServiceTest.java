@@ -1,6 +1,7 @@
 package wsssguardo.find.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -83,16 +84,17 @@ class FindServiceTest {
         when(repository.findByIdAndProjectId(findId, projectId)).thenReturn(Optional.of(find));
         when(repository.existsActiveRiskLink(findId)).thenReturn(true);
 
-        assertThrows(ApiException.class, () -> service.delete(projectId, findId));
+        assertThrows(ApiException.class, () -> service.delete(projectId, findId, "testUser"));
 
         verify(repository).findByIdAndProjectId(findId, projectId);
         verify(repository).existsActiveRiskLink(findId);
     }
 
     @Test
-    void deleteFind_NoLinkedRisks_DeletesEntity() {
+    void deleteFind_NoLinkedRisks_SoftDeletesEntity() {
         UUID projectId = UUID.randomUUID();
         UUID findId = UUID.randomUUID();
+        String username = "testUser";
         Project project = new Project();
         project.setId(projectId);
         Find find = find(findId, "Achado");
@@ -100,11 +102,13 @@ class FindServiceTest {
         when(repository.findByIdAndProjectId(findId, projectId)).thenReturn(Optional.of(find));
         when(repository.existsActiveRiskLink(findId)).thenReturn(false);
 
-        service.delete(projectId, findId);
+        service.delete(projectId, findId, username);
 
         verify(repository).findByIdAndProjectId(findId, projectId);
         verify(repository).existsActiveRiskLink(findId);
-        verify(repository).delete(find);
+        assertNotNull(find.getDeletedAt());
+        assertEquals(username, find.getDeletedBy());
+        verify(repository).save(find);
     }
 
     @Test

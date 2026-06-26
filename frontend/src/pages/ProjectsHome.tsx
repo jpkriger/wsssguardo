@@ -5,12 +5,12 @@ import type { Project } from "@/components/ProjectsTable/ProjectsTable";
 import type { CriticalWindowItem } from "@/components/CriticalWindowCard/CriticalWindowCard";
 import { listProjects, type ProjectResponse } from "@/api/project";
 import { getRiskSummary, type RiskSummaryResponse } from "@/api/risk";
+import { listUsers, type UserProfile } from "@/api/users";
 import { Link } from "react-router";
 import { ChevronLeft } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const FALLBACK_CONSULTANT_NAMES = ["Avaliador Um", "Avaliador Dois"];
 
 function summaryToRisks(summary: RiskSummaryResponse | null): Project["risks"] {
   if (!summary) return [];
@@ -74,14 +74,22 @@ function buildSchedule(project: ProjectResponse): {
   };
 }
 
+function getUserDisplayName(user: UserProfile | undefined): string {
+  if (!user) return "Consultor não encontrado";
+  return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || user.id;
+}
+
 function mapProjectToTable(
   project: ProjectResponse,
   index: number,
   summary: RiskSummaryResponse | null,
+  usersById: Map<string, UserProfile>,
 ): Project {
   const schedule = buildSchedule(project);
-  const consultantName =
-    FALLBACK_CONSULTANT_NAMES[index % FALLBACK_CONSULTANT_NAMES.length];
+  const consultants =
+    project.consultantIds?.map((consultantId) => ({
+      name: getUserDisplayName(usersById.get(consultantId)),
+    })) ?? [];
 
   return {
     id: project.id,
@@ -91,16 +99,19 @@ function mapProjectToTable(
     endDate: project.endDate,
     daysRemaining: Math.min(schedule.daysRemaining, schedule.totalDays),
     totalDays: schedule.totalDays,
-    consultant: { name: consultantName },
+    consultants,
     risks: summaryToRisks(summary),
   };
 }
 
 export default function ProjectsHome(): ReactElement {
+  const { user } = useAuth();
   const [apiProjects, setApiProjects] = useState<ProjectResponse[]>([]);
+  const [usersById, setUsersById] = useState<Map<string, UserProfile>>(new Map());
   const [riskSummaries, setRiskSummaries] = useState<Map<string, RiskSummaryResponse>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const canAccessCompanies = user?.role === "MANAGER";
 
   useEffect(() => {
     let cancelled = false;
@@ -110,9 +121,13 @@ export default function ProjectsHome(): ReactElement {
       setError(null);
 
       try {
-        const projects = await listProjects();
+        const [projects, users] = await Promise.all([
+          listProjects(),
+          listUsers().catch(() => []),
+        ]);
         if (cancelled) return;
         setApiProjects(projects);
+        setUsersById(new Map(users.map((user) => [user.id, user])));
 
         const summaries = await Promise.all(
           projects.map((p) => getRiskSummary(p.id).catch(() => null)),
@@ -147,9 +162,9 @@ export default function ProjectsHome(): ReactElement {
   const projects = useMemo(
     () =>
       apiProjects.map((project, index) =>
-        mapProjectToTable(project, index, riskSummaries.get(project.id) ?? null),
+        mapProjectToTable(project, index, riskSummaries.get(project.id) ?? null, usersById),
       ),
-    [apiProjects, riskSummaries],
+    [apiProjects, riskSummaries, usersById],
   );
 
   const criticalWindows = useMemo<CriticalWindowItem[]>(() => {
@@ -196,13 +211,15 @@ export default function ProjectsHome(): ReactElement {
 
 return (
   <>
-    <Link
-      to="/companies"
-      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <ChevronLeft className="size-4" />
-      Voltar para Empresas
-    </Link>
+    {canAccessCompanies && (
+      <Link
+        to="/companies"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronLeft className="size-4" />
+        Voltar para Empresas
+      </Link>
+    )}
 
     <div className="flex flex-col gap-10">
       {/* Visão Geral */}

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { FolderOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import styles from "./CriticalWindowCard.module.css";
 
 export interface CriticalWindowItem {
     id: string | number;
@@ -24,7 +23,7 @@ export function CriticalWindowCard({
     className,
 }: CriticalWindowCardProps): React.JSX.Element {
     return (
-        <Card className={cn(styles.card, "min-w-[100px] flex-1 mx-auto", className)}>
+        <Card className={cn("min-w-[100px] flex-1 mx-auto transition-all duration-200 hover:border-primary hover:-translate-y-0.5", className)}>
             <CardContent className="flex flex-col gap-3 px-3 py-1">
                 <div className="flex items-center justify-between gap-2">
                     <span className="!text-[12px] font-semibold tracking-[0.2em] uppercase text-muted-foreground">

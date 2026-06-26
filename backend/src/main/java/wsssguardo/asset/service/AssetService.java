@@ -47,25 +47,25 @@ public class AssetService {
     }
 
     @Transactional
-    public AssetResponseDTO createAsset(UUID projectId, AssetCreateRequestDTO request, String username) {
+    public AssetResponseDTO createAsset(UUID projectId, AssetCreateRequestDTO request) {
         var project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
 
-        Asset asset = assetMapper.toEntity(request, project, username);
+        Asset asset = assetMapper.toEntity(request, project);
         asset = repository.save(asset);
 
         return assetMapper.toResponse(asset);
     }
 
     @Transactional
-    public AssetResponseDTO updateAsset(UUID projectId, UUID id, AssetUpdateRequestDTO request, String username) {
+    public AssetResponseDTO updateAsset(UUID projectId, UUID id, AssetUpdateRequestDTO request) {
         var asset = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset", id));
         if (!asset.getProject().getId().equals(projectId)) {
             throw new ApiException("Asset does not belong to the given project", HttpStatus.NOT_FOUND);
         }
 
-        asset = assetMapper.updateEntity(asset, request, username);
+        asset = assetMapper.updateEntity(asset, request);
 
         return assetMapper.toResponse(asset);
     }
@@ -82,7 +82,8 @@ public class AssetService {
             throw new ApiException("Asset has linked findings and cannot be deleted", HttpStatus.CONFLICT);
         }
 
-        assetMapper.deleteEntity(asset, username);
+        asset.softDelete(username);
+        repository.save(asset);
     }
 
 }

@@ -1,6 +1,7 @@
 package wsssguardo.project.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -12,7 +13,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +24,7 @@ import wsssguardo.company.Company;
 import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.ProjectDeletionAudit;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
 import wsssguardo.project.domain.projectConfiguration.ProjectConfiguration;
@@ -36,6 +37,7 @@ import wsssguardo.project.dto.ProjectUpdateRequest;
 import wsssguardo.project.dto.RiskCategoryDTO;
 import wsssguardo.project.dto.RiskConfigUpdateDTO;
 import wsssguardo.project.mapper.ProjectMapper;
+import wsssguardo.project.repository.ProjectDeletionAuditRepository;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.project.repository.ProjectUserRepository;
 import wsssguardo.risk.repository.RiskRepository;
@@ -57,6 +59,7 @@ public class ProjectService {
     private final ArtifactRepository artifactRepository;
     private final FindRepository findRepository;
     private final RiskRepository riskRepository;
+    private final ProjectDeletionAuditRepository projectDeletionAuditRepository;
     private final ProjectMapper mapper;
     private final ProjectAccessService projectAccessService;
 
@@ -228,10 +231,19 @@ public class ProjectService {
     }
 
     @Transactional
-    public void deleteProject(UUID id) {
+    public void deleteProject(UUID id, String username) {
         Project project = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", id));
 
+        projectDeletionAuditRepository.save(ProjectDeletionAudit.builder()
+                .projectName(project.getName())
+                .companyName(project.getCompany().getName())
+                .projectStatus(project.getStatus())
+                .projectStartDate(project.getStartDate())
+                .projectEndDate(project.getEndDate())
+                .deletedBy(username)
+                .deletedAt(LocalDateTime.now())
+                .build());
         repository.delete(project);
     }
 

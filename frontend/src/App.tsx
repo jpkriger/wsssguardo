@@ -1,6 +1,5 @@
 import { type ReactElement } from "react";
 import { Outlet } from "react-router";
-import styles from "./App.module.css";
 import { ThemeProvider } from "./components/theme-provider";
 import GlobalHeader from "./components/GlobalHeader/GlobalHeader";
 import GlobalFooter from "./components/GlobalFooter/GlobalFooter";
@@ -15,8 +14,10 @@ export default function App(): ReactElement {
           <GlobalHeader />
         </nav>
 
-        <div className={styles.container}>
-          <main className={styles.main}>
+        {/* .container */}
+        <div className="flex flex-1 min-h-0 w-full mx-auto px-40 py-4">
+          {/* .main */}
+          <main className="flex-1 min-h-0 flex flex-col gap-6">
             <Outlet />
           </main>
         </div>

@@ -83,7 +83,7 @@ public class CompanyController {
     public ResponseEntity<Void> delete(
             @PathVariable UUID id) {
         projectAccessService.assertManager();
-        service.delete(id);
+        service.delete(id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 

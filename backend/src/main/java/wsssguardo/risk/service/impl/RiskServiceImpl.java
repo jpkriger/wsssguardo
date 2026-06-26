@@ -45,12 +45,12 @@ public class RiskServiceImpl implements RiskService {
 
   @Override
   @Transactional
-  public RiskResponseDTO createRisk(UUID projectId, RiskCreateRequestDTO request, String username) {
+  public RiskResponseDTO createRisk(UUID projectId, RiskCreateRequestDTO request) {
     Project project = projectRepository.findById(projectId)
         .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
     List<Find> finds = findByIds(request.findIds(), findRepository, "Find", project.getId());
 
-    Risk risk = mapper.toEntity(request, project, finds, username);
+    Risk risk = mapper.toEntity(request, project, finds);
     Risk savedRisk = repository.save(risk);
     return mapper.toResponse(savedRisk);
   }
@@ -110,14 +110,14 @@ public class RiskServiceImpl implements RiskService {
         ? findByIds(dto.findIds(), findRepository, "Find", projectId)
         : null;
 
-    risk = mapper.updateEntity(risk, dto, finds, null);
+    risk = mapper.updateEntity(risk, dto, finds);
 
     return mapper.toResponse(repository.save(risk));
   }
 
   @Override
   @Transactional
-  public void delete(UUID projectId, UUID id) {
+  public void delete(UUID projectId, UUID id, String username) {
     Risk risk = repository.findById(id)
         .orElseThrow(() -> new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND));
 
@@ -125,7 +125,8 @@ public class RiskServiceImpl implements RiskService {
       throw new ApiException("Risk does not belong to the given project", HttpStatus.NOT_FOUND);
     }
 
-    repository.deleteById(id);
+    risk.softDelete(username);
+    repository.save(risk);
   }
 
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,
