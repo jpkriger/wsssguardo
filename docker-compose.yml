@@ -27,8 +27,7 @@ services:
       DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       OTLP_ENABLED: "false"
       SECURITY_AUTH_DISABLED: "true"
-      OLLAMA_URL: "${OLLAMA_URL:-http://ollama:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:3b}"
+      AI_SERVICE_URL: "${AI_SERVICE_URL:-http://localhost:8000}"
     depends_on:
       db:
         condition: service_healthy
@@ -75,8 +74,8 @@ services:
       OTLP_ENABLED: "false"
       SECURITY_AUTH_DISABLED: "${SECURITY_AUTH_DISABLED:-true}"
       AUTH_COOKIE_SECURE: "false"
-      OLLAMA_URL: "${OLLAMA_URL:-http://host.docker.internal:11434}"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen2.5:3b}"
+      AI_SERVICE_URL: "${AI_SERVICE_URL:-http://host.docker.internal:8000}"
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms128m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"
       COGNITO_REGION: "${COGNITO_REGION:-us-east-2}"
       COGNITO_USER_POOL_ID: "${COGNITO_USER_POOL_ID:-placeholder}"
       COGNITO_CLIENT_ID: "${COGNITO_CLIENT_ID:-placeholder}"

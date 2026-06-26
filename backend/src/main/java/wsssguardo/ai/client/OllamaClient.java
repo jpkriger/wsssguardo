@@ -2,7 +2,6 @@ package wsssguardo.ai.client;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -17,16 +16,11 @@ import wsssguardo.shared.exception.ApiException;
 @Component
 public class OllamaClient {
 
-    private static final Pattern FIRST_NUMBER = Pattern.compile("\\d+");
-
     private final RestClient restClient;
-    private final String model;
 
     public OllamaClient(
-            @Value("${ollama.url}") String url,
-            @Value("${ollama.model}") String model,
+            @Value("${ai.service.url}") String url,
             RestClient.Builder builder) {
-        this.model = model;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(15));
         factory.setReadTimeout(Duration.ofSeconds(180));
@@ -35,38 +29,28 @@ public class OllamaClient {
 
     public String generate(String systemPrompt, String userPrompt, double temperature) {
         var payload = Map.of(
-                "model", model,
-                "system", systemPrompt,
-                "prompt", userPrompt,
-                "stream", false,
-                "options", Map.of("temperature", temperature));
+                "system_prompt", systemPrompt,
+                "user_prompt", userPrompt,
+                "temperature", temperature);
 
         try {
-            OllamaResponse response = restClient.post()
-                    .uri("/api/generate")
+            AiResponse response = restClient.post()
+                    .uri("/api/ai/complete")
                     .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
                     .body(payload)
                     .retrieve()
-                    .body(OllamaResponse.class);
+                    .body(AiResponse.class);
 
-            if (response == null || response.response() == null) {
+            if (response == null || response.text() == null) {
                 throw new ApiException("AI service returned empty response", HttpStatus.BAD_GATEWAY);
             }
 
-            return response.response().trim();
+            return response.text().trim();
         } catch (RestClientException e) {
             throw new ApiException("AI service unavailable: " + e.getMessage(), HttpStatus.BAD_GATEWAY);
         }
     }
 
-    public Integer generateScore(String systemPrompt, String userPrompt) {
-        String raw = generate(systemPrompt, userPrompt, 0.0);
-        var matcher = FIRST_NUMBER.matcher(raw);
-        if (!matcher.find()) {
-            throw new ApiException("AI returned non-numeric score: " + raw, HttpStatus.BAD_GATEWAY);
-        }
-        return Integer.parseInt(matcher.group());
-    }
-
-    record OllamaResponse(String response) {}
+    record AiResponse(String text) {}
 }

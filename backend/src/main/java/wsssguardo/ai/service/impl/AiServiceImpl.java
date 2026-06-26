@@ -64,6 +64,7 @@ public class AiServiceImpl implements AiService {
             3. A linguagem deve ser puramente voltada para negócios. Foque no panorama geral de exposição, no impacto sistêmico e no risco ao valor para os stakeholders. Não foque em detalhes operacionais de cada falha.
             4. É ESTRITAMENTE PROIBIDO mencionar nomes de marcas, soluções ou produtos comerciais específicos.
             5. Não liste os riscos em formato de tópicos; crie uma narrativa fluida que represente a atual postura de risco da organização com base na síntese dos dados.
+            6. USE EXCLUSIVAMENTE terceira pessoa. É PROIBIDO usar pronomes possessivos de primeira pessoa como "nossa", "nosso", "nossas", "nossos". Refira-se à organização como "a organização", "a empresa" ou "a entidade avaliada".
             """;
 
     private static final String REPORT_TECHNICAL_SYSTEM_PROMPT = """
@@ -76,6 +77,7 @@ public class AiServiceImpl implements AiService {
             3. Use linguagem técnica precisa: mencione vetores de ataque, classes de vulnerabilidade (ex: injeção, escalonamento de privilégios, exposição de credenciais), superfície de ataque e impacto técnico.
             4. É ESTRITAMENTE PROIBIDO mencionar nomes de marcas, soluções ou produtos comerciais específicos.
             5. Não liste os riscos em formato de tópicos; crie uma narrativa técnica fluida que caracterize a postura de segurança atual da infraestrutura.
+            6. USE EXCLUSIVAMENTE terceira pessoa. É PROIBIDO usar pronomes possessivos de primeira pessoa como "nossa", "nosso", "nossas", "nossos". Refira-se à organização como "a organização", "a empresa" ou "a entidade avaliada".
             """;
 
     private final RiskRepository riskRepository;
