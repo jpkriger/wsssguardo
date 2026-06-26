@@ -45,3 +45,6 @@ terraform.tfstate.backup
 
 # Arquivos de arquivamento gerados (saida binaria encriptada)
 *.p7m
+
+# Chaves de produção do arquivamento (geradas localmente, nunca commitar)
+prod-keys/

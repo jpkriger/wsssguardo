@@ -42,7 +42,7 @@ Dois problemas centrais moldam o design:
    ├─ Jackson → JSON canônico (ordenado, determinístico)
    ├─ ArchiveCryptoService:
    │     SHA-256 → CMS SignedData (chave privada de assinatura do servidor)
-   │                 → CMS EnvelopedData (cert público do cofre, AES-256-GCM + RSA-OAEP)
+   │                 → CMS EnvelopedData (cert público do cofre, AES-256-CBC + RSA-OAEP)
    │     → bytes .p7m
    ├─ persiste ArchiveManifest (id, projectId, sha256, tamanho, quem, quando, status=PENDING_DOWNLOAD)
    └─ download: project-{id}-{timestamp}.p7m  (application/pkcs7-mime, attachment)
@@ -133,7 +133,7 @@ Propriedade-chave: o servidor **não consegue decriptar** o que produziu (só te
 ### Camadas CMS
 
 1. `JSON (UTF-8)` → SHA-256 → **CMS SignedData** assinado com a privada do servidor (`SHA256withRSA`).
-2. SignedData → **CMS EnvelopedData**: gera chave AES-256-GCM aleatória, encripta o conteúdo; encripta a chave AES com RSA-OAEP usando o cert do cofre.
+2. SignedData → **CMS EnvelopedData**: gera chave AES-256-CBC aleatória, encripta o conteúdo; encripta a chave AES com RSA-OAEP usando o cert do cofre. Detalhes em [archive-crypto.md](./archive-crypto.md).
 3. Saída `.p7m` (DER), interoperável com `openssl cms`.
 
 ### Checklist de controles
