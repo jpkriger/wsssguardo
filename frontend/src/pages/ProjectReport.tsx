@@ -144,7 +144,7 @@ function buildInitialFormState(project: ProjectResponse | null, companyName?: st
     client: companyName ?? project?.companyId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
-    summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
+    summary: project?.aiReportIntro ?? (project ? `Resumo executivo do projeto ${project.name}.` : ""),
   };
 }
 
@@ -225,6 +225,7 @@ export default function ProjectReport(): ReactElement {
 
   useEffect(() => {
     setFormState(buildInitialFormState(project, companyName));
+    if (project?.aiReportIntro) setSummaryIsAi(true);
   }, [project, companyName]);
 
   useEffect(() => {
