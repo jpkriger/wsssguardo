@@ -11,6 +11,7 @@ interface MFAVerificationFormProps {
   loading?: boolean;
   error?: string | null;
   onBack?: () => void;
+  backLabel?: string;
 }
 
 export default function MFAVerificationForm({
@@ -20,6 +21,7 @@ export default function MFAVerificationForm({
   loading = false,
   error,
   onBack,
+  backLabel = "← Voltar ao login",
 }: MFAVerificationFormProps): ReactElement {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [copied, setCopied] = useState(false);
@@ -159,7 +161,7 @@ export default function MFAVerificationForm({
               onClick={onBack}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              ← Voltar ao login
+              {backLabel}
             </button>
           </div>
         </div>

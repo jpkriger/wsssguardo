@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { changePassword } from "@/api/account";
+import { ApiErrorResponse } from "@/api/errors";
 import { toast } from "sonner";
 
 export default function ChangePasswordCard(): ReactElement {
@@ -11,20 +13,24 @@ export default function ChangePasswordCard(): ReactElement {
     const [confirm, setConfirm] = useState("");
     const [loading, setLoading] = useState(false);
 
-    function handleSubmit(e: FormEvent) {
+    async function handleSubmit(e: FormEvent): Promise<void> {
         e.preventDefault();
         if (password === "" || password !== confirm) {
             toast.error("Senhas precisam coincidir");
             return;
         }
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            await changePassword(current, password);
             setCurrent("");
             setPassword("");
             setConfirm("");
-            toast.success("Senha alterada com sucesso (simulada)");
-        }, 800);
+            toast.success("Senha alterada com sucesso");
+        } catch (err) {
+            toast.error(err instanceof ApiErrorResponse ? err.message : "Não foi possível alterar a senha");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -33,7 +39,7 @@ export default function ChangePasswordCard(): ReactElement {
                 <h3 className="text-lg font-medium">Alterar senha</h3>
             </CardHeader>
             <CardContent className="px-8 pb-8">
-                <form className="grid gap-4" onSubmit={handleSubmit}>
+                <form className="grid gap-4" onSubmit={(e) => void handleSubmit(e)}>
                     <div className="grid gap-2">
                         <Label htmlFor="current">Senha atual</Label>
                         <Input className="rounded"id="current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
