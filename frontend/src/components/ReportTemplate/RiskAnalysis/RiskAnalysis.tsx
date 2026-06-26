@@ -419,14 +419,14 @@ function RiskCard({
             <ArrowRight size={14} className="text-slate-400" />
             <RelPill label={`${item.linkedFindings.length} Achados`} />
             <ArrowRight size={14} className="text-slate-400" />
-            <RelPill label={`${item.linkedAssets.length} Ativos`} />
-            <span className="text-slate-300">•</span>
             <RelPill label={`${item.linkedArtifacts.length} Documentos`} />
+            <ArrowRight size={14} className="text-slate-400" />
+            <RelPill label={`${item.linkedAssets.length} Ativos`} />
           </div>
         </div>
 
-        {/* Findings, Artifacts, Assets as anchor links */}
-        <div className={`grid gap-6 ${showAssetsArtifacts ? "grid-cols-3" : "grid-cols-1"}`}>
+        {/* Findings + Artifacts as anchor links (2 columns, mirroring Figma) */}
+        <div className={`grid gap-6 ${showAssetsArtifacts ? "grid-cols-2" : "grid-cols-1"}`}>
           {/* Achados */}
           <div>
             <SectionLabel>Achados relacionados</SectionLabel>
@@ -449,62 +449,62 @@ function RiskCard({
             </ul>
           </div>
 
+          {/* Artefatos */}
           {showAssetsArtifacts && (
-            <>
-              {/* Artefatos */}
-              <div>
-                <SectionLabel>Artefatos</SectionLabel>
-                {shownArtifacts.length > 0 ? (
-                  <ul className="mt-2 space-y-1.5">
-                    {shownArtifacts.map((artifact) => (
-                      <li key={artifact.id} className="flex items-center gap-1.5 text-sm">
-                        <FileText
-                          size={13}
-                          className="text-slate-400 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <a
-                          href={`#${artifactAnchorId(artifact.id)}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                        >
-                          {artifact.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-400">Sem artefatos vinculados</p>
-                )}
-              </div>
-
-              {/* Ativos */}
-              <div>
-                <SectionLabel>Ativos afetados</SectionLabel>
-                {shownAssets.length > 0 ? (
-                  <ul className="mt-2 space-y-1.5">
-                    {shownAssets.map((asset) => (
-                      <li key={asset.id} className="flex items-center gap-1.5 text-sm">
-                        <Database
-                          size={13}
-                          className="text-slate-400 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <a
-                          href={`#${assetAnchorId(asset.id)}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                        >
-                          {asset.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-400">Sem ativos vinculados</p>
-                )}
-              </div>
-            </>
+            <div>
+              <SectionLabel>Artefatos</SectionLabel>
+              {shownArtifacts.length > 0 ? (
+                <ul className="mt-2 space-y-1.5">
+                  {shownArtifacts.map((artifact) => (
+                    <li key={artifact.id} className="flex items-center gap-1.5 text-sm">
+                      <FileText
+                        size={13}
+                        className="text-slate-400 shrink-0"
+                        strokeWidth={1.5}
+                      />
+                      <a
+                        href={`#${artifactAnchorId(artifact.id)}`}
+                        className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                      >
+                        {artifact.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400">Sem artefatos vinculados</p>
+              )}
+            </div>
           )}
         </div>
+
+        {/* Ativos afetados (full-width block below the columns, mirroring Figma) */}
+        {showAssetsArtifacts && (
+          <div>
+            <SectionLabel>Ativos afetados</SectionLabel>
+            {shownAssets.length > 0 ? (
+              <ul className="mt-2 space-y-1.5">
+                {shownAssets.map((asset) => (
+                  <li key={asset.id} className="flex items-center gap-1.5 text-sm">
+                    <Database
+                      size={13}
+                      className="text-slate-400 shrink-0"
+                      strokeWidth={1.5}
+                    />
+                    <a
+                      href={`#${assetAnchorId(asset.id)}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    >
+                      {asset.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-slate-400">Sem ativos vinculados</p>
+            )}
+          </div>
+        )}
 
         {/* Mitigation steps */}
         {showRecommendations && mitigationSteps.length > 0 && (
@@ -587,6 +587,7 @@ function SupportingDocumentation({
               title={finding.name}
               description={finding.description ?? undefined}
               date={finding.createdAt}
+              reference={finding.reference ?? undefined}
               meta={
                 finding.categoricalSeverity
                   ? `Severidade: ${finding.categoricalSeverity}`
@@ -606,6 +607,7 @@ function SupportingDocumentation({
               title={artifact.name}
               description={artifact.description ?? undefined}
               date={artifact.createdAt}
+              reference={artifact.driveLink || artifact.content || undefined}
               meta={artifact.contentType ? `Tipo: ${artifact.contentType}` : undefined}
             />
           ))}
@@ -651,12 +653,15 @@ function DocEntry({
   description,
   date,
   meta,
+  reference,
 }: {
   anchorId: string;
   title: string;
   description?: string;
   date?: string;
   meta?: string;
+  /** Document/source reference (e.g. drive link or file path) shown like the Figma. */
+  reference?: string;
 }): ReactElement {
   const formattedDate = formatDate(date);
 
@@ -669,6 +674,11 @@ function DocEntry({
       {description && (
         <p className="mt-0.5 text-sm text-slate-600 leading-relaxed">
           {description}
+        </p>
+      )}
+      {reference && (
+        <p className="mt-1 text-xs font-mono text-slate-400 break-all">
+          {reference}
         </p>
       )}
       <div className="mt-1 flex items-center gap-3 flex-wrap">
