@@ -1,6 +1,7 @@
 import { type ReactElement, useState } from "react";
 import ProfileForm from "@/components/Profile/ProfileForm";
 import ChangePasswordCard from "@/components/Profile/ChangePasswordCard";
+import MfaCard from "@/components/Profile/MfaCard";
 
 export default function Profile(): ReactElement {
     const [showChange, setShowChange] = useState(false);
@@ -12,6 +13,7 @@ export default function Profile(): ReactElement {
                     {!showChange ? (
                         <>
                             <ProfileForm onChangePassword={() => setShowChange(true)} />
+                            <MfaCard />
                         </>
                     ) : (
                         <>

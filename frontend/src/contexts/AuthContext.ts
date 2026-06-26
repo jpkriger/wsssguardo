@@ -9,6 +9,7 @@ export interface AuthContextValue {
   startMfaSetup: (session: string, email: string) => Promise<MfaSetupResponse>;
   completeMfaSetup: (session: string, email: string, code: string) => Promise<void>;
   verifyMfa: (session: string, email: string, code: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
