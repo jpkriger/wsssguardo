@@ -156,6 +156,16 @@ resource "aws_instance" "backend" {
   iam_instance_profile   = aws_iam_instance_profile.backend.name
   tags                   = merge(local.tags, { Name = local.ec2_name })
 
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
@@ -167,7 +177,9 @@ resource "aws_instance" "backend" {
 
     # Pacotes
     dnf update -y
-    dnf install -y docker certbot
+    dnf install -y docker certbot cronie amazon-ssm-agent
+    systemctl enable --now crond
+    systemctl enable --now amazon-ssm-agent
 
     # Docker
     systemctl enable --now docker
@@ -188,6 +200,9 @@ resource "aws_instance" "backend" {
     # Cron de renovação automática do certificado
     echo "0 3 * * * root certbot renew --quiet --pre-hook 'docker stop nginx || true' --post-hook 'docker start nginx || true'" \
       > /etc/cron.d/certbot-renew
+
+    # Reinicia o SSM agent após tudo configurado para garantir registro com as credenciais IAM
+    systemctl restart amazon-ssm-agent || true
   EOF
 }
 
