@@ -70,7 +70,7 @@ public class Risk extends BaseEntity {
       @Column(nullable = false)
       private RiskPriority priority;
 
-      @Column(length = 1000)
+      @Column(columnDefinition = "TEXT")
       private String aiSummary;
 
       private String recommendation;
