@@ -247,9 +247,9 @@ export default function ProjectModal({
           }}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="min-h-0 overflow-hidden px-7 py-6">
-            <div className="grid min-h-0 items-stretch gap-6 overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)]">
-              <section className="flex min-h-0 flex-col gap-6 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+            <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)]">
+              <section className="flex min-h-0 flex-col gap-6">
                 <div className="shrink-0 space-y-5 rounded-lg border border-border bg-background/60 p-5">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Dados do projeto</h3>
@@ -299,7 +299,7 @@ export default function ProjectModal({
                 </div>
 
                 {!isEdit && (
-                  <div className="flex min-h-0 flex-col gap-5 overflow-hidden rounded-lg border border-border bg-background/60 p-5">
+                  <div className="flex min-h-0 flex-col gap-5 rounded-lg border border-border bg-background/60 p-5">
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">
                         Configuração de Risco
