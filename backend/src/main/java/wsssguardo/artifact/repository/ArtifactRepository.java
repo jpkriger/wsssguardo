@@ -70,4 +70,8 @@ public interface ArtifactRepository extends JpaRepository<Artifact, UUID> {
                         """, nativeQuery = true)
         boolean existsActiveFindLink(@Param("artifactId") UUID artifactId);
 
+        // Export de arquivamento: inclui tombstones (ignora o @SQLRestriction do BaseEntity).
+        @Query(value = "SELECT * FROM artifacts WHERE project_id = :projectId", nativeQuery = true)
+        List<Artifact> findAllByProjectIdIncludingDeleted(@Param("projectId") UUID projectId);
+
 }

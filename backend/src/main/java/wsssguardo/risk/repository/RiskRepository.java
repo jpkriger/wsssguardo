@@ -19,4 +19,18 @@ public interface RiskRepository extends JpaRepository<Risk, UUID> {
 
     @Query("SELECT r.riskLevel FROM Risk r WHERE r.project.id = :projectId AND r.riskLevel IS NOT NULL")
     List<Integer> findRiskLevelsByProjectId(@Param("projectId") UUID projectId);
+
+    // --- Export de arquivamento (inclui tombstones; ignora o @SQLRestriction) ---
+
+    @Query(value = "SELECT * FROM risks WHERE project_id = :projectId", nativeQuery = true)
+    List<Risk> findAllByProjectIdIncludingDeleted(@Param("projectId") UUID projectId);
+
+    /** Pares [risk_id, finds_id] de todos os riscos do projeto (dono da M2M risks_finds). */
+    @Query(value = """
+            SELECT rf.risk_id, rf.finds_id
+            FROM risks_finds rf
+            JOIN risks r ON r.id = rf.risk_id
+            WHERE r.project_id = :projectId
+            """, nativeQuery = true)
+    List<Object[]> findFindLinksByProjectId(@Param("projectId") UUID projectId);
 }

@@ -79,9 +79,16 @@ services:
       COGNITO_CLIENT_SECRET: "${COGNITO_CLIENT_SECRET:-placeholder}"
       AWS_PROFILE: "${AWS_PROFILE:-wsssguardo}"
       SPRING_LIQUIBASE_CONTEXTS: seed
+      # Arquivamento: chaves montadas de ./backend/dev-keys (gere com openssl — ver docs/project-archival.md).
+      # A app sobe sem elas; só o endpoint de arquivar fica 503 até os arquivos existirem.
+      ARCHIVE_SIGNING_KEYSTORE_PATH: "${ARCHIVE_SIGNING_KEYSTORE_PATH:-/keys/signer.p12}"
+      ARCHIVE_SIGNING_KEYSTORE_PASSWORD: "${ARCHIVE_SIGNING_KEYSTORE_PASSWORD:-changeit}"
+      ARCHIVE_SIGNING_KEY_ALIAS: "${ARCHIVE_SIGNING_KEY_ALIAS:-archive-signer}"
+      ARCHIVE_RECIPIENT_CERTIFICATE_PATH: "${ARCHIVE_RECIPIENT_CERTIFICATE_PATH:-/keys/vault-public.crt}"
     volumes:
       - maven_cache:/root/.m2
       - ~/.aws:/root/.aws:ro
+      - ./backend/dev-keys:/keys:ro
     depends_on:
       db:
         condition: service_healthy
