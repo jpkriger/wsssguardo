@@ -55,6 +55,7 @@ public class ArchiveServiceImpl implements ArchiveService {
     private static final String[] PURGE_STATEMENTS = {
             "DELETE FROM finds_assets WHERE find_id IN (SELECT id FROM finds WHERE project_id = :pid)",
             "DELETE FROM finds_artifacts WHERE find_id IN (SELECT id FROM finds WHERE project_id = :pid)",
+            "DELETE FROM finds_categories WHERE find_id IN (SELECT id FROM finds WHERE project_id = :pid)",
             "DELETE FROM risks_finds WHERE risk_id IN (SELECT id FROM risks WHERE project_id = :pid)",
             "DELETE FROM risks WHERE project_id = :pid",
             "DELETE FROM finds WHERE project_id = :pid",

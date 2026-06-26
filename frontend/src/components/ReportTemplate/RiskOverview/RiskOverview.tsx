@@ -127,12 +127,12 @@ export default function RiskOverview({
       .map((risk) => ({
         id: risk.id,
         name: risk.name,
-        riskLevelLabel: getRiskLevelConfig(risk.riskLevel),
+        riskLevelLabel: getRiskLevelConfig(risk.generalRisk),
         businessImpact:
           risk.consequences?.trim() ||
           risk.description?.trim() ||
           "Sem descrição.",
-        riskLevel: risk.riskLevel ?? 0,
+        riskLevel: risk.generalRisk ?? 0,
       }))
       .sort((a, b) => b.riskLevel - a.riskLevel);
   }, [getRiskLevelConfig, risks]);

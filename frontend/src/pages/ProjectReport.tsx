@@ -8,6 +8,8 @@ import {
   EyeIcon,
   File,
   Calendar as CalendarIcon,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
-import { projectsById, type ProjectResponse } from "../api/project";
+import { projectsById, summarizeReport, type ProjectResponse } from "../api/project";
 import {
   fetchRisksByProject,
   getRiskSummary,
@@ -136,13 +138,10 @@ function getTodayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildInitialFormState(
-  project: ProjectResponse | null,
-  companyName?: string,
-): FormState {
+function buildInitialFormState(project: ProjectResponse | null, companyName?: string): FormState {
   return {
     title: project?.name ?? "",
-    client: companyName ?? project?.customerId ?? "",
+    client: companyName ?? project?.companyId ?? "",
     date: getTodayIsoDate(),
     responsible: "Equipe de análise",
     summary: project ? `Resumo executivo do projeto ${project.name}.` : "",
@@ -184,9 +183,34 @@ export default function ProjectReport(): ReactElement {
   const [riskTableExpanded, setRiskTableExpanded] = useState(false);
   const [riskDetailsExpanded, setRiskDetailsExpanded] = useState(false);
   const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [aiReportLoading, setAiReportLoading] = useState(false);
+  const [summaryIsAi, setSummaryIsAi] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const exportTitle = formState.title.trim() || project?.name || "Relatório";
+
+  async function handleGenerateAiSummary(): Promise<void> {
+    if (!projectId) return;
+    const selectedRisks = projectRisks.filter((r) => selectedRiskIds[r.id]);
+    if (selectedRisks.length === 0) {
+      toast.error("Nenhum risco selecionado.");
+      return;
+    }
+    const summaries = selectedRisks.map(
+      (r) => r.aiSummary || [r.name, r.description, r.consequences].filter(Boolean).join(" — "),
+    );
+    setAiReportLoading(true);
+    try {
+      const result = await summarizeReport(projectId, summaries, detailLevel);
+      setFormState((current) => ({ ...current, summary: result.reportSummary }));
+      setSummaryIsAi(true);
+      toast.success("Introdução IA gerada com sucesso.");
+    } catch {
+      toast.error("Erro ao gerar introdução IA.");
+    } finally {
+      setAiReportLoading(false);
+    }
+  }
 
   function handleExportHtml(): void {
     if (!previewRef.current) return;
@@ -251,7 +275,7 @@ export default function ProjectReport(): ReactElement {
     let cancelled = false;
 
     async function loadCompanyNameData(): Promise<void> {
-      if (!project?.customerId) {
+      if (!project?.companyId) {
         setCompanyName(undefined);
         return;
       }
@@ -260,7 +284,7 @@ export default function ProjectReport(): ReactElement {
         const companies = await listCompanies();
         if (cancelled) return;
 
-        const company = companies.find((c) => c.id === project.customerId);
+        const company = companies.find((c) => c.id === project.companyId);
         setCompanyName(company?.name);
       } catch {
         if (!cancelled) {
@@ -274,7 +298,7 @@ export default function ProjectReport(): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [project?.customerId]);
+  }, [project?.companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -376,6 +400,7 @@ export default function ProjectReport(): ReactElement {
             <ExecutiveSummary
               projectId={projectId}
               customSummary={formState.summary}
+              summaryIsAi={summaryIsAi}
               highRisks={riskSummary?.highRisks}
               mediumRisks={riskSummary?.mediumRisks}
             />
@@ -393,6 +418,20 @@ export default function ProjectReport(): ReactElement {
         // Executivo, Visão Geral dos Riscos e Business Impact Assessment
         // pertencem ao relatório Executivo e não entram aqui.
         <>
+          {formState.summary && (
+            <div className="space-y-2 text-slate-300">
+              <div className="text-2xl font-semibold text-slate-600">Introdução</div>
+              <div className="h-px bg-current" />
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-col gap-2">
+                  <div className="text-sm font-medium text-slate-900">
+                    {summaryIsAi ? "RESUMO GERADO POR LLM" : "RESUMO"}
+                  </div>
+                  <p className="text-sm text-slate-600 whitespace-pre-wrap">{formState.summary}</p>
+                </div>
+              </div>
+            </div>
+          )}
           {sectionsEnabled["riskDetails"] && (
             <RiskAnalysis
               projectId={projectId}
@@ -433,9 +472,7 @@ export default function ProjectReport(): ReactElement {
                     </span>
                   );
 
-                const endDate = startOfDay(
-                  parseProjectEndDate(project.endDate),
-                );
+                const endDate = startOfDay(parseProjectEndDate(project.endDate));
                 const today = startOfDay(new Date());
                 const daysRemaining = Math.floor(
                   (endDate.getTime() - today.getTime()) / 86_400_000,
@@ -454,9 +491,7 @@ export default function ProjectReport(): ReactElement {
                 else if (daysRemaining <= 15) colorText = "text-warning";
 
                 return (
-                  <span
-                    className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}
-                  >
+                  <span className={`text-xl sm:text-2xl font-semibold tracking-tight ${colorText}`}>
                     {`Faltam ${daysRemaining} dia${daysRemaining === 1 ? "" : "s"} - Encerra em ${formatDateBr(endDate)}`}
                   </span>
                 );
@@ -601,9 +636,7 @@ export default function ProjectReport(): ReactElement {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setRiskDetailsExpanded(
-                                      (current) => !current,
-                                    )
+                                    setRiskDetailsExpanded((current) => !current)
                                   }
                                   className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                   aria-label={
@@ -668,7 +701,7 @@ export default function ProjectReport(): ReactElement {
                               ) : (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
                                   Nenhum risco encontrado para este projeto.
-                                </div>
+                                 </div>
                               )}
                             </div>
                           ) : null}
@@ -778,36 +811,30 @@ export default function ProjectReport(): ReactElement {
                     <Popover>
                       <PopoverTrigger
                         id="report-date"
-                        className={cn(
-                          "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-                          !formState.date && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 size-4" />
-                        {formState.date ? (
-                          format(
-                            new Date(formState.date + "T12:00:00"),
-                            "dd/MM/yyyy",
-                            { locale: ptBR },
-                          )
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
-                      </PopoverTrigger>
+                              className={cn(
+                                "w-full inline-flex items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                                !formState.date && "text-muted-foreground",
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 size-4" />
+                              {formState.date ? (
+                                format(
+                                  new Date(formState.date + "T12:00:00"),
+                                  "dd/MM/yyyy",
+                                  { locale: ptBR },
+                                )
+                              ) : (
+                                <span>Selecione uma data</span>
+                              )}
+                            </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={
-                            formState.date
-                              ? new Date(formState.date + "T12:00:00")
-                              : undefined
-                          }
+                          selected={formState.date ? new Date(formState.date + "T12:00:00") : undefined}
                           onSelect={(newDate: Date | undefined) =>
                             setFormState((current) => ({
                               ...current,
-                              date: newDate
-                                ? format(newDate, "yyyy-MM-dd")
-                                : "",
+                              date: newDate ? format(newDate, "yyyy-MM-dd") : "",
                             }))
                           }
                           initialFocus
@@ -841,24 +868,50 @@ export default function ProjectReport(): ReactElement {
                   </div>
 
                   <div className="space-y-2">
-                    <Label
-                      className="text-muted-foreground"
-                      htmlFor="report-summary"
-                    >
-                      Resumo executivo
-                    </Label>
-                    <Textarea
-                      id="report-summary"
-                      value={formState.summary}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          summary: event.target.value,
-                        }))
-                      }
-                      placeholder="Escreva aqui o resumo executivo"
-                      className="min-h-32"
-                    />
+                    <div className="flex items-center justify-between">
+                      <Label
+                        className="text-muted-foreground"
+                        htmlFor="report-summary"
+                      >
+                        Resumo executivo
+                      </Label>
+                      <button
+                        type="button"
+                        disabled={aiReportLoading}
+                        onClick={() => { void handleGenerateAiSummary(); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {aiReportLoading ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="size-3" />
+                        )}
+                        {aiReportLoading ? "Gerando..." : "Gerar com IA"}
+                      </button>
+                    </div>
+                    {aiReportLoading ? (
+                      <div className="min-h-32 rounded-md border border-input bg-background px-3 py-3 flex flex-col gap-2.5 justify-center">
+                        <div className="h-3 w-full rounded-full bg-primary/10 animate-pulse" />
+                        <div className="h-3 w-[90%] rounded-full bg-primary/10 animate-pulse" />
+                        <div className="h-3 w-[75%] rounded-full bg-primary/10 animate-pulse" />
+                        <div className="h-3 w-[85%] rounded-full bg-primary/10 animate-pulse" />
+                        <div className="h-3 w-[60%] rounded-full bg-primary/10 animate-pulse" />
+                      </div>
+                    ) : (
+                      <Textarea
+                        id="report-summary"
+                        value={formState.summary}
+                        onChange={(event) => {
+                          setSummaryIsAi(false);
+                          setFormState((current) => ({
+                            ...current,
+                            summary: event.target.value,
+                          }));
+                        }}
+                        placeholder="Escreva aqui o resumo executivo"
+                        className="min-h-32"
+                      />
+                    )}
                   </div>
                 </div>
               </CardContent>

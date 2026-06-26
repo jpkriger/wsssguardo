@@ -26,7 +26,8 @@ public class ProjectMapper {
             project.getStartDate(),
             project.getEndDate(),
             project.getStatus(),
-            consultantIds
+            consultantIds,
+            project.getAiReportIntro()
         );
     }
 }

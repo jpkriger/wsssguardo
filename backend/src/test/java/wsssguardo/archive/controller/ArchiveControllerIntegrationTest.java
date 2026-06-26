@@ -45,6 +45,7 @@ import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
 import wsssguardo.risk.Risk;
+import wsssguardo.risk.RiskPriority;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
 
@@ -189,6 +190,12 @@ class ArchiveControllerIntegrationTest extends AbstractIntegrationTest {
         risk.setProject(project);
         risk.setCreatedAt(LocalDateTime.now());
         risk.setFinds(new java.util.ArrayList<>(List.of(find)));
+        risk.setDamageOperations(0f);
+        risk.setDamageIndividuals(0f);
+        risk.setDamageOtherOrgs(0f);
+        risk.setDamageAssets(0f);
+        risk.setGeneralRisk(0f);
+        risk.setPriority(RiskPriority.P3);
         persist(risk);
 
         em.flush();

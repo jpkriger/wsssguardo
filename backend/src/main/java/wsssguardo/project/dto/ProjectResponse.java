@@ -13,6 +13,7 @@ public record ProjectResponse(
     LocalDate startDate,
     LocalDate endDate,
     ProjectStatus status,
-    List<UUID> consultantIds
+    List<UUID> consultantIds,
+    String aiReportIntro
 ) {
 }

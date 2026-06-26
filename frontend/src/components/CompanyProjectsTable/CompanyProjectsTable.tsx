@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
 
-export type ProjectStatus = "Em andamento" | "Atrasado" | "Concluído" | "Em espera" | "Cancelado" | "Arquivado";
+export type ProjectStatus = "Em andamento" | "Atrasado" | "Concluído" | "Em espera" | "Cancelado";
 
 export interface CompanyProject {
   id: string;
@@ -41,13 +41,6 @@ const statusConfig: Record<ProjectStatus, { className: string }> = {
   "Cancelado": {
     className: "bg-muted/50 text-muted-foreground border border-border px-2.5 py-0.5 rounded-sm font-medium",
   },
-  "Arquivado": {
-    className: "bg-slate-500/10 text-slate-400 border border-slate-500/50 px-2.5 py-0.5 rounded-sm font-medium",
-  },
-};
-
-const STATUS_FALLBACK = {
-  className: "bg-muted/50 text-muted-foreground border border-border px-2.5 py-0.5 rounded-sm font-medium",
 };
 
 interface CompanyProjectsTableProps {
@@ -105,7 +98,7 @@ export function CompanyProjectsTable({
         label: "Status",
         getSortValue: (p) => p.status,
         renderCell: (p) => (
-          <Badge className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", (statusConfig[p.status] ?? STATUS_FALLBACK).className)}>
+          <Badge className={cn("text-[11px] font-medium px-2 py-0.5 rounded-md", statusConfig[p.status].className)}>
             {p.status}
           </Badge>
         ),
