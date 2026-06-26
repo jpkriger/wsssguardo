@@ -18,6 +18,7 @@ export interface RiskResponse {
     generalRisk: number;
     recommendation: string;
     priority: RiskPriority;
+    aiSummary?: string | null;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -115,4 +116,12 @@ export interface RiskSummaryResponse {
 
 export function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
     return apiClient.get(`${base(projectId)}/summary`).json<RiskSummaryResponse>();
+}
+
+export function suggestRiskScore(projectId: string, riskId: string): Promise<{ score: number }> {
+    return apiClient.post(`${base(projectId)}/${riskId}/ai/suggest-score`, { timeout: false }).json<{ score: number }>();
+}
+
+export function summarizeRisk(projectId: string, riskId: string): Promise<{ summary: string }> {
+    return apiClient.post(`${base(projectId)}/${riskId}/ai/summarize`, { timeout: false }).json<{ summary: string }>();
 }

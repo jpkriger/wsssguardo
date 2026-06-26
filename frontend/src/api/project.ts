@@ -78,3 +78,13 @@ export interface ProjectSummaryDTO {
 export function getProjectSummary(projectId: string): Promise<ProjectSummaryDTO> {
   return apiClient.get(`${BASE}/${projectId}/summary`).json<ProjectSummaryDTO>();
 }
+
+export function summarizeReport(
+  projectId: string,
+  summaries: string[],
+  reportType: "executivo" | "tecnico",
+): Promise<{ reportSummary: string }> {
+  return apiClient
+    .post(`${BASE}/${projectId}/ai/report-summary`, { json: { summaries, reportType }, timeout: false })
+    .json<{ reportSummary: string }>();
+}
