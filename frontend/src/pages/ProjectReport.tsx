@@ -883,7 +883,11 @@ export default function ProjectReport(): ReactElement {
             ref={previewRef}
             className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 pb-5 pt-0"
           >
-            {previewBody}
+            {/* Render the preview body in only one place at a time. When the
+                expanded dialog is open it owns the live copy; rendering both
+                would duplicate every anchor `id`, breaking in-document
+                navigation (links would jump to the hidden copy). */}
+            {!previewExpanded && previewBody}
           </CardContent>
         </Card>
       </div>

@@ -32,6 +32,25 @@ function collectDocumentStyles(): string {
   return parts.join("\n");
 }
 
+// In-document anchor navigation (e.g. the technical report's "jump to finding"
+// links) uses fragment URLs like `<a href="#finding-123">`. Because the
+// exported document sets a `<base href>` so fonts/images keep resolving, a bare
+// fragment would otherwise resolve against that base origin and navigate away
+// from the saved file instead of scrolling within it. This handler matches on
+// the raw `href` attribute, so it scrolls correctly regardless of `<base>`.
+const ANCHOR_NAV_SCRIPT = `<script>
+document.addEventListener("click", function (event) {
+  var anchor = event.target.closest && event.target.closest('a[href^="#"]');
+  if (!anchor) return;
+  var id = decodeURIComponent(anchor.getAttribute("href").slice(1));
+  if (!id) return;
+  var target = document.getElementById(id);
+  if (!target) return;
+  event.preventDefault();
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+</script>`;
+
 /**
  * Build a standalone HTML document from a live DOM node, inlining the page's
  * styles and resolving relative URLs against the current origin so fonts and
@@ -54,10 +73,12 @@ ${styles}
   @page { margin: 16mm; }
   html, body { background: #ffffff; margin: 0; padding: 0; }
   body { padding: 24px; }
+  html { scroll-behavior: smooth; }
 </style>
 </head>
 <body>
 ${body}
+${ANCHOR_NAV_SCRIPT}
 </body>
 </html>`;
 }

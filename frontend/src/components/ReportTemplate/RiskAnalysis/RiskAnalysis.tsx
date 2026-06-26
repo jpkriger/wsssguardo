@@ -42,13 +42,12 @@ interface RiskAnalysisItem {
   risk: RiskResponse;
   riskLevel: RiskLevelConfig;
   linkedFindings: FindingResponse[];
-  linkedFindingNames: string[];
   linkedAssets: AssetResponse[];
-  linkedAssetNames: string[];
   linkedArtifacts: ArtifactResponse[];
-  linkedArtifactNames: string[];
-  potentialConsequences: string;
 }
+
+/** Max related items rendered per risk card before the list is truncated. */
+const MAX_RELATED_PER_CARD = 5;
 
 const DEFAULT_RISK_CATEGORIES: RiskCategoryDTO[] = [
   { label: "Baixo", minRange: 0, maxRange: 24 },
@@ -102,19 +101,17 @@ function buildGetRiskLevelConfig(
   };
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+// Stable anchor ids for in-document navigation. Keyed off the entity id (the
+// backend guarantees it unique) rather than the display name, which can collide
+// or be empty and produce duplicate DOM ids that break anchor navigation.
+function findingAnchorId(id: string): string {
+  return `finding-${id}`;
 }
-
-function getPotentialConsequences(risk: RiskResponse): string {
-  if (risk.consequences?.trim()) return risk.consequences.trim();
-  if (risk.description?.trim()) return risk.description.trim();
-  return "Interrupção de operações críticas, perda de confidencialidade e impacto na disponibilidade.";
+function artifactAnchorId(id: string): string {
+  return `artifact-${id}`;
+}
+function assetAnchorId(id: string): string {
+  return `asset-${id}`;
 }
 
 function getMockMitigationSteps(risk: RiskResponse): string[] {
@@ -256,26 +253,23 @@ export default function RiskAnalysis({
         f.linkedArtifactIds.forEach((id) => linkedArtifactIdSet.add(id));
       });
 
+      // Keep the full linked sets here: the relationship counts and the
+      // final "Documentação de Suporte" section must reflect every related
+      // entity. Per-card lists are truncated only at render time.
       const linkedAssets = [...linkedAssetIdSet]
         .map((id) => assetMap.get(id))
-        .filter((a): a is AssetResponse => a != null)
-        .slice(0, 5);
+        .filter((a): a is AssetResponse => a != null);
 
-      const linkedArtifactsFull = [...linkedArtifactIdSet]
+      const linkedArtifacts = [...linkedArtifactIdSet]
         .map((id) => artifactMap.get(id))
-        .filter((a): a is ArtifactResponse => a != null)
-        .slice(0, 5);
+        .filter((a): a is ArtifactResponse => a != null);
 
       return {
         risk,
         riskLevel: getRiskLevelConfig(risk.riskLevel),
-        linkedFindings: linkedFindings.slice(0, 5),
-        linkedFindingNames: linkedFindings.slice(0, 5).map((f) => f.name),
+        linkedFindings,
         linkedAssets,
-        linkedAssetNames: linkedAssets.map((a) => a.name),
-        linkedArtifacts: linkedArtifactsFull,
-        linkedArtifactNames: linkedArtifactsFull.map((a) => a.name),
-        potentialConsequences: getPotentialConsequences(risk),
+        linkedArtifacts,
       };
     });
   }, [assets, artifacts, findings, getRiskLevelConfig, risks, selectedRiskIds]);
@@ -372,11 +366,15 @@ function RiskCard({
 }): ReactElement {
   const mitigationSteps: string[] = getMockMitigationSteps(item.risk);
   const responsibleArea: string = getMockResponsibleArea(item.risk);
-  const riskAnchorId = `risk-${slugify(item.risk.name)}`;
+
+  // Counts (pills) reflect the full relationship set; the lists below are
+  // truncated to keep each card readable.
+  const shownFindings = item.linkedFindings.slice(0, MAX_RELATED_PER_CARD);
+  const shownArtifacts = item.linkedArtifacts.slice(0, MAX_RELATED_PER_CARD);
+  const shownAssets = item.linkedAssets.slice(0, MAX_RELATED_PER_CARD);
 
   return (
     <div
-      id={riskAnchorId}
       className={`rounded-2xl border ${item.riskLevel.borderColor} bg-white overflow-hidden`}
     >
       <div className="flex items-start justify-between gap-4 px-6 py-5">
@@ -433,12 +431,12 @@ function RiskCard({
           <div>
             <SectionLabel>Achados relacionados</SectionLabel>
             <ul className="mt-2 space-y-1.5">
-              {item.linkedFindings.length > 0 ? (
-                item.linkedFindings.map((finding) => (
+              {shownFindings.length > 0 ? (
+                shownFindings.map((finding) => (
                   <li key={finding.id} className="flex items-start gap-2 text-sm">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
                     <a
-                      href={`#finding-${slugify(finding.name)}`}
+                      href={`#${findingAnchorId(finding.id)}`}
                       className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                     >
                       {finding.name}
@@ -456,9 +454,9 @@ function RiskCard({
               {/* Artefatos */}
               <div>
                 <SectionLabel>Artefatos</SectionLabel>
-                {item.linkedArtifacts.length > 0 ? (
+                {shownArtifacts.length > 0 ? (
                   <ul className="mt-2 space-y-1.5">
-                    {item.linkedArtifacts.map((artifact) => (
+                    {shownArtifacts.map((artifact) => (
                       <li key={artifact.id} className="flex items-center gap-1.5 text-sm">
                         <FileText
                           size={13}
@@ -466,7 +464,7 @@ function RiskCard({
                           strokeWidth={1.5}
                         />
                         <a
-                          href={`#artifact-${slugify(artifact.name)}`}
+                          href={`#${artifactAnchorId(artifact.id)}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         >
                           {artifact.name}
@@ -482,9 +480,9 @@ function RiskCard({
               {/* Ativos */}
               <div>
                 <SectionLabel>Ativos afetados</SectionLabel>
-                {item.linkedAssets.length > 0 ? (
+                {shownAssets.length > 0 ? (
                   <ul className="mt-2 space-y-1.5">
-                    {item.linkedAssets.map((asset) => (
+                    {shownAssets.map((asset) => (
                       <li key={asset.id} className="flex items-center gap-1.5 text-sm">
                         <Database
                           size={13}
@@ -492,7 +490,7 @@ function RiskCard({
                           strokeWidth={1.5}
                         />
                         <a
-                          href={`#asset-${slugify(asset.name)}`}
+                          href={`#${assetAnchorId(asset.id)}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                         >
                           {asset.name}
@@ -585,7 +583,7 @@ function SupportingDocumentation({
           {findings.map((finding) => (
             <DocEntry
               key={finding.id}
-              anchorId={`finding-${slugify(finding.name)}`}
+              anchorId={findingAnchorId(finding.id)}
               title={finding.name}
               description={finding.description ?? undefined}
               date={finding.createdAt}
@@ -604,7 +602,7 @@ function SupportingDocumentation({
           {artifacts.map((artifact) => (
             <DocEntry
               key={artifact.id}
-              anchorId={`artifact-${slugify(artifact.name)}`}
+              anchorId={artifactAnchorId(artifact.id)}
               title={artifact.name}
               description={artifact.description ?? undefined}
               date={artifact.createdAt}
@@ -619,7 +617,7 @@ function SupportingDocumentation({
           {assets.map((asset) => (
             <DocEntry
               key={asset.id}
-              anchorId={`asset-${slugify(asset.name)}`}
+              anchorId={assetAnchorId(asset.id)}
               title={asset.name}
               description={asset.description ?? undefined}
               date={asset.createdAt}
