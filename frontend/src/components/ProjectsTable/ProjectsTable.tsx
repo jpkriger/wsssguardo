@@ -16,7 +16,17 @@ export interface ProjectRisk {
   count: number;
 }
 
-export type ProjectApiStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
+export type ProjectApiStatus =
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "ON_HOLD"
+  | "CANCELLED"
+  | "ARCHIVED";
+
+const STATUS_FALLBACK = {
+  label: "Desconhecido",
+  className: "bg-muted/60 text-muted-foreground border-border",
+};
 
 const STATUS_LABEL: Record<Exclude<ProjectApiStatus, "IN_PROGRESS">, { label: string; className: string }> = {
   COMPLETED: {
@@ -30,6 +40,10 @@ const STATUS_LABEL: Record<Exclude<ProjectApiStatus, "IN_PROGRESS">, { label: st
   CANCELLED: {
     label: "Cancelado",
     className: "bg-muted/60 text-muted-foreground border-border",
+  },
+  ARCHIVED: {
+    label: "Arquivado",
+    className: "bg-slate-500/15 text-slate-600 border-slate-500/30 dark:text-slate-400",
   },
 };
 
@@ -201,9 +215,10 @@ export function ProjectsTable({ projects, totalCount }: ProjectsTableProps): Rea
         getSortValue: (p) => p.daysRemaining,
         renderCell: (p) => {
           if (p.status !== "IN_PROGRESS") {
+            const statusInfo = STATUS_LABEL[p.status] ?? STATUS_FALLBACK;
             return (
-              <Badge variant="outline" className={cn("text-xs font-medium", STATUS_LABEL[p.status].className)}>
-                {STATUS_LABEL[p.status].label}
+              <Badge variant="outline" className={cn("text-xs font-medium", statusInfo.className)}>
+                {statusInfo.label}
               </Badge>
             );
           }
