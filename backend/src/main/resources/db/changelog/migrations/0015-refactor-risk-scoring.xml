@@ -51,7 +51,8 @@
             ALTER TABLE risks
                 ADD COLUMN damage_assets FLOAT,
                 ADD COLUMN general_risk FLOAT,
-                ADD COLUMN priority VARCHAR(2);
+                ADD COLUMN priority VARCHAR(2),
+                ADD COLUMN ai_summary VARCHAR(1000);
 
             UPDATE risks
             SET damage_assets = COALESCE(damage_assets, damage_operations, 0),
