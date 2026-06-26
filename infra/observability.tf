@@ -129,6 +129,10 @@ resource "aws_instance" "obs" {
   iam_instance_profile   = aws_iam_instance_profile.obs.name
   tags                   = merge(local.obs_tags, { Name = local.obs_ec2_name })
 
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
@@ -139,7 +143,8 @@ resource "aws_instance" "obs" {
     set -e
 
     dnf update -y
-    dnf install -y docker
+    dnf install -y docker amazon-ssm-agent
+    systemctl enable --now amazon-ssm-agent
 
     systemctl enable --now docker
 
