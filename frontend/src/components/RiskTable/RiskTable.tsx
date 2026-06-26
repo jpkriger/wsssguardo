@@ -28,6 +28,7 @@ import RiskModal, {
 import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "@/lib/format-date";
 import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
 import { formatProbability } from "../RiskExpandedContent/format";
 
@@ -324,6 +325,38 @@ export default function RiskTable(): ReactElement {
             </span>
           );
         },
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (r) => r.createdBy,
+        renderCell: (risk) => (
+          <span className="text-sm text-foreground whitespace-nowrap">
+            {risk.createdBy ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (r) => r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (r) => r.updatedAt ?? r.createdAt,
+        renderCell: (risk) => (
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {formatDateTime(risk.updatedAt ?? risk.createdAt)}
+          </span>
+        ),
       },
     ],
     [getRiskLevelConfig, probabilityRange.max],

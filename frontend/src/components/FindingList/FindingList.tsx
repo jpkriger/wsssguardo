@@ -14,6 +14,7 @@ import FindingModal, {
 import CategoryFilter from "../CategoryFilter/CategoryFilter";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
+import { formatDateTime } from "../../lib/format-date";
 
 const PAGE_SIZE = 5;
 
@@ -178,6 +179,38 @@ export default function FindingList({ projectId }: FindingListProps): ReactEleme
         cellClassName: "text-center",
         getSortValue: (f) => f.linkedArtifactIds.length,
         renderCell: (f) => String(f.linkedArtifactIds.length),
+      },
+      {
+        id: "createdBy",
+        label: "Criado por",
+        getSortValue: (f) => f.createdBy ?? null,
+        renderCell: (f) => (
+          <span className="text-foreground whitespace-nowrap">
+            {f.createdBy ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        label: "Data de criação",
+        dataType: "date",
+        getSortValue: (f) => f.createdAt,
+        renderCell: (f) => (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {formatDateTime(f.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "updatedAt",
+        label: "Última alteração",
+        dataType: "date",
+        getSortValue: (f) => f.updatedAt ?? f.createdAt,
+        renderCell: (f) => (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {formatDateTime(f.updatedAt ?? f.createdAt)}
+          </span>
+        ),
       },
     ],
     [],
