@@ -51,12 +51,4 @@ public interface FindRepository extends JpaRepository<Find, UUID> {
             """, nativeQuery = true)
     List<Object[]> findArtifactLinksByProjectId(@Param("projectId") UUID projectId);
 
-    /** Pares [find_id, categories_id] de todos os finds do projeto. */
-    @Query(value = """
-            SELECT fc.find_id, fc.categories_id
-            FROM finds_categories fc
-            JOIN finds f ON f.id = fc.find_id
-            WHERE f.project_id = :projectId
-            """, nativeQuery = true)
-    List<Object[]> findCategoryLinksByProjectId(@Param("projectId") UUID projectId);
 }

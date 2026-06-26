@@ -114,14 +114,6 @@ function assetAnchorId(id: string): string {
   return `asset-${id}`;
 }
 
-function getMockRegulatoryTags(risk: RiskResponse): string[] {
-  if (risk.generalRisk >= 7.5)
-    return ["LGPD", "ISO 27001", "Auditoria obrigatória"];
-  if (risk.generalRisk >= 5) return ["LGPD", "Controles internos"];
-  if (risk.generalRisk >= 2.5) return ["Boas práticas", "Monitoramento"];
-  return ["Acompanhamento preventivo"];
-}
-
 function getMockMitigationSteps(risk: RiskResponse): string[] {
   if (risk.generalRisk >= 7.5) {
     return [

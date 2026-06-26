@@ -25,6 +25,7 @@ import ConfirmDialog from "../ConfirmDialog/ConfirmDialog";
 import GenericTable from "../GenericTable/GenericTable";
 import type { ColumnDefinition } from "../GenericTable/types";
 import { formatDateTime } from "@/lib/format-date";
+import { formatProbability } from "../RiskExpandedContent/format";
 import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
 import { priorityConfig, priorityOptions } from "@/lib/priority";
 
