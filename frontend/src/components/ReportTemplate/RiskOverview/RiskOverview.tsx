@@ -141,7 +141,7 @@ export default function RiskOverview({
     return risks.map((risk, index) => ({
       id: risk.id,
       name: risk.name,
-      riskLevelLabel: getRiskLevelConfig(risk.riskLevel),
+      riskLevelLabel: getRiskLevelConfig(risk.generalRisk),
       businessImpact:
         risk.consequences?.trim() ||
         risk.description?.trim() ||

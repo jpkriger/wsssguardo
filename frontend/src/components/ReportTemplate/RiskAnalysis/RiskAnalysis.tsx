@@ -120,22 +120,22 @@ function getPotentialConsequences(risk: RiskResponse): string {
 }
 
 function getMockRegulatoryTags(risk: RiskResponse): string[] {
-  if (risk.riskLevel >= 75)
+  if (risk.generalRisk >= 7.5)
     return ["LGPD", "ISO 27001", "Auditoria obrigatória"];
-  if (risk.riskLevel >= 50) return ["LGPD", "Controles internos"];
-  if (risk.riskLevel >= 25) return ["Boas práticas", "Monitoramento"];
+  if (risk.generalRisk >= 5) return ["LGPD", "Controles internos"];
+  if (risk.generalRisk >= 2.5) return ["Boas práticas", "Monitoramento"];
   return ["Acompanhamento preventivo"];
 }
 
 function getMockMitigationSteps(risk: RiskResponse): string[] {
-  if (risk.riskLevel >= 75) {
+  if (risk.generalRisk >= 7.5) {
     return [
       "Isolar o ativo ou processo impactado imediatamente.",
       "Executar análise de causa raiz e plano emergencial.",
       "Validar controles de contenção com as áreas responsáveis.",
     ];
   }
-  if (risk.riskLevel >= 50) {
+  if (risk.generalRisk >= 5) {
     return [
       "Reforçar monitoramento do cenário de risco.",
       "Priorizar ações de correção nas próximas entregas.",
@@ -149,9 +149,9 @@ function getMockMitigationSteps(risk: RiskResponse): string[] {
 }
 
 function getMockResponsibleArea(risk: RiskResponse): string {
-  if (risk.riskLevel >= 75) return "Segurança da Informação";
-  if (risk.riskLevel >= 50) return "Operações e Tecnologia";
-  if (risk.riskLevel >= 25) return "Gestão do Projeto";
+  if (risk.generalRisk >= 7.5) return "Segurança da Informação";
+  if (risk.generalRisk >= 5) return "Operações e Tecnologia";
+  if (risk.generalRisk >= 2.5) return "Gestão do Projeto";
   return "Área de Negócio";
 }
 
@@ -251,7 +251,7 @@ export default function RiskAnalysis({
 
       return {
         risk,
-        riskLevel: getRiskLevelConfig(risk.riskLevel),
+        riskLevel: getRiskLevelConfig(risk.generalRisk),
         linkedFindingCount: linkedFindings.length,
         linkedFindingNames: linkedFindings.slice(0, 3).map((f) => f.name),
         linkedAssetNames: getUniqueNames(linkedAssetIds, assetMap).slice(0, 3),

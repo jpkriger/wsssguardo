@@ -15,6 +15,7 @@ export interface RiskResponse {
     damageIndividuals: number;
     damageOtherOrgs: number;
     damageAssets: number;
+    generalRisk: number;
     recommendation: string;
     priority: RiskPriority;
     createdBy: string;
