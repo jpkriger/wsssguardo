@@ -1,5 +1,7 @@
 package wsssguardo.auth;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import wsssguardo.auth.CognitoAuthService.MfaSetupStartResult;
 import wsssguardo.auth.dto.*;
 import wsssguardo.user.service.UserService;
 
+import java.util.Base64;
 import java.util.Map;
 
 @Slf4j
@@ -20,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final CognitoAuthService cognitoAuthService;
     private final UserService userService;
@@ -128,15 +133,22 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(@CookieValue(value = "refresh_token", required = false) String refreshToken,
+                                        @CookieValue(value = "cognito_sub", required = false) String cognitoSub,
                                         @RequestParam(required = false) String email,
                                         HttpServletResponse res) {
-        if (refreshToken == null || email == null) {
+        if (refreshToken == null) {
             return ResponseEntity.status(401).build();
         }
         // Cognito REFRESH_TOKEN_AUTH exige SECRET_HASH computado com o username interno (sub UUID),
-        // não com o email. Buscamos o sub no banco para montar o hash correto.
-        String cognitoUsername = userService.findCognitoSubByEmail(email)
-                .orElse(email);
+        // não com o email. O sub vem do cookie gravado no login — independente do email.
+        String cognitoUsername = cognitoSub;
+        if (cognitoUsername == null && email != null) {
+            // Fallback transitório para sessões criadas antes do cookie cognito_sub.
+            cognitoUsername = userService.findCognitoSubByEmail(email).orElse(email);
+        }
+        if (cognitoUsername == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
             TokenPair tokens = cognitoAuthService.refresh(refreshToken, cognitoUsername);
             addTokenCookies(res, tokens);
@@ -170,12 +182,33 @@ public class AuthController {
         // Cognito não emite novo refresh token no fluxo de refresh — só atualiza quando presente
         if (tokens.refreshToken() != null) {
             addCookie(res, buildCookie("refresh_token", tokens.refreshToken(), "/api/auth/refresh", 30 * 24 * 3600));
+            // sub interno do Cognito, usado para montar o SECRET_HASH no refresh sem depender do email
+            String sub = extractSub(tokens.accessToken());
+            if (sub != null) {
+                addCookie(res, buildCookie("cognito_sub", sub, "/api/auth/refresh", 30 * 24 * 3600));
+            }
         }
     }
 
     private void clearTokenCookies(HttpServletResponse res) {
         addCookie(res, buildCookie("access_token", "", "/api", 0));
         addCookie(res, buildCookie("refresh_token", "", "/api/auth/refresh", 0));
+        addCookie(res, buildCookie("cognito_sub", "", "/api/auth/refresh", 0));
+    }
+
+    // Lê o claim "sub" do payload do JWT sem validação — o token acabou de vir do Cognito.
+    private String extractSub(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length < 2) return null;
+            byte[] payload = Base64.getUrlDecoder().decode(parts[1]);
+            JsonNode node = OBJECT_MAPPER.readTree(payload);
+            String sub = node.path("sub").asText(null);
+            return (sub == null || sub.isBlank()) ? null : sub;
+        } catch (Exception e) {
+            log.warn("Não foi possível extrair o sub do access token", e);
+            return null;
+        }
     }
 
     private ResponseCookie buildCookie(String name, String value, String path, long maxAge) {

@@ -1,8 +1,10 @@
 package wsssguardo.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 import wsssguardo.user.User;
 import wsssguardo.user.domain.UserRole;
@@ -57,6 +59,29 @@ public class UserService {
                         .role(UserRole.CONSULTANT)
                         .build())
         );
+    }
+
+    /** Garante que o e-mail não está em uso por outro usuário (409 se estiver). */
+    public void ensureEmailAvailable(User user, String email) {
+        repository.findByEmail(email)
+                .filter(existing -> !existing.getId().equals(user.getId()))
+                .ifPresent(existing -> {
+                    throw new ApiException("E-mail já está em uso", HttpStatus.CONFLICT);
+                });
+    }
+
+    @Transactional
+    public void updateEmail(User user, String newEmail) {
+        ensureEmailAvailable(user, newEmail);
+        user.setEmail(newEmail);
+        repository.save(user);
+    }
+
+    @Transactional
+    public void updateName(User user, String firstName, String lastName) {
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        repository.save(user);
     }
 
     public UserResponse toResponse(User user) {
