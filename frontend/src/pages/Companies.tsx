@@ -38,6 +38,7 @@ function deriveStatus(
   if (apiStatus === "COMPLETED") return "Concluído";
   if (apiStatus === "CANCELLED") return "Cancelado";
   if (apiStatus === "ON_HOLD") return "Em espera";
+  if (apiStatus === "ARCHIVED") return "Arquivado";
   if (endDate && new Date(endDate) < new Date()) return "Atrasado";
   return "Em andamento";
 }
