@@ -189,10 +189,10 @@ class ArchiveControllerIntegrationTest extends AbstractIntegrationTest {
         risk.setProject(project);
         risk.setCreatedAt(LocalDateTime.now());
         risk.setFinds(new java.util.ArrayList<>(List.of(find)));
-        risk.setDamageOperations(0);
-        risk.setDamageIndividuals(0);
-        risk.setDamageOtherOrgs(0);
-        risk.setDamageAssets(0);
+        risk.setDamageOperations(0f);
+        risk.setDamageIndividuals(0f);
+        risk.setDamageOtherOrgs(0f);
+        risk.setDamageAssets(0f);
         persist(risk);
 
         em.flush();
