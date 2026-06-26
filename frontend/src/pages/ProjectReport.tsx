@@ -650,7 +650,7 @@ export default function ProjectReport(): ReactElement {
                                         </span>
                                         <span className="block text-xs text-muted-foreground">
                                           {risk.description ||
-                                            `Nível ${risk.riskLevel}`}
+                                            `Nível ${risk.generalRisk}`}
                                         </span>
                                       </span>
                                     </span>
