@@ -1,5 +1,7 @@
 import apiClient from "@/lib/api-client";
 
+export type RiskPriority = "P1" | "P2" | "P3" | "P4" | "P5";
+
 export interface RiskResponse {
     id: string;
     projectId: string;
@@ -9,11 +11,12 @@ export interface RiskResponse {
     consequences: string;
     occurrenceProbability: number;
     impactProbability: number;
-    damageOperations: string;
-    damageIndividuals: string;
-    damageOtherOrgs: string;
+    damageOperations: number;
+    damageIndividuals: number;
+    damageOtherOrgs: number;
+    damageAssets: number;
     recommendation: string;
-    riskLevel: number;
+    priority: RiskPriority;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -36,11 +39,12 @@ export interface RiskCreateRequest {
     consequences: string;
     occurrenceProbability: number;
     impactProbability: number;
-    damageOperations: string;
-    damageIndividuals: string;
-    damageOtherOrgs: string;
+    damageOperations: number;
+    damageIndividuals: number;
+    damageOtherOrgs: number;
+    damageAssets: number;
     recommendation: string;
-    riskLevel: number;
+    priority: RiskPriority;
 }
 
 export interface RiskUpdateRequest {
@@ -49,12 +53,13 @@ export interface RiskUpdateRequest {
     consequences?: string;
     occurrenceProbability?: number;
     impactProbability?: number;
-    damageOperations?: string;
+    damageOperations?: number;
     findIds?: string[];
-    damageIndividuals?: string;
-    damageOtherOrgs?: string;
+    damageIndividuals?: number;
+    damageOtherOrgs?: number;
+    damageAssets?: number;
     recommendation?: string;
-    riskLevel?: number;
+    priority?: RiskPriority;
 }
 
 function base(projectId: string): string {

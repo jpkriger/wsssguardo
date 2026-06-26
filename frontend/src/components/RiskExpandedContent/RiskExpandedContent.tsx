@@ -2,10 +2,11 @@ import type { ReactElement } from "react";
 import type { RiskResponse } from "@/api/risk";
 import type { RiskModalOption } from "../RiskModal/RiskModal";
 import { formatProbability } from "./format";
+import { Badge } from "@/components/ui/badge";
+import { priorityConfig } from "@/lib/priority";
 
 interface RiskExpandedContentProps {
   risk: RiskResponse;
-  levelConfig: { label: string; className: string };
   probabilityMax: number;
   findings: RiskModalOption[];
   onEdit: (risk: RiskResponse) => void;
@@ -14,12 +15,13 @@ interface RiskExpandedContentProps {
 
 export default function RiskExpandedContent({
   risk,
-  levelConfig,
   probabilityMax,
   findings,
   onEdit,
   onDelete,
 }: RiskExpandedContentProps): ReactElement {
+  const pConfig = priorityConfig[risk.priority] ?? priorityConfig.P3;
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header: Nome + badge */}
@@ -28,11 +30,11 @@ export default function RiskExpandedContent({
         <span className="text-foreground font-bold text-base">
           {risk.name || "—"}
         </span>
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${levelConfig.className}`}
+        <Badge
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${pConfig.className}`}
         >
-          {levelConfig.label}
-        </span>
+          {pConfig.label}
+        </Badge>
       </div>
 
       {/* Probabilidades — stat cards */}
@@ -85,14 +87,14 @@ export default function RiskExpandedContent({
         </div>
       </div>
 
-      {/* Danos — 3 mini-cards */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Danos — 4 mini-cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
           <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">
             Danos Operações
           </p>
           <p className="text-foreground text-sm font-semibold">
-            {risk.damageOperations || "—"}
+            {risk.damageOperations ?? "—"}
           </p>
         </div>
         <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
@@ -100,7 +102,7 @@ export default function RiskExpandedContent({
             Danos Indivíduos
           </p>
           <p className="text-foreground text-sm font-semibold">
-            {risk.damageIndividuals || "—"}
+            {risk.damageIndividuals ?? "—"}
           </p>
         </div>
         <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
@@ -108,7 +110,15 @@ export default function RiskExpandedContent({
             Danos Outras Orgs
           </p>
           <p className="text-foreground text-sm font-semibold">
-            {risk.damageOtherOrgs || "—"}
+            {risk.damageOtherOrgs ?? "—"}
+          </p>
+        </div>
+        <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
+          <p className="text-muted-foreground text-xs uppercase tracking-wider mb-0.5">
+            Danos Ativos
+          </p>
+          <p className="text-foreground text-sm font-semibold">
+            {risk.damageAssets ?? "—"}
           </p>
         </div>
       </div>
@@ -123,20 +133,9 @@ export default function RiskExpandedContent({
         </p>
       </div>
 
-      {/* Bottom: Nível de Risco + Achados vinculados */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 flex items-center gap-2">
-          <span className="text-muted-foreground text-xs uppercase tracking-wider">
-            Nível de Risco
-          </span>
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${levelConfig.className}`}
-          >
-            {levelConfig.label}
-            {risk.riskLevel != null && ` (${risk.riskLevel})`}
-          </span>
-        </div>
-        <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2 col-span-2">
+      {/* Bottom: Achados vinculados */}
+      <div className="grid grid-cols-1">
+        <div className="rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
           <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
             Achados vinculados
           </p>
@@ -164,7 +163,7 @@ export default function RiskExpandedContent({
       </div>
 
       {/* Ações */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-4">
         <button
           type="button"
           className="px-4 py-1.5 text-sm rounded-md border border-border text-foreground hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer font-medium"
