@@ -41,7 +41,6 @@ import wsssguardo.artifact.domain.ArtifactType;
 import wsssguardo.asset.Asset;
 import wsssguardo.company.Company;
 import wsssguardo.find.Find;
-import wsssguardo.find.domain.FindCategory;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
@@ -162,7 +161,6 @@ class ArchiveControllerIntegrationTest extends AbstractIntegrationTest {
     private UUID seedFullProject() {
         Company company = persist(newCompany("Acme"));
         User user = persist(newUser());
-        FindCategory category = persist(newCategory("Rede"));
 
         Project project = newProject(company);
         project = persist(project);
@@ -184,7 +182,6 @@ class ArchiveControllerIntegrationTest extends AbstractIntegrationTest {
         find.setCreatedAt(LocalDateTime.now());
         find.setAssets(List.of(asset));
         find.setArtifacts(List.of(artifact));
-        find.setCategories(List.of(category));
         find = persist(find);
 
         Risk risk = new Risk();
@@ -219,12 +216,6 @@ class ArchiveControllerIntegrationTest extends AbstractIntegrationTest {
         u.setRole(UserRole.CONSULTANT);
         u.setCreatedAt(LocalDateTime.now());
         return u;
-    }
-
-    private FindCategory newCategory(String name) {
-        FindCategory c = FindCategory.builder().name(name).build();
-        c.setCreatedAt(LocalDateTime.now());
-        return c;
     }
 
     private Project newProject(Company company) {
