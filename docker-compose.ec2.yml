@@ -27,6 +27,7 @@ services:
       DB_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       OTLP_ENABLED: "false"
       SECURITY_AUTH_DISABLED: "false"
+      AI_SERVICE_URL: ${AI_SERVICE_URL}
       COGNITO_REGION: ${COGNITO_REGION}
       COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID}
       COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
