@@ -1,5 +1,7 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
 import type { RiskResponse } from "@/api/risk";
+import { summarizeRisk } from "@/api/risk";
 import type { RiskModalOption } from "../RiskModal/RiskModal";
 import { formatProbability } from "./format";
 import { Badge } from "@/components/ui/badge";
@@ -7,20 +9,39 @@ import { priorityConfig } from "@/lib/priority";
 
 interface RiskExpandedContentProps {
   risk: RiskResponse;
+  projectId: string;
   probabilityMax: number;
   findings: RiskModalOption[];
   onEdit: (risk: RiskResponse) => void;
   onDelete: (risk: RiskResponse) => void;
+  onUpdateRisk: (fields: Partial<RiskResponse>) => void;
 }
 
 export default function RiskExpandedContent({
   risk,
+  projectId,
   probabilityMax,
   findings,
   onEdit,
   onDelete,
+  onUpdateRisk,
 }: RiskExpandedContentProps): ReactElement {
   const pConfig = priorityConfig[risk.priority] ?? priorityConfig.P3;
+  const [summarizing, setSummarizing] = useState(false);
+  const [summarizeError, setSummarizeError] = useState<string | null>(null);
+
+  async function handleSummarize(): Promise<void> {
+    setSummarizing(true);
+    setSummarizeError(null);
+    try {
+      const result = await summarizeRisk(projectId, risk.id);
+      onUpdateRisk({ aiSummary: result.summary });
+    } catch (err: unknown) {
+      setSummarizeError(err instanceof Error ? err.message : "Erro ao gerar resumo");
+    } finally {
+      setSummarizing(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -160,6 +181,42 @@ export default function RiskExpandedContent({
             </ul>
           )}
         </div>
+      </div>
+
+      {/* Resumo IA */}
+      <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-muted-foreground text-xs uppercase tracking-wider">
+            Resumo Executivo IA
+          </p>
+          <button
+            type="button"
+            disabled={summarizing}
+            onClick={() => { void handleSummarize(); }}
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {summarizing ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Sparkles className="size-3" />
+            )}
+            {summarizing ? "Gerando..." : risk.aiSummary ? "Regenerar" : "Gerar resumo"}
+          </button>
+        </div>
+        {summarizing ? (
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="h-3 w-full rounded-full bg-primary/10 animate-pulse" />
+            <div className="h-3 w-[85%] rounded-full bg-primary/10 animate-pulse" />
+            <div className="h-3 w-[70%] rounded-full bg-primary/10 animate-pulse" />
+          </div>
+        ) : risk.aiSummary ? (
+          <p className="text-foreground text-sm leading-relaxed">{risk.aiSummary}</p>
+        ) : (
+          <p className="text-muted-foreground text-sm italic">Nenhum resumo gerado ainda.</p>
+        )}
+        {summarizeError && (
+          <p className="text-destructive text-xs mt-1">{summarizeError}</p>
+        )}
       </div>
 
       {/* Ações */}

@@ -329,12 +329,18 @@ export default function RiskTable(): ReactElement {
         expandableContent={(risk) => (
           <RiskExpandedContent
             risk={risk}
+            projectId={projectId}
             probabilityMax={probabilityRange.max}
             findings={findings}
             onEdit={handleEdit}
             onDelete={(r) => {
               setRiskToDelete(r);
               setConfirmDeleteOpen(true);
+            }}
+            onUpdateRisk={(fields) => {
+              setRisks((prev) =>
+                prev.map((r) => (r.id === risk.id ? { ...r, ...fields } : r)),
+              );
             }}
           />
         )}

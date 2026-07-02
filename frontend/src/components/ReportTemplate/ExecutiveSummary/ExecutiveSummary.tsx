@@ -8,6 +8,7 @@ import { getProjectSummary, type ProjectSummaryDTO } from "@/api/project";
 interface ExecutiveSummaryProps {
   projectId?: string;
   customSummary?: string;
+  summaryIsAi?: boolean;
   highRisks?: number;
   mediumRisks?: number;
 }
@@ -15,6 +16,7 @@ interface ExecutiveSummaryProps {
 export default function ExecutiveSummary({
   projectId,
   customSummary,
+  summaryIsAi = false,
   highRisks = 0,
   mediumRisks = 0,
 }: ExecutiveSummaryProps): ReactElement {
@@ -106,8 +108,8 @@ export default function ExecutiveSummary({
                 <Card className="border border-slate-200 bg-white shadow-none">
                   <CardContent className="p-4 text-left">
                     <div className="flex flex-col gap-2 items-start">
-                      <div className="text-sm font-medium text-slate-900">
-                        RESUMO GERADO POR LLM
+                        <div className="text-sm font-medium text-slate-900">
+                        {summaryIsAi ? "RESUMO GERADO POR LLM" : "RESUMO"}
                       </div>
                       <p className="text-sm text-slate-600 whitespace-pre-wrap">
                         {customSummary}

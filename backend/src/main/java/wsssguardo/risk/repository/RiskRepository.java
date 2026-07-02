@@ -1,6 +1,7 @@
 package wsssguardo.risk.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -12,6 +13,14 @@ import org.springframework.data.repository.query.Param;
 import wsssguardo.risk.Risk;
 
 public interface RiskRepository extends JpaRepository<Risk, UUID> {
+
+    // DISTINCT + JOIN FETCH em vez de @EntityGraph: @EntityGraph numa coleção
+    // @ManyToMany (finds) combinado com retorno de resultado único
+    // (Optional<Risk>) causa NonUniqueResultException para qualquer risco com
+    // 2+ finds, pois o LEFT JOIN gera uma linha por find. O DISTINCT no JPQL
+    // deduplica a entidade raiz em memória (Hibernate), não as linhas do SQL.
+    @Query("SELECT DISTINCT r FROM Risk r LEFT JOIN FETCH r.finds WHERE r.id = :id AND r.project.id = :projectId")
+    Optional<Risk> findByIdAndProjectId(@Param("id") UUID id, @Param("projectId") UUID projectId);
 
     Page<Risk> findAllByProjectId(UUID projectId, Pageable pageable);
 
