@@ -1,7 +1,7 @@
 import apiClient from "@/lib/api-client";
 import type { RiskConfigDTO } from "./projectConfiguration";
 
-export type ProjectStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
+export type ProjectStatus = "IN_PROGRESS" | "COMPLETED" | "ON_HOLD" | "CANCELLED" | "ARCHIVED";
 
 export interface ProjectResponse {
   id: string;

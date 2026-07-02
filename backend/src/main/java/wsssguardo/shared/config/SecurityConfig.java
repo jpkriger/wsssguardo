@@ -72,6 +72,9 @@ public class SecurityConfig {
                         "/api/auth/mfa-setup/complete",
                         "/api/auth/refresh"
                     ).permitAll()
+                    // porta 8080 só é alcançável pela EC2 de observabilidade (Security Group),
+                    // não fica exposta na internet — scrape do Prometheus não carrega JWT
+                    .requestMatchers("/actuator/prometheus", "/actuator/health").permitAll()
                     .requestMatchers("/swagger-ui/**", "/api-docs/**").denyAll()
                     .anyRequest().authenticated()
                 );
