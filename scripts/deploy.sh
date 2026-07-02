@@ -276,7 +276,7 @@ if ! docker-compose up -d; then
   docker logs wsssguardo-db-1 2>&1 || true
   exit 1
 fi
-docker-compose restart nginx
+docker-compose restart nginx promtail
 SCRIPT
 )
 

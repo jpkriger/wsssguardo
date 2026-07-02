@@ -120,28 +120,37 @@ resource "aws_security_group" "backend" {
   vpc_id = data.aws_vpc.default.id
   tags   = local.tags
 
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "HTTPS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+# Regras de ingress ficam como recursos separados (não inline) porque
+# observability.tf também anexa regras a este mesmo SG via
+# aws_security_group_rule — misturar os dois estilos no mesmo SG faz o
+# Terraform tratar o bloco inline como autoritativo e apagar as regras
+# de observability.tf a cada apply.
+resource "aws_security_group_rule" "backend_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.backend.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "HTTP"
+}
+
+resource "aws_security_group_rule" "backend_https" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.backend.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "HTTPS"
 }
 
 # ---------------------------------------------------------------------------
