@@ -11,6 +11,7 @@ export interface ProjectResponse {
   endDate: string | null;
   status: ProjectStatus;
   consultantIds: string[];
+  aiReportIntro: string | null;
 }
 
 export interface CreateProjectRequest {
