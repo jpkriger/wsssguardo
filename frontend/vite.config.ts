@@ -33,5 +33,11 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
+    coverage: {
+      provider: 'v8',
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/vite-env.d.ts'],
+    },
   },
 })
