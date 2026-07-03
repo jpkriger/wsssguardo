@@ -1,9 +1,13 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { File, TriangleAlert, CircleAlert } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getProjectSummary, type ProjectSummaryDTO } from "@/api/project";
+import {
+  getProjectConfiguration,
+  type RiskCategoryDTO,
+} from "@/api/projectConfiguration";
 
 interface ExecutiveSummaryProps {
   projectId?: string;
@@ -11,6 +15,27 @@ interface ExecutiveSummaryProps {
   summaryIsAi?: boolean;
   highRisks?: number;
   mediumRisks?: number;
+}
+
+/**
+ * getRiskSummary (backend) buckets risks by position in the project's sorted
+ * RiskConfig categories: idx 0 -> low, last idx -> high, anything between -> medium.
+ * These helpers mirror that same grouping to label the "high"/"medium" tiles
+ * with the project's real category names instead of a fixed "Crítico"/"Alto".
+ */
+function highCategoryLabel(categories: RiskCategoryDTO[]): string {
+  if (categories.length === 0) return "Altos";
+  const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
+  return sorted[sorted.length - 1].label;
+}
+
+function mediumCategoryLabel(categories: RiskCategoryDTO[]): string {
+  if (categories.length <= 2) return "Médios";
+  const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
+  return sorted
+    .slice(1, -1)
+    .map((c) => c.label)
+    .join(" / ");
 }
 
 export default function ExecutiveSummary({
@@ -21,6 +46,7 @@ export default function ExecutiveSummary({
   mediumRisks = 0,
 }: ExecutiveSummaryProps): ReactElement {
   const [summary, setSummary] = useState<ProjectSummaryDTO | null>(null);
+  const [riskCategories, setRiskCategories] = useState<RiskCategoryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,18 +64,25 @@ export default function ExecutiveSummary({
       setError(null);
 
       try {
-        const data = await getProjectSummary(projectId);
-        if (!cancelled) {
-          setSummary(data);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
+        const [summaryRes, configRes] = await Promise.allSettled([
+          getProjectSummary(projectId),
+          getProjectConfiguration(projectId),
+        ]);
+        if (cancelled) return;
+
+        if (summaryRes.status === "fulfilled") {
+          setSummary(summaryRes.value);
+        } else {
           setSummary(null);
           setError(
-            loadError instanceof Error
-              ? loadError.message
+            summaryRes.reason instanceof Error
+              ? summaryRes.reason.message
               : "Resumo indisponível.",
           );
+        }
+
+        if (configRes.status === "fulfilled") {
+          setRiskCategories(configRes.value.riskConfig.categories);
         }
       } finally {
         if (!cancelled) {
@@ -64,6 +97,9 @@ export default function ExecutiveSummary({
       cancelled = true;
     };
   }, [projectId]);
+
+  const highLabel = useMemo(() => highCategoryLabel(riskCategories), [riskCategories]);
+  const mediumLabel = useMemo(() => mediumCategoryLabel(riskCategories), [riskCategories]);
 
   return (
     <>
@@ -92,13 +128,13 @@ export default function ExecutiveSummary({
                 />
                 <StatTile
                   icon={<CircleAlert className="size-4 text-red-500" />}
-                  label="RISCOS CRÍTICOS"
+                  label={`RISCOS ${highLabel.toUpperCase()}`}
                   value={highRisks}
                   borderColor="red-200"
                 />
                 <StatTile
                   icon={<TriangleAlert className="size-4 text-yellow-500" />}
-                  label="RISCOS ALTOS"
+                  label={`RISCOS ${mediumLabel.toUpperCase()}`}
                   value={mediumRisks}
                   borderColor="slate-200"
                 />

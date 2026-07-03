@@ -66,6 +66,14 @@ export default function ProjectModal({
   const [error, setError] = useState<string | null>(null);
 
   const [riskConfig, setRiskConfig] = useState<RiskConfigDTO>(createDefaultRiskConfig());
+  // Buffers de texto livre para os campos de range: o usuário digita aqui sem
+  // nenhuma validação/parse a cada tecla. Só viram número (e disparam a
+  // redistribuição das categorias) no blur, via commitGlobalRange/commitCategoryRange.
+  // Sem isso, o <input type="number"> controlado recalculava o valor a cada tecla e
+  // perdia a posição do cursor, fazendo o dígito novo substituir o anterior.
+  const [minRangeText, setMinRangeText] = useState(String(createDefaultRiskConfig().minRange));
+  const [maxRangeText, setMaxRangeText] = useState(String(createDefaultRiskConfig().maxRange));
+  const [categoryRangeText, setCategoryRangeText] = useState<Record<string, string>>({});
   const [consultantIds, setConsultantIds] = useState<string[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [userSearch, setUserSearch] = useState("");
@@ -77,10 +85,14 @@ export default function ProjectModal({
       setEndDate(project.endDate?.split("T")[0] ?? "");
       setConsultantIds(project.consultantIds ?? []);
     } else {
+      const defaultConfig = createDefaultRiskConfig();
       setName("");
       setStartDate("");
       setEndDate("");
-      setRiskConfig(createDefaultRiskConfig());
+      setRiskConfig(defaultConfig);
+      setMinRangeText(String(defaultConfig.minRange));
+      setMaxRangeText(String(defaultConfig.maxRange));
+      setCategoryRangeText({});
       setConsultantIds([]);
     }
     setUserSearch("");
@@ -135,7 +147,11 @@ export default function ProjectModal({
     });
   };
 
-  const updateGlobalRange = (field: "minRange" | "maxRange", value: number): void => {
+  const updateGlobalRange = (field: "minRange" | "maxRange", rawValue: string): void => {
+    if (rawValue.trim() === "") return;
+    const value = Number(rawValue);
+    if (Number.isNaN(value)) return;
+
     setRiskConfig((prev) => {
       const newMin = field === "minRange" ? value : prev.minRange;
       const newMax = field === "maxRange" ? value : prev.maxRange;
@@ -148,11 +164,55 @@ export default function ProjectModal({
     });
   };
 
+  // Chamado no blur dos campos de range global: aplica o valor digitado e
+  // limpa os buffers de texto das categorias, já que a redistribuição acima
+  // recalcula o min/max de todas elas.
+  const commitGlobalRange = (field: "minRange" | "maxRange", rawValue: string): void => {
+    updateGlobalRange(field, rawValue);
+    setCategoryRangeText({});
+
+    // Ressincroniza o buffer de texto com o valor autoritativo (mesma lógica dos
+    // campos de categoria): se o input ficou vazio/inválido, updateGlobalRange
+    // manteve o valor antigo, então voltamos a exibi-lo em vez do texto digitado.
+    const trimmed = rawValue.trim();
+    const parsed = Number(trimmed);
+    const committed =
+      trimmed !== "" && !Number.isNaN(parsed) ? parsed : riskConfig[field];
+    const setBuffer = field === "minRange" ? setMinRangeText : setMaxRangeText;
+    setBuffer(String(committed));
+  };
+
   const updateCategory = (index: number, field: keyof RiskCategoryDTO, value: string | number): void => {
+    if (field === "minRange" || field === "maxRange") {
+      if (typeof value === "string") {
+        if (value.trim() === "") return;
+        const parsed = Number(value);
+        if (Number.isNaN(parsed)) return;
+        value = parsed;
+      }
+    }
+
     setRiskConfig((prev) => {
       const categories = [...prev.categories];
       categories[index] = { ...categories[index], [field]: value };
       return { ...prev, categories };
+    });
+  };
+
+  // Chamado no blur dos campos "De"/"Até" de cada nível: aplica o valor e
+  // limpa o buffer de texto daquele campo, voltando a exibir o número
+  // autoritativo (cat.minRange/maxRange) em vez do texto que estava sendo digitado.
+  const commitCategoryRange = (
+    index: number,
+    field: "minRange" | "maxRange",
+    bufferKey: string,
+    rawValue: string,
+  ): void => {
+    updateCategory(index, field, rawValue);
+    setCategoryRangeText((prev) => {
+      const next = { ...prev };
+      delete next[bufferKey];
+      return next;
     });
   };
 
@@ -167,6 +227,7 @@ export default function ProjectModal({
         categories: redistributeCategories(newCategories, prev.minRange, prev.maxRange),
       };
     });
+    setCategoryRangeText({});
   };
 
   const removeCategory = (index: number): void => {
@@ -177,6 +238,7 @@ export default function ProjectModal({
         categories: redistributeCategories(newCategories, prev.minRange, prev.maxRange),
       };
     });
+    setCategoryRangeText({});
   };
 
   const validateRiskConfig = (): string | null => {
@@ -314,11 +376,11 @@ export default function ProjectModal({
                         <Label htmlFor="risk-min-range">Valor Mínimo</Label>
                         <Input
                           id="risk-min-range"
-                          type="number"
-                          value={riskConfig.minRange}
-                          onChange={(e) =>
-                            updateGlobalRange("minRange", Number(e.target.value))
-                          }
+                          type="text"
+                          inputMode="numeric"
+                          value={minRangeText}
+                          onChange={(e) => setMinRangeText(e.target.value)}
+                          onBlur={(e) => commitGlobalRange("minRange", e.target.value)}
                           disabled={loading}
                         />
                       </div>
@@ -326,11 +388,11 @@ export default function ProjectModal({
                         <Label htmlFor="risk-max-range">Valor Máximo</Label>
                         <Input
                           id="risk-max-range"
-                          type="number"
-                          value={riskConfig.maxRange}
-                          onChange={(e) =>
-                            updateGlobalRange("maxRange", Number(e.target.value))
-                          }
+                          type="text"
+                          inputMode="numeric"
+                          value={maxRangeText}
+                          onChange={(e) => setMaxRangeText(e.target.value)}
+                          onBlur={(e) => commitGlobalRange("maxRange", e.target.value)}
                           disabled={loading}
                         />
                       </div>
@@ -385,10 +447,17 @@ export default function ProjectModal({
                                 </Label>
                                 <Input
                                   id={`cat-min-${index}`}
-                                  type="number"
-                                  value={cat.minRange}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={categoryRangeText[`${index}-min`] ?? String(cat.minRange)}
                                   onChange={(e) =>
-                                    updateCategory(index, "minRange", Number(e.target.value))
+                                    setCategoryRangeText((prev) => ({
+                                      ...prev,
+                                      [`${index}-min`]: e.target.value,
+                                    }))
+                                  }
+                                  onBlur={(e) =>
+                                    commitCategoryRange(index, "minRange", `${index}-min`, e.target.value)
                                   }
                                   disabled={loading}
                                   className="h-8 text-sm"
@@ -400,10 +469,17 @@ export default function ProjectModal({
                                 </Label>
                                 <Input
                                   id={`cat-max-${index}`}
-                                  type="number"
-                                  value={cat.maxRange}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={categoryRangeText[`${index}-max`] ?? String(cat.maxRange)}
                                   onChange={(e) =>
-                                    updateCategory(index, "maxRange", Number(e.target.value))
+                                    setCategoryRangeText((prev) => ({
+                                      ...prev,
+                                      [`${index}-max`]: e.target.value,
+                                    }))
+                                  }
+                                  onBlur={(e) =>
+                                    commitCategoryRange(index, "maxRange", `${index}-max`, e.target.value)
                                   }
                                   disabled={loading}
                                   className="h-8 text-sm"

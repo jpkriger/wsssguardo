@@ -16,6 +16,7 @@ import {
   type RiskResponse,
 } from "@/api/risk";
 import { listFindings, type FindingResponse } from "@/api/finding";
+import { getProjectConfiguration } from "@/api/projectConfiguration";
 import RiskModal, {
   type RiskModalSubmitData,
   type RiskModalRisk,
@@ -30,6 +31,9 @@ import RiskExpandedContent from "../RiskExpandedContent/RiskExpandedContent";
 import { priorityConfig } from "@/lib/priority";
 
 const PAGE_SIZE = 5;
+
+/** Falls back to the backend's default RiskConfig scale (0–10) until the project's real configuration loads. */
+const DEFAULT_DAMAGE_RANGE = { min: 0, max: 10 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -57,6 +61,7 @@ export default function RiskTable(): ReactElement {
     min: 0,
     max: 100,
   };
+  const [damageRange, setDamageRange] = useState(DEFAULT_DAMAGE_RANGE);
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [riskToDelete, setRiskToDelete] = useState<RiskResponse | null>(null);
@@ -91,10 +96,23 @@ export default function RiskTable(): ReactElement {
     }
   }, [projectId]);
 
+  const loadDamageRange = useCallback(async () => {
+    try {
+      const config = await getProjectConfiguration(projectId);
+      const { minRange, maxRange } = config.riskConfig;
+      if (minRange != null && maxRange != null) {
+        setDamageRange({ min: minRange, max: maxRange });
+      }
+    } catch {
+      setDamageRange(DEFAULT_DAMAGE_RANGE);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     void loadRisks();
     void loadFindings();
-  }, [loadRisks, loadFindings]);
+    void loadDamageRange();
+  }, [loadRisks, loadFindings, loadDamageRange]);
 
   async function handleDelete(id: string): Promise<void> {
     setDeleting(true);
@@ -353,6 +371,7 @@ export default function RiskTable(): ReactElement {
         risk={selectedRisk}
         findings={findings}
         probabilityRange={probabilityRange}
+        damageRange={damageRange}
         onClose={() => setModalOpen(false)}
         onSubmit={(data) => {
           void handleSubmit(data);
