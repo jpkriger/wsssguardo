@@ -36,6 +36,8 @@ interface RiskLevelConfig {
   label: RiskLevelLabel;
   badgeClassName: string;
   borderColor: string;
+  /** Severity tier relative to the project's configured categories: 0 = most severe. */
+  tier: number;
 }
 
 interface RiskAnalysisItem {
@@ -60,6 +62,7 @@ const FALLBACK_RISK_LEVEL: RiskLevelConfig = {
   label: "Baixo",
   badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
   borderColor: "border-emerald-200",
+  tier: Number.POSITIVE_INFINITY,
 };
 
 function buildGetRiskLevelConfig(
@@ -67,28 +70,33 @@ function buildGetRiskLevelConfig(
 ): (riskLevel: number | null | undefined) => RiskLevelConfig {
   const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
   const configs: RiskLevelConfig[] = sorted.map((_, i) => {
+    const tier = sorted.length - 1 - i;
     if (i === sorted.length - 1)
       return {
         label: sorted[i].label as RiskLevelLabel,
         badgeClassName: "border-red-200 bg-red-50 text-red-600",
         borderColor: "border-red-200",
+        tier,
       };
     if (i === sorted.length - 2)
       return {
         label: sorted[i].label as RiskLevelLabel,
         badgeClassName: "border-orange-200 bg-orange-50 text-orange-600",
         borderColor: "border-orange-200",
+        tier,
       };
     if (i === sorted.length - 3)
       return {
         label: sorted[i].label as RiskLevelLabel,
         badgeClassName: "border-amber-200 bg-amber-50 text-amber-600",
         borderColor: "border-amber-200",
+        tier,
       };
     return {
       label: sorted[i].label as RiskLevelLabel,
       badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
       borderColor: "border-emerald-200",
+      tier,
     };
   });
 
@@ -114,15 +122,15 @@ function assetAnchorId(id: string): string {
   return `asset-${id}`;
 }
 
-function getMockMitigationSteps(risk: RiskResponse): string[] {
-  if (risk.generalRisk >= 7.5) {
+function getMockMitigationSteps(riskLevel: RiskLevelConfig): string[] {
+  if (riskLevel.tier === 0) {
     return [
       "Isolar o ativo ou processo impactado imediatamente.",
       "Executar análise de causa raiz e plano emergencial.",
       "Validar controles de contenção com as áreas responsáveis.",
     ];
   }
-  if (risk.generalRisk >= 5) {
+  if (riskLevel.tier === 1) {
     return [
       "Reforçar monitoramento do cenário de risco.",
       "Priorizar ações de correção nas próximas entregas.",
@@ -135,10 +143,10 @@ function getMockMitigationSteps(risk: RiskResponse): string[] {
   ];
 }
 
-function getMockResponsibleArea(risk: RiskResponse): string {
-  if (risk.generalRisk >= 7.5) return "Segurança da Informação";
-  if (risk.generalRisk >= 5) return "Operações e Tecnologia";
-  if (risk.generalRisk >= 2.5) return "Gestão do Projeto";
+function getMockResponsibleArea(riskLevel: RiskLevelConfig): string {
+  if (riskLevel.tier === 0) return "Segurança da Informação";
+  if (riskLevel.tier === 1) return "Operações e Tecnologia";
+  if (riskLevel.tier === 2) return "Gestão do Projeto";
   return "Área de Negócio";
 }
 
@@ -364,8 +372,8 @@ function RiskCard({
   showAssetsArtifacts: boolean;
   showRecommendations: boolean;
 }): ReactElement {
-  const mitigationSteps: string[] = getMockMitigationSteps(item.risk);
-  const responsibleArea: string = getMockResponsibleArea(item.risk);
+  const mitigationSteps: string[] = getMockMitigationSteps(item.riskLevel);
+  const responsibleArea: string = getMockResponsibleArea(item.riskLevel);
 
   // Counts (pills) reflect the full relationship set; the lists below are
   // truncated to keep each card readable.

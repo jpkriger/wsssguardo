@@ -95,6 +95,8 @@ interface RiskModalProps {
   risk?: RiskModalRisk | null;
   findings?: RiskModalOption[];
   probabilityRange?: { min: number; max: number };
+  /** Project's configured damage scale (RiskConfig.minRange/maxRange). Falls back to 0–10 until loaded. */
+  damageRange?: { min: number; max: number };
   onClose: () => void;
   onSubmit: (data: RiskModalSubmitData) => void;
 }
@@ -394,13 +396,14 @@ export default function RiskModal({
   risk = null,
   findings = [],
   probabilityRange,
+  damageRange,
   onClose,
   onSubmit,
 }: RiskModalProps): ReactElement {
   const probMin = probabilityRange?.min ?? PROBABILITY_MIN_DEFAULT;
   const probMax = probabilityRange?.max ?? PROBABILITY_MAX_DEFAULT;
-  const dmgMin = DAMAGE_MIN_DEFAULT;
-  const dmgMax = DAMAGE_MAX_DEFAULT;
+  const dmgMin = damageRange?.min ?? DAMAGE_MIN_DEFAULT;
+  const dmgMax = damageRange?.max ?? DAMAGE_MAX_DEFAULT;
 
   const [form, setForm] = useState<RiskModalFormState>(createEmptyFormState());
   const [findIds, setFindIds] = useState<string[]>([]);
@@ -694,6 +697,9 @@ export default function RiskModal({
                 <Input
                   type="number"
                   id={makeFieldId("damageOperations")}
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageOperations}
                   onChange={(e) =>
                     handleFieldChange("damageOperations", e.target.value)
@@ -713,6 +719,9 @@ export default function RiskModal({
                 <Input
                   type="number"
                   id={makeFieldId("damageIndividuals")}
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageIndividuals}
                   onChange={(e) =>
                     handleFieldChange("damageIndividuals", e.target.value)
@@ -732,6 +741,9 @@ export default function RiskModal({
                 <Input
                   type="number"
                   id={makeFieldId("damageOtherOrgs")}
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageOtherOrgs}
                   onChange={(e) =>
                     handleFieldChange("damageOtherOrgs", e.target.value)
@@ -751,6 +763,9 @@ export default function RiskModal({
                 <Input
                   type="number"
                   id={makeFieldId("damageAssets")}
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageAssets}
                   onChange={(e) =>
                     handleFieldChange("damageAssets", e.target.value)
