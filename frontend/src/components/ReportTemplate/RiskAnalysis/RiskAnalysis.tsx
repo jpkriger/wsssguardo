@@ -100,11 +100,19 @@ function buildGetRiskLevelConfig(
     };
   });
 
+  // Mirrors the backend bucketing (RiskServiceImpl.isInCategory): a non-last
+  // category is bounded above by the NEXT category's minRange (exclusive), not
+  // by its own maxRange. generalRisk is an average of integer damages, so it is
+  // usually fractional; using maxRange here left gaps (e.g. 7.5 between a 4–7 and
+  // an 8–10 category) that fell through to FALLBACK "Baixo" while the summary
+  // counted the same risk as Médio/Alto. Only the last category uses maxRange.
   return (riskLevel) => {
     if (riskLevel == null) return FALLBACK_RISK_LEVEL;
-    const index = sorted.findIndex(
-      (c) => riskLevel >= c.minRange && riskLevel <= c.maxRange,
-    );
+    const index = sorted.findIndex((c, i) => {
+      if (riskLevel < c.minRange) return false;
+      const isLast = i === sorted.length - 1;
+      return isLast ? riskLevel <= c.maxRange : riskLevel < sorted[i + 1].minRange;
+    });
     return index === -1 ? FALLBACK_RISK_LEVEL : configs[index];
   };
 }

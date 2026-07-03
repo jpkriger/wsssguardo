@@ -170,6 +170,16 @@ export default function ProjectModal({
   const commitGlobalRange = (field: "minRange" | "maxRange", rawValue: string): void => {
     updateGlobalRange(field, rawValue);
     setCategoryRangeText({});
+
+    // Ressincroniza o buffer de texto com o valor autoritativo (mesma lógica dos
+    // campos de categoria): se o input ficou vazio/inválido, updateGlobalRange
+    // manteve o valor antigo, então voltamos a exibi-lo em vez do texto digitado.
+    const trimmed = rawValue.trim();
+    const parsed = Number(trimmed);
+    const committed =
+      trimmed !== "" && !Number.isNaN(parsed) ? parsed : riskConfig[field];
+    const setBuffer = field === "minRange" ? setMinRangeText : setMaxRangeText;
+    setBuffer(String(committed));
   };
 
   const updateCategory = (index: number, field: keyof RiskCategoryDTO, value: string | number): void => {
