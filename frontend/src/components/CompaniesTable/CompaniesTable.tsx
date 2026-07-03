@@ -31,7 +31,6 @@ interface CompaniesTableProps {
   onDeleteCompany?: (id: string, name: string) => void;
   onCreateProject?: (companyId: string, companyName: string) => void;
   onEditProject?: (projectId: string) => void;
-  onDeleteProject?: (projectId: string, projectName: string) => void;
   onCompleteProject?: (projectId: string) => void;
   onCancelProject?: (projectId: string) => void;
 }
@@ -47,7 +46,6 @@ export function CompaniesTable({
   onDeleteCompany,
   onCreateProject,
   onEditProject,
-  onDeleteProject,
   onCompleteProject,
   onCancelProject,
 }: CompaniesTableProps): ReactElement {
@@ -147,7 +145,6 @@ export function CompaniesTable({
           cardClassName="generic-table-card--nested"
           onCreateProject={() => onCreateProject?.(company.id, company.name)}
           onEditProject={onEditProject}
-          onDeleteProject={onDeleteProject}
           onCompleteProject={onCompleteProject}
           onCancelProject={onCancelProject}
         />

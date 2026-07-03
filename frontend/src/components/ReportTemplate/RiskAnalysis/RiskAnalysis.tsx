@@ -20,6 +20,11 @@ import {
   getProjectConfiguration,
   type RiskCategoryDTO,
 } from "@/api/projectConfiguration";
+import {
+  buildGetRiskLevelConfig,
+  DEFAULT_RISK_CATEGORIES,
+  type RiskLevelConfig,
+} from "@/lib/riskLevel";
 
 interface RiskAnalysisProps {
   projectId?: string;
@@ -28,16 +33,6 @@ interface RiskAnalysisProps {
   showAssetsArtifacts?: boolean;
   /** Show the recommended mitigation steps within each risk card. */
   showRecommendations?: boolean;
-}
-
-type RiskLevelLabel = "Baixo" | "Médio" | "Alto" | "Crítico";
-
-interface RiskLevelConfig {
-  label: RiskLevelLabel;
-  badgeClassName: string;
-  borderColor: string;
-  /** Severity tier relative to the project's configured categories: 0 = most severe. */
-  tier: number;
 }
 
 interface RiskAnalysisItem {
@@ -50,72 +45,6 @@ interface RiskAnalysisItem {
 
 /** Max related items rendered per risk card before the list is truncated. */
 const MAX_RELATED_PER_CARD = 5;
-
-const DEFAULT_RISK_CATEGORIES: RiskCategoryDTO[] = [
-  { label: "Baixo", minRange: 0, maxRange: 24 },
-  { label: "Médio", minRange: 25, maxRange: 49 },
-  { label: "Alto", minRange: 50, maxRange: 74 },
-  { label: "Crítico", minRange: 75, maxRange: 100 },
-];
-
-const FALLBACK_RISK_LEVEL: RiskLevelConfig = {
-  label: "Baixo",
-  badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  borderColor: "border-emerald-200",
-  tier: Number.POSITIVE_INFINITY,
-};
-
-function buildGetRiskLevelConfig(
-  categories: RiskCategoryDTO[],
-): (riskLevel: number | null | undefined) => RiskLevelConfig {
-  const sorted = [...categories].sort((a, b) => a.minRange - b.minRange);
-  const configs: RiskLevelConfig[] = sorted.map((_, i) => {
-    const tier = sorted.length - 1 - i;
-    if (i === sorted.length - 1)
-      return {
-        label: sorted[i].label as RiskLevelLabel,
-        badgeClassName: "border-red-200 bg-red-50 text-red-600",
-        borderColor: "border-red-200",
-        tier,
-      };
-    if (i === sorted.length - 2)
-      return {
-        label: sorted[i].label as RiskLevelLabel,
-        badgeClassName: "border-orange-200 bg-orange-50 text-orange-600",
-        borderColor: "border-orange-200",
-        tier,
-      };
-    if (i === sorted.length - 3)
-      return {
-        label: sorted[i].label as RiskLevelLabel,
-        badgeClassName: "border-amber-200 bg-amber-50 text-amber-600",
-        borderColor: "border-amber-200",
-        tier,
-      };
-    return {
-      label: sorted[i].label as RiskLevelLabel,
-      badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      borderColor: "border-emerald-200",
-      tier,
-    };
-  });
-
-  // Mirrors the backend bucketing (RiskServiceImpl.isInCategory): a non-last
-  // category is bounded above by the NEXT category's minRange (exclusive), not
-  // by its own maxRange. generalRisk is an average of integer damages, so it is
-  // usually fractional; using maxRange here left gaps (e.g. 7.5 between a 4–7 and
-  // an 8–10 category) that fell through to FALLBACK "Baixo" while the summary
-  // counted the same risk as Médio/Alto. Only the last category uses maxRange.
-  return (riskLevel) => {
-    if (riskLevel == null) return FALLBACK_RISK_LEVEL;
-    const index = sorted.findIndex((c, i) => {
-      if (riskLevel < c.minRange) return false;
-      const isLast = i === sorted.length - 1;
-      return isLast ? riskLevel <= c.maxRange : riskLevel < sorted[i + 1].minRange;
-    });
-    return index === -1 ? FALLBACK_RISK_LEVEL : configs[index];
-  };
-}
 
 // Stable anchor ids for in-document navigation. Keyed off the entity id (the
 // backend guarantees it unique) rather than the display name, which can collide
