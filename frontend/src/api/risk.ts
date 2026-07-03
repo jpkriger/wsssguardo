@@ -1,4 +1,6 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
+
+export type RiskPriority = "P1" | "P2" | "P3" | "P4" | "P5";
 
 export interface RiskResponse {
     id: string;
@@ -9,12 +11,14 @@ export interface RiskResponse {
     consequences: string;
     occurrenceProbability: number;
     impactProbability: number;
-    damageOperations: string;
-    damageAssetIds: string[];
-    damageIndividuals: string;
-    damageOtherOrgs: string;
+    damageOperations: number;
+    damageIndividuals: number;
+    damageOtherOrgs: number;
+    damageAssets: number;
+    generalRisk: number;
     recommendation: string;
-    riskLevel: number;
+    priority: RiskPriority;
+    aiSummary?: string | null;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -31,19 +35,18 @@ export interface RiskPageResponse {
 }
 
 export interface RiskCreateRequest {
-    projectId: string;
     name: string;
     findIds: string[];
     description: string;
     consequences: string;
     occurrenceProbability: number;
     impactProbability: number;
-    damageOperations: string;
-    damageAssetIds: string[];
-    damageIndividuals: string;
-    damageOtherOrgs: string;
+    damageOperations: number;
+    damageIndividuals: number;
+    damageOtherOrgs: number;
+    damageAssets: number;
     recommendation: string;
-    riskLevel: number;
+    priority: RiskPriority;
 }
 
 export interface RiskUpdateRequest {
@@ -52,65 +55,56 @@ export interface RiskUpdateRequest {
     consequences?: string;
     occurrenceProbability?: number;
     impactProbability?: number;
-    damageOperations?: string;
+    damageOperations?: number;
     findIds?: string[];
-    assetIds?: string[];
-    damageIndividuals?: string;
-    damageOtherOrgs?: string;
+    damageIndividuals?: number;
+    damageOtherOrgs?: number;
+    damageAssets?: number;
     recommendation?: string;
-    riskLevel?: number;
+    priority?: RiskPriority;
 }
 
-const BASE = "/api/risks";
+function base(projectId: string): string {
+    return `projects/${projectId}/risks`;
+}
 
-export async function fetchRisksByProject(
+export function fetchRisksByProject(
     projectId: string,
     page: number = 0,
     size: number = 5,
 ): Promise<RiskPageResponse> {
-    const params = new URLSearchParams({
-        page: String(page),
-        size: String(size),
-    });
-
-    const url = `${BASE}/project/${projectId}?${params.toString()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<RiskPageResponse>;
+    return apiClient
+        .get(base(projectId), {
+            searchParams: { page: String(page), size: String(size) },
+        })
+        .json<RiskPageResponse>();
 }
 
-export async function createRisk(data: RiskCreateRequest): Promise<RiskResponse> {
-    const res = await fetch(BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-    return res.json() as Promise<RiskResponse>;
+export async function fetchAllRisksByProject(
+    projectId: string,
+): Promise<RiskResponse[]> {
+    const PAGE_SIZE = 100;
+    const all: RiskResponse[] = [];
+    let page = 0;
+    for (;;) {
+        const res = await fetchRisksByProject(projectId, page, PAGE_SIZE);
+        all.push(...res.content);
+        if (res.last || res.content.length === 0) break;
+        page += 1;
+    }
+    return all;
 }
 
-export async function updateRisk(id: string, data: RiskUpdateRequest): Promise<RiskResponse> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<RiskResponse>;
+export function createRisk(projectId: string, data: RiskCreateRequest): Promise<RiskResponse> {
+    return apiClient.post(base(projectId), { json: data }).json<RiskResponse>();
 }
 
-export async function deleteRisk(id: string): Promise<void> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, { method: "DELETE" });
+export function updateRisk(projectId: string, id: string, data: RiskUpdateRequest): Promise<RiskResponse> {
+    return apiClient.put(`${base(projectId)}/${id}`, { json: data }).json<RiskResponse>();
+}
 
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
+export async function deleteRisk(projectId: string, id: string): Promise<void> {
+    await apiClient.delete(`${base(projectId)}/${id}`);
 }
 
 export interface RiskSummaryResponse {
@@ -120,9 +114,14 @@ export interface RiskSummaryResponse {
     lowRisks: number;
 }
 
-export async function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
-    const url = `${BASE}/project/${projectId}/summary`;
-    const res = await fetch(url);
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-    return res.json() as Promise<RiskSummaryResponse>;
+export function getRiskSummary(projectId: string): Promise<RiskSummaryResponse> {
+    return apiClient.get(`${base(projectId)}/summary`).json<RiskSummaryResponse>();
+}
+
+export function suggestRiskScore(projectId: string, riskId: string): Promise<{ score: number }> {
+    return apiClient.post(`${base(projectId)}/${riskId}/ai/suggest-score`, { timeout: false }).json<{ score: number }>();
+}
+
+export function summarizeRisk(projectId: string, riskId: string): Promise<{ summary: string }> {
+    return apiClient.post(`${base(projectId)}/${riskId}/ai/summarize`, { timeout: false }).json<{ summary: string }>();
 }

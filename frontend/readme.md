@@ -54,3 +54,16 @@ O módulo `src/api` concentra os clients tipados. Além de `entityObject`, o fro
 - `listProjects` para buscar todos os projetos.
 - `projectsById` para buscar detalhes de múltiplos projetos via `ids` repetido.
 - `projectsByUserId` para buscar IDs de projetos vinculados a um usuário.
+
+## Contrato do relatório
+
+Referência de integração para o time de frontend:
+
+- [Contrato da API de relatório](../docs/report-api-contract.md)
+
+Para mock local, use estes pontos como base:
+
+- request em `POST /api/reports/generate`;
+- `projectId`, `selectedSections`, `detailLevel` e `editableFields` fazem parte do body;
+- response traz `reportId`, `projectId`, `status`, `generatedAt` e `artifacts`;
+- `artifacts.pdf.url` e `artifacts.html.url` são os campos mínimos para download e preview.

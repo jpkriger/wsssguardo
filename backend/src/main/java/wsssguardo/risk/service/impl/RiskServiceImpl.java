@@ -16,14 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import wsssguardo.asset.Asset;
-import wsssguardo.asset.repository.AssetRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
 import wsssguardo.risk.Risk;
 import wsssguardo.project.domain.projectConfiguration.RiskCategory;
+import wsssguardo.project.domain.projectConfiguration.RiskConfig;
 import wsssguardo.risk.dto.requestdto.RiskCreateRequestDTO;
 import wsssguardo.risk.dto.requestdto.RiskUpdateRequestDTO;
 import wsssguardo.risk.dto.responsedto.RiskPageResponseDTO;
@@ -43,18 +42,17 @@ public class RiskServiceImpl implements RiskService {
   private final RiskRepository repository;
   private final ProjectRepository projectRepository;
   private final FindRepository findRepository;
-  private final AssetRepository assetRepository;
   private final RiskMapper mapper;
 
   @Override
   @Transactional
-  public RiskResponseDTO createRisk(RiskCreateRequestDTO request, String username) {
-    Project project = projectRepository.findById(request.projectId())
-        .orElseThrow(() -> new ResourceNotFoundException("Project", request.projectId()));
+  public RiskResponseDTO createRisk(UUID projectId, RiskCreateRequestDTO request) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
     List<Find> finds = findByIds(request.findIds(), findRepository, "Find", project.getId());
-    List<Asset> damageAssets = findByIds(request.damageAssetIds(), assetRepository, "Asset", project.getId());
 
-    Risk risk = mapper.toEntity(request, project, finds, damageAssets, username);
+    Risk risk = mapper.toEntity(request, project, finds);
+    applyGeneralRisk(project, risk);
     Risk savedRisk = repository.save(risk);
     return mapper.toResponse(savedRisk);
   }
@@ -75,7 +73,7 @@ public class RiskServiceImpl implements RiskService {
         .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
 
     List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
-    List<Integer> riskLevels = repository.findRiskLevelsByProjectId(projectId);
+    List<Float> generalRisks = repository.findGeneralRisksByProjectId(projectId);
     long total = repository.countByProjectId(projectId);
 
     List<RiskCategory> sorted = categories.stream()
@@ -83,11 +81,10 @@ public class RiskServiceImpl implements RiskService {
         .toList();
 
     long low = 0, medium = 0, high = 0;
-    for (Integer level : riskLevels) {
+    for (Float level : generalRisks) {
       int idx = -1;
       for (int i = 0; i < sorted.size(); i++) {
-        RiskCategory cat = sorted.get(i);
-        if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+        if (isInCategory(level, sorted, i)) {
           idx = i;
           break;
         }
@@ -102,31 +99,36 @@ public class RiskServiceImpl implements RiskService {
 
   @Override
   @Transactional
-  public RiskResponseDTO update(UUID id, RiskUpdateRequestDTO dto) {
+  public RiskResponseDTO update(UUID projectId, UUID id, RiskUpdateRequestDTO dto) {
     Risk risk = repository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Risk", id));
 
-    UUID projectId = risk.getProject().getId();
+    if (!risk.getProject().getId().equals(projectId)) {
+      throw new ApiException("Risk does not belong to the given project", HttpStatus.NOT_FOUND);
+    }
 
     List<Find> finds = dto.findIds() != null
         ? findByIds(dto.findIds(), findRepository, "Find", projectId)
         : null;
-    List<Asset> assets = dto.assetIds() != null
-        ? findByIds(dto.assetIds(), assetRepository, "Asset", projectId)
-        : null;
 
-    risk = mapper.updateEntity(risk, dto, finds, assets, null);
+    risk = mapper.updateEntity(risk, dto, finds);
+    applyGeneralRisk(risk.getProject(), risk);
 
     return mapper.toResponse(repository.save(risk));
   }
 
   @Override
   @Transactional
-  public void delete(UUID id) {
-    if (!repository.existsById(id)) {
-      throw new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND);
+  public void delete(UUID projectId, UUID id, String username) {
+    Risk risk = repository.findById(id)
+        .orElseThrow(() -> new ApiException("Risk not found with id: " + id, HttpStatus.NOT_FOUND));
+
+    if (!risk.getProject().getId().equals(projectId)) {
+      throw new ApiException("Risk does not belong to the given project", HttpStatus.NOT_FOUND);
     }
-    repository.deleteById(id); // soft delete automático
+
+    risk.softDelete(username);
+    repository.save(risk);
   }
 
   private <T extends BaseEntity> List<T> findByIds(List<UUID> ids,
@@ -150,18 +152,59 @@ public class RiskServiceImpl implements RiskService {
       throw new ResourceNotFoundException(resourceName, missingId);
     }
 
-    // Validate that the entities belong to the project
     for (T entity : entities) {
       if (entity instanceof Find f && !f.getProject().getId().equals(projectId)) {
         throw new ApiException("Find " + f.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
       }
-      if (entity instanceof Asset a && !a.getProject().getId().equals(projectId)) {
-        throw new ApiException("Asset " + a.getId() + " does not belong to Project " + projectId, HttpStatus.BAD_REQUEST);
-      }
     }
 
-            
     return new ArrayList<>(uniqueIds.stream().map(entitiesById::get).toList());
   }
+
+  private void applyGeneralRisk(Project project, Risk risk) {
+    validateDamageScores(project.getConfiguration().getRiskConfig(), risk);
+    risk.setGeneralRisk(average(
+        risk.getDamageOperations(),
+        risk.getDamageAssets(),
+        risk.getDamageIndividuals(),
+        risk.getDamageOtherOrgs()));
+  }
+
+  private void validateDamageScores(RiskConfig riskConfig, Risk risk) {
+    validateDamageScore("damageOperations", risk.getDamageOperations(), riskConfig);
+    validateDamageScore("damageAssets", risk.getDamageAssets(), riskConfig);
+    validateDamageScore("damageIndividuals", risk.getDamageIndividuals(), riskConfig);
+    validateDamageScore("damageOtherOrgs", risk.getDamageOtherOrgs(), riskConfig);
+  }
+
+  private void validateDamageScore(String fieldName, Float value, RiskConfig riskConfig) {
+    if (value == null) {
+      throw new ApiException(fieldName + " must not be null", HttpStatus.BAD_REQUEST);
+    }
+    if (riskConfig == null || riskConfig.getMinRange() == null || riskConfig.getMaxRange() == null) {
+      throw new ApiException("Project risk scale is not configured", HttpStatus.BAD_REQUEST);
+    }
+    if (value < riskConfig.getMinRange() || value > riskConfig.getMaxRange()) {
+      throw new ApiException(
+          fieldName + " must be between " + riskConfig.getMinRange() + " and " + riskConfig.getMaxRange(),
+          HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  private Float average(Float... values) {
+    float total = 0F;
+    for (Float value : values) {
+      total += value;
+    }
+    return total / values.length;
+  }
+
+  private boolean isInCategory(Float level, List<RiskCategory> categories, int index) {
+    RiskCategory category = categories.get(index);
+    boolean isLast = index == categories.size() - 1;
+    if (isLast) {
+      return level >= category.getMinRange() && level <= category.getMaxRange();
+    }
+    return level >= category.getMinRange() && level < categories.get(index + 1).getMinRange();
+  }
 }
-            

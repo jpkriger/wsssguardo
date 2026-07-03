@@ -1,0 +1,7 @@
+tunnel: <SUBSTITUIR_PELO_ID_DO_TUNNEL>
+credentials-file: <SUBSTITUIR_PELO_CAMINHO_DAS_CREDENCIAIS>
+
+ingress:
+  - hostname: ollama.alcaria.dev
+    service: http://localhost:8000
+  - service: http_status:404

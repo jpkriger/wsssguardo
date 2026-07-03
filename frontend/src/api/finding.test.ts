@@ -5,6 +5,10 @@ import { listFindings, createFinding } from "./finding";
 
 const PROJECT_ID = "018f2f32-ff0a-7c30-9dfa-a9f765432101";
 
+function requestOf(spy: { mock: { calls: unknown[][] } }, call = 0): Request {
+  return spy.mock.calls[call][0] as Request;
+}
+
 describe("finding api", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -33,7 +37,7 @@ describe("finding api", () => {
       .mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
 
     await expect(listFindings(PROJECT_ID)).resolves.toEqual(payload);
-    expect(fetchSpy).toHaveBeenCalledWith(
+    expect(new URL(requestOf(fetchSpy).url).pathname).toBe(
       `/api/projects/${PROJECT_ID}/findings/listByProject/`,
     );
   });
@@ -48,7 +52,7 @@ describe("finding api", () => {
           timestamp: "2026-04-01T10:00:00Z",
           path: `/api/projects/${PROJECT_ID}/findings/listByProject/`,
         }),
-        { status: 404 },
+        { status: 404, headers: { "Content-Type": "application/json" } },
       ),
     );
 
@@ -77,21 +81,21 @@ describe("finding api", () => {
       createdAt: "2026-04-01T10:00:00Z",
     };
 
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify(payload), { status: 201 }));
+    let captured: unknown;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      captured = await (input as Request).clone().json();
+      return new Response(JSON.stringify(payload), { status: 201 });
+    });
 
     const request = { name: "XSS", categoricalSeverity: "HIGH" as const };
     await expect(createFinding(PROJECT_ID, request)).resolves.toEqual(payload);
 
-    expect(fetchSpy).toHaveBeenCalledWith(
+    const sent = requestOf(fetchSpy);
+    expect(sent.method).toBe("POST");
+    expect(new URL(sent.url).pathname).toBe(
       `/api/projects/${PROJECT_ID}/findings/create/`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-      },
     );
+    expect(captured).toEqual(request);
   });
 
   it("createFinding throws structured error when backend returns 400", async () => {
@@ -104,7 +108,7 @@ describe("finding api", () => {
           timestamp: "2026-04-01T10:00:00Z",
           path: `/api/projects/${PROJECT_ID}/findings/create/`,
         }),
-        { status: 400 },
+        { status: 400, headers: { "Content-Type": "application/json" } },
       ),
     );
 

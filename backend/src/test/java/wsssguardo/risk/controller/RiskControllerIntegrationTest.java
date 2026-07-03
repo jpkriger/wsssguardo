@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import wsssguardo.AbstractIntegrationTest;
 
-import wsssguardo.asset.Asset;
-import wsssguardo.asset.repository.AssetRepository;
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
@@ -35,7 +32,7 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private CustomerRepository customerRepository;
+  private CompanyRepository companyRepository;
 
   @Autowired
   private ProjectRepository projectRepository;
@@ -43,15 +40,11 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
   @Autowired
   private FindRepository findRepository;
 
-  @Autowired
-  private AssetRepository assetRepository;
-
   @Test
   void createRiskShouldReturnCreatedResponse() throws Exception {
-    Customer customer = createCustomer();
-    Project project = createProject(customer);
+    Company company = createCompany();
+    Project project = createProject(company);
     Find find = createFind(project);
-    Asset asset = createAsset(project);
 
     String body = """
         {
@@ -62,16 +55,16 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
           "consequences": "Privacy incident",
           "occurrenceProbability": 0.7,
           "impactProbability": 0.9,
-          "damageOperations": "Incident response required",
-          "damageAssetIds": ["%s"],
-          "damageIndividuals": "Personal data exposure",
-          "damageOtherOrgs": "Partner notification",
+          "damageOperations": 8,
+          "damageIndividuals": 9,
+          "damageOtherOrgs": 7,
+          "damageAssets": 6,
           "recommendation": "Restrict endpoint and add tests",
-          "riskLevel": 9000
+          "priority": "P1"
         }
-        """.formatted(project.getId(), find.getId(), asset.getId());
+        """.formatted(project.getId(), find.getId());
 
-    mockMvc.perform(post("/api/risks")
+    mockMvc.perform(post("/api/projects/" + project.getId() + "/risks")
             .contentType(MediaType.APPLICATION_JSON)
             .content(body))
         .andExpect(status().isCreated())
@@ -80,30 +73,33 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.projectId", is(project.getId().toString())))
         .andExpect(jsonPath("$.name", is("Unauthorized data exposure")))
         .andExpect(jsonPath("$.findIds[0]", is(find.getId().toString())))
-        .andExpect(jsonPath("$.damageAssetIds[0]", is(asset.getId().toString())))
-        .andExpect(jsonPath("$.riskLevel", is(9000)));
+        .andExpect(jsonPath("$.damageAssets", is(6.0)))
+        .andExpect(jsonPath("$.generalRisk", is(7.5)))
+        .andExpect(jsonPath("$.priority", is("P1")));
   }
 
   @Test
   void createRiskShouldReturnBadRequestWhenBodyIsInvalid() throws Exception {
-    mockMvc.perform(post("/api/risks")
+    Company company = createCompany();
+    Project project = createProject(company);
+    mockMvc.perform(post("/api/projects/" + project.getId() + "/risks")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status", is(400)));
   }
 
-  private Customer createCustomer() {
-    Customer customer = new Customer();
-    customer.setName("Acme Corp");
-    customer.setCreatedAt(LocalDateTime.now());
-    return customerRepository.saveAndFlush(customer);
+  private Company createCompany() {
+    Company company = new Company();
+    company.setName("Acme Corp");
+    company.setCreatedAt(LocalDateTime.now());
+    return companyRepository.saveAndFlush(company);
   }
 
-  private Project createProject(Customer customer) {
+  private Project createProject(Company company) {
     Project project = new Project();
     project.setName("Privacy Review");
-    project.setCustomer(customer);
+    project.setCompany(company);
     project.setStartDate(LocalDate.of(2026, 3, 1));
     project.setEndDate(LocalDate.of(2026, 12, 1));
     project.setStatus(ProjectStatus.IN_PROGRESS);
@@ -117,13 +113,5 @@ class RiskControllerIntegrationTest extends AbstractIntegrationTest {
     find.setProject(project);
     find.setCreatedAt(LocalDateTime.now());
     return findRepository.saveAndFlush(find);
-  }
-
-  private Asset createAsset(Project project) {
-    Asset asset = new Asset();
-    asset.setName("Customer API");
-    asset.setProject(project);
-    asset.setCreatedAt(LocalDateTime.now());
-    return assetRepository.saveAndFlush(asset);
   }
 }

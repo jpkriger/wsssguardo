@@ -1,13 +1,11 @@
 package wsssguardo.risk.mapper;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import wsssguardo.asset.Asset;
 import wsssguardo.find.Find;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
@@ -19,8 +17,7 @@ import wsssguardo.risk.dto.responsedto.RiskResponseDTO;
 @Component
 public class RiskMapper {
 
-  public Risk toEntity(RiskCreateRequestDTO request, Project project, List<Find> finds,
-      List<Asset> damageAssets, String username) {
+  public Risk toEntity(RiskCreateRequestDTO request, Project project, List<Find> finds) {
     Risk risk = Risk.builder()
         .project(project)
         .name(request.name().trim())
@@ -30,13 +27,12 @@ public class RiskMapper {
         .occurrenceProbability(request.occurrenceProbability())
         .impactProbability(request.impactProbability())
         .damageOperations(request.damageOperations())
-        .damageAssets(damageAssets)
         .damageIndividuals(request.damageIndividuals())
         .damageOtherOrgs(request.damageOtherOrgs())
+        .damageAssets(request.damageAssets())
         .recommendation(request.recommendation())
-        .riskLevel(request.riskLevel())
+        .priority(request.priority())
         .build();
-    risk.setCreatedBy(username);
     return risk;
   }
 
@@ -51,11 +47,13 @@ public class RiskMapper {
         risk.getOccurrenceProbability(),
         risk.getImpactProbability(),
         risk.getDamageOperations(),
-        idsFromAssets(risk.getDamageAssets()),
         risk.getDamageIndividuals(),
         risk.getDamageOtherOrgs(),
+        risk.getDamageAssets(),
+        risk.getGeneralRisk(),
+        risk.getPriority(),
+        risk.getAiSummary(),
         risk.getRecommendation(),
-        risk.getRiskLevel(),
         risk.getCreatedBy(),
         risk.getCreatedAt(),
         risk.getUpdatedAt());
@@ -73,31 +71,22 @@ public class RiskMapper {
     );
   }
 
-  public Risk updateEntity(Risk risk, RiskUpdateRequestDTO request,
-                           List<Find> finds, List<Asset> damageAssets, String username) {
-    boolean changed = false;
+  public Risk updateEntity(Risk risk, RiskUpdateRequestDTO request, List<Find> finds) {
 
-    changed |= applyName(risk, request.name());
-    changed |= applyDescription(risk, request.description());
-    changed |= applyConsequences(risk, request.consequences());
-    changed |= applyOccurrenceProbability(risk, request.occurrenceProbability());
-    changed |= applyImpactProbability(risk, request.impactProbability());
-    changed |= applyDamageOperations(risk, request.damageOperations());
-    changed |= applyFinds(risk, finds);
-    changed |= applyDamageAssets(risk, damageAssets);
-    changed |= applyDamageIndividuals(risk, request.damageIndividuals());
-    changed |= applyDamageOtherOrgs(risk, request.damageOtherOrgs());
-    changed |= applyRecommendation(risk, request.recommendation());
-    changed |= applyRiskLevel(risk, request.riskLevel());
-
-    if (changed) applyAudit(risk, username);
+    applyName(risk, request.name());
+    applyDescription(risk, request.description());
+    applyConsequences(risk, request.consequences());
+    applyOccurrenceProbability(risk, request.occurrenceProbability());
+    applyImpactProbability(risk, request.impactProbability());
+    applyDamageOperations(risk, request.damageOperations());
+    applyFinds(risk, finds);
+    applyDamageIndividuals(risk, request.damageIndividuals());
+    applyDamageOtherOrgs(risk, request.damageOtherOrgs());
+    applyDamageAssets(risk, request.damageAssets());
+    applyRecommendation(risk, request.recommendation());
+    applyPriority(risk, request.priority());
 
     return risk;
-  }
-
-  public void deleteEntity(Risk risk, String deletedBy) {
-    risk.setDeletedAt(LocalDateTime.now());
-    risk.setDeletedBy(deletedBy);
   }
 
   // --- helper methods ---
@@ -109,13 +98,6 @@ public class RiskMapper {
     return finds.stream().map(Find::getId).toList();
   }
 
-  private List<UUID> idsFromAssets(List<Asset> assets) {
-    if (assets == null || assets.isEmpty()) {
-      return List.of();
-    }
-    return assets.stream().map(Asset::getId).toList();
-  }
-
   // --- field-level apply methods ---
 
   boolean applyName(Risk r, String v)                        { if (v == null) return false; r.setName(v); return true; }
@@ -123,7 +105,7 @@ public class RiskMapper {
   boolean applyConsequences(Risk r, String v)                { if (v == null) return false; r.setConsequences(v); return true; }
   boolean applyOccurrenceProbability(Risk r, Float v)        { if (v == null) return false; r.setOccurrenceProbability(v); return true; }
   boolean applyImpactProbability(Risk r, Float v)            { if (v == null) return false; r.setImpactProbability(v); return true; }
-  boolean applyDamageOperations(Risk r, String v)            { if (v == null) return false; r.setDamageOperations(v); return true; }
+  boolean applyDamageOperations(Risk r, Float v)             { if (v == null) return false; r.setDamageOperations(v); return true; }
   boolean applyFinds(Risk r, List<Find> v) {
     if (v == null) return false;
     r.getFinds().clear();
@@ -131,19 +113,10 @@ public class RiskMapper {
     return true;
   }
 
-  boolean applyDamageAssets(Risk r, List<Asset> v) {
-    if (v == null) return false;
-    r.getDamageAssets().clear();
-    r.getDamageAssets().addAll(v);
-    return true;
-  }
-  boolean applyDamageIndividuals(Risk r, String v)           { if (v == null) return false; r.setDamageIndividuals(v); return true; }
-  boolean applyDamageOtherOrgs(Risk r, String v)             { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
+  boolean applyDamageIndividuals(Risk r, Float v)            { if (v == null) return false; r.setDamageIndividuals(v); return true; }
+  boolean applyDamageOtherOrgs(Risk r, Float v)              { if (v == null) return false; r.setDamageOtherOrgs(v); return true; }
+  boolean applyDamageAssets(Risk r, Float v)                 { if (v == null) return false; r.setDamageAssets(v); return true; }
   boolean applyRecommendation(Risk r, String v)              { if (v == null) return false; r.setRecommendation(v); return true; }
-  boolean applyRiskLevel(Risk r, Integer v)                  { if (v == null) return false; r.setRiskLevel(v); return true; }
+  boolean applyPriority(Risk r, wsssguardo.risk.RiskPriority v) { if (v == null) return false; r.setPriority(v); return true; }
 
-  void applyAudit(Risk risk, String username) {
-    risk.setUpdatedAt(LocalDateTime.now());
-    risk.setLastModifiedBy(username);
-  }
 }

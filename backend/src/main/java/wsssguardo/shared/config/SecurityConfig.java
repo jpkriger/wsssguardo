@@ -1,28 +1,33 @@
 package wsssguardo.shared.config;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import wsssguardo.shared.security.CognitoUserSyncFilter;
+import wsssguardo.shared.security.CookieBearerTokenResolver;
+
+import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // TODO: create a JWT filter that validates tokens issued by AWS Cognito.
-    //       The filter should:
-    //       - extract the Bearer token from the Authorization header
-    //       - validate the token signature against the Cognito JWKS endpoint:
-    //         https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
-    //       - extract claims (sub, email, groups) and populate the SecurityContext
-    //       - reject requests with invalid or expired tokens with 401
-    //       Once implemented, replace permitAll() with authenticated() and add the filter:
-    //         .addFilterBefore(cognitoJwtFilter(), UsernamePasswordAuthenticationFilter.class)
+    private final CognitoUserSyncFilter cognitoUserSyncFilter;
+
+    @Autowired(required = false)
+    private JwtDecoder jwtDecoder;
 
     @Value("${security.auth.disabled:false}")
     private boolean authDisabled;
@@ -34,13 +39,45 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(Customizer.withDefaults()).disable());
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (authDisabled) {
-            http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            http
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(Customizer.withDefaults()).disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         } else {
-            http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
+            http
+                .csrf(csrf -> csrf
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .ignoringRequestMatchers("/api/auth/**")
+                )
+                .headers(headers -> headers
+                    .frameOptions(frame -> frame.deny())
+                    .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'self'; script-src 'self'; object-src 'none'")
+                    )
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                    .jwt(jwt -> jwt.decoder(jwtDecoder))
+                    .bearerTokenResolver(new CookieBearerTokenResolver("access_token"))
+                )
+                .addFilterAfter(cognitoUserSyncFilter, BearerTokenAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                        "/api/auth/login",
+                        "/api/auth/new-password",
+                        "/api/auth/mfa-verify",
+                        "/api/auth/mfa-setup",
+                        "/api/auth/mfa-setup/complete",
+                        "/api/auth/refresh"
+                    ).permitAll()
+                    // porta 8080 só é alcançável pela EC2 de observabilidade (Security Group),
+                    // não fica exposta na internet — scrape do Prometheus não carrega JWT
+                    .requestMatchers("/actuator/prometheus", "/actuator/health").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/api-docs/**").denyAll()
+                    .anyRequest().authenticated()
+                );
         }
 
         return http.build();
@@ -52,6 +89,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

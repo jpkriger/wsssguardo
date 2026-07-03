@@ -1,4 +1,6 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +20,6 @@ import {
 import {
   createProject,
   updateProject,
-  deleteProject,
   type ProjectResponse,
   type ProjectStatus,
 } from "../api/project";
@@ -36,6 +37,7 @@ function deriveStatus(
   if (apiStatus === "COMPLETED") return "Concluído";
   if (apiStatus === "CANCELLED") return "Cancelado";
   if (apiStatus === "ON_HOLD") return "Em espera";
+  if (apiStatus === "ARCHIVED") return "Arquivado";
   if (endDate && new Date(endDate) < new Date()) return "Atrasado";
   return "Em andamento";
 }
@@ -46,6 +48,8 @@ function mapProject(project: CompanyProjectResponse): CompanyProject {
     name: project.name,
     startDate: formatDate(project.startDate),
     endDate: formatDate(project.endDate),
+    startDateRaw: project.startDate,
+    endDateRaw: project.endDate,
     status: deriveStatus(project.status, project.endDate),
     rawStatus: project.status,
   };
@@ -56,12 +60,14 @@ function mapCompany(company: CompanyResponse): Company {
     id: company.id,
     name: company.name,
     createdAt: formatDate(company.createdAt),
+    createdAtRaw: company.createdAt,
     totalProjects: company.projects.length,
     projects: company.projects.map(mapProject),
   };
 }
 
 export default function Companies(): ReactElement {
+  const { user } = useAuth();
   const [apiCompanies, setApiCompanies] = useState<CompanyResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +83,10 @@ export default function Companies(): ReactElement {
   const [targetCompanyId, setTargetCompanyId] = useState<string>("");
   const [targetCompanyName, setTargetCompanyName] = useState<string>("");
 
-  // Delete state (shared between company and project)
+  // Delete state (empresa apenas — projeto só se retira via arquivamento)
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
-    type: "company" | "project";
   } | undefined>();
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -129,7 +134,7 @@ export default function Companies(): ReactElement {
   };
 
   const handleDeleteCompany = (id: string, name: string): void => {
-    setDeleteTarget({ id, name, type: "company" });
+    setDeleteTarget({ id, name });
   };
 
   // --- Project handlers ---
@@ -157,20 +162,22 @@ export default function Companies(): ReactElement {
         name: data.name,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        consultantIds: data.consultantIds,
       });
     } else {
+      if (!data.riskConfig) {
+        throw new Error("Configuração de risco é obrigatória para criar um projeto.");
+      }
       await createProject({
         name: data.name,
-        customerId: targetCompanyId,
+        companyId: targetCompanyId,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
+        riskConfig: data.riskConfig,
+        consultantIds: data.consultantIds ?? [],
       });
     }
     await loadCompanies();
-  };
-
-  const handleDeleteProject = (projectId: string, projectName: string): void => {
-    setDeleteTarget({ id: projectId, name: projectName, type: "project" });
   };
 
   const handleUpdateProjectStatus = async (projectId: string, status: ProjectStatus): Promise<void> => {
@@ -182,17 +189,13 @@ export default function Companies(): ReactElement {
     }
   };
 
-  // --- Shared delete confirm ---
+  // --- Delete confirm (empresa) ---
 
   const confirmDelete = async (): Promise<void> => {
     if (!deleteTarget) return;
     try {
       setDeleteLoading(true);
-      if (deleteTarget.type === "company") {
-        await deleteCompany(deleteTarget.id);
-      } else {
-        await deleteProject(deleteTarget.id);
-      }
+      await deleteCompany(deleteTarget.id);
       setDeleteTarget(undefined);
       await loadCompanies();
     } catch (err) {
@@ -201,6 +204,10 @@ export default function Companies(): ReactElement {
       setDeleteLoading(false);
     }
   };
+
+  if (user?.role !== "MANAGER") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -223,7 +230,7 @@ export default function Companies(): ReactElement {
       </section>
 
       {!loading && !error && (
-        <div className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full flex flex-col gap-4">
+       <div className="mx-auto px-6 lg:px-24 max-w-[1280px] w-full flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -234,6 +241,7 @@ export default function Companies(): ReactElement {
                 className="pl-9 h-9 text-[13px] w-72 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-amber-500/40 focus-visible:border-amber-500/60"
               />
             </div>
+            <div className="relative left-24">
             <Button
               className="h-9 text-[13px] gap-1.5 font-medium px-4"
               style={{ background: "#d4a574", color: "#0f1117" }}
@@ -242,20 +250,22 @@ export default function Companies(): ReactElement {
               <Plus className="h-4 w-4" />
               Criar Empresa
             </Button>
+            </div>
           </div>
 
-          <CompaniesTable
-            companies={companies}
-            search={search}
-            onSearchChange={setSearch}
-            onEditCompany={handleEditCompany}
-            onDeleteCompany={handleDeleteCompany}
-            onCreateProject={handleCreateProject}
-            onEditProject={handleEditProject}
-            onDeleteProject={handleDeleteProject}
-            onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
-            onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
-          />
+          <div className="mx-auto px-6 lg:px-12 max-w-[1280px] w-full">
+            <CompaniesTable
+              companies={companies}
+              search={search}
+              onSearchChange={setSearch}
+              onEditCompany={handleEditCompany}
+              onDeleteCompany={handleDeleteCompany}
+              onCreateProject={handleCreateProject}
+              onEditProject={handleEditProject}
+              onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
+              onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
+            />
+          </div>
         </div>
       )}
 
@@ -276,7 +286,7 @@ export default function Companies(): ReactElement {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title={deleteTarget?.type === "project" ? "Deletar Projeto" : "Deletar Empresa"}
+        title="Deletar Empresa"
         message={`Tem certeza que deseja deletar "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(undefined)}

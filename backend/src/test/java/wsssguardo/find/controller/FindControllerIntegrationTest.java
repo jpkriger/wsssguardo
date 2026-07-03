@@ -17,8 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import wsssguardo.AbstractIntegrationTest;
 
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.Find;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
@@ -31,7 +31,7 @@ class FindControllerIntegrationTest extends AbstractIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private CompanyRepository companyRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -41,8 +41,8 @@ class FindControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void getFindingNameByProjectIdShouldReturnFindingNamesForProject() throws Exception {
-        Customer customer = createCustomer("Cliente Teste");
-        Project project = createProject(customer);
+        Company company = createCompany("Cliente Teste");
+        Project project = createProject(company);
         Find older = createFind(project, "Achado anterior", LocalDateTime.of(2026, 4, 20, 10, 0));
         Find newer = createFind(project, "Achado recente", LocalDateTime.of(2026, 4, 21, 10, 0));
 
@@ -64,17 +64,17 @@ class FindControllerIntegrationTest extends AbstractIntegrationTest {
             .andExpect(status().isNotFound());
     }
 
-    private Customer createCustomer(String name) {
-        Customer customer = new Customer();
-        customer.setName(name);
-        customer.setCreatedAt(LocalDateTime.now());
-        return customerRepository.saveAndFlush(customer);
+    private Company createCompany(String name) {
+        Company company = new Company();
+        company.setName(name);
+        company.setCreatedAt(LocalDateTime.now());
+        return companyRepository.saveAndFlush(company);
     }
 
-    private Project createProject(Customer customer) {
+    private Project createProject(Company company) {
         Project project = new Project();
         project.setName("Projeto Teste");
-        project.setCustomer(customer);
+        project.setCompany(company);
         project.setStartDate(LocalDate.of(2026, 4, 1));
         project.setEndDate(LocalDate.of(2026, 12, 31));
         project.setStatus(ProjectStatus.IN_PROGRESS);

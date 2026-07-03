@@ -1,6 +1,7 @@
 package wsssguardo.find.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,7 @@ import wsssguardo.find.mapper.FindMapper;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,15 +51,14 @@ class FindServiceTest {
         UUID secondId = UUID.randomUUID();
         Project project = new Project();
         project.setId(projectId);
-        
+
         Find olderFind = find(firstId, "Achado anterior");
         Find newerFind = find(secondId, "Achado recente");
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(repository.findAllByProjectIdOrderByCreatedAtDesc(projectId)).thenReturn(List.of(
-            newerFind,
-            olderFind
-        ));
+                newerFind,
+                olderFind));
         when(mapper.toNameResponse(newerFind)).thenReturn(new FindNameResponseDTO(secondId, "Achado recente"));
         when(mapper.toNameResponse(olderFind)).thenReturn(new FindNameResponseDTO(firstId, "Achado anterior"));
 
@@ -70,6 +71,44 @@ class FindServiceTest {
         assertEquals("Achado anterior", response.get(1).name());
         verify(projectRepository).findById(projectId);
         verify(repository).findAllByProjectIdOrderByCreatedAtDesc(projectId);
+    }
+
+    @Test
+    void deleteFind_WithLinkedRisks_ThrowsConflict() {
+        UUID projectId = UUID.randomUUID();
+        UUID findId = UUID.randomUUID();
+        Project project = new Project();
+        project.setId(projectId);
+        Find find = find(findId, "Achado");
+
+        when(repository.findByIdAndProjectId(findId, projectId)).thenReturn(Optional.of(find));
+        when(repository.existsActiveRiskLink(findId)).thenReturn(true);
+
+        assertThrows(ApiException.class, () -> service.delete(projectId, findId, "testUser"));
+
+        verify(repository).findByIdAndProjectId(findId, projectId);
+        verify(repository).existsActiveRiskLink(findId);
+    }
+
+    @Test
+    void deleteFind_NoLinkedRisks_SoftDeletesEntity() {
+        UUID projectId = UUID.randomUUID();
+        UUID findId = UUID.randomUUID();
+        String username = "testUser";
+        Project project = new Project();
+        project.setId(projectId);
+        Find find = find(findId, "Achado");
+
+        when(repository.findByIdAndProjectId(findId, projectId)).thenReturn(Optional.of(find));
+        when(repository.existsActiveRiskLink(findId)).thenReturn(false);
+
+        service.delete(projectId, findId, username);
+
+        verify(repository).findByIdAndProjectId(findId, projectId);
+        verify(repository).existsActiveRiskLink(findId);
+        assertNotNull(find.getDeletedAt());
+        assertEquals(username, find.getDeletedBy());
+        verify(repository).save(find);
     }
 
     @Test

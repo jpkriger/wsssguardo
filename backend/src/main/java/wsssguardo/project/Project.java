@@ -20,12 +20,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.type.SqlTypes;
 
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
-import wsssguardo.customer.Customer;
+import wsssguardo.company.Company;
 import wsssguardo.find.Find;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
@@ -40,15 +39,14 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE projects SET deleted_at = NOW() WHERE id = ?")
 public class Project extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -79,4 +77,7 @@ public class Project extends BaseEntity {
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private ProjectConfiguration configuration = ProjectConfiguration.createDefault();
+
+    @Column(name = "ai_report_intro", columnDefinition = "TEXT")
+    private String aiReportIntro;
 }

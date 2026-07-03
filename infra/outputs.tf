@@ -50,3 +50,28 @@ output "obs_private_ip" {
   description = "IP privado da EC2 de observabilidade (usado pelo nginx do backend)"
   value       = aws_instance.obs.private_ip
 }
+
+# -------------------------------------------------------------------------
+# Cognito
+# -------------------------------------------------------------------------
+
+output "cognito_user_pool_id" {
+  description = "ID do Cognito User Pool — usado como COGNITO_USER_POOL_ID no backend"
+  value       = aws_cognito_user_pool.main.id
+}
+
+output "cognito_client_id" {
+  description = "ID do App Client — usado como COGNITO_CLIENT_ID no backend"
+  value       = aws_cognito_user_pool_client.backend.id
+}
+
+output "cognito_client_secret" {
+  description = "Secret do App Client — usado como COGNITO_CLIENT_SECRET no backend"
+  value       = aws_cognito_user_pool_client.backend.client_secret
+  sensitive   = true
+}
+
+output "cognito_region" {
+  description = "Região do Cognito — usado como COGNITO_REGION no backend"
+  value       = var.aws_region
+}

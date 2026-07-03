@@ -12,7 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import type { RiskPriority } from "@/api/risk";
+import { priorityConfig, priorityOptions } from "@/lib/priority";
 
 export interface RiskModalOption {
   id: string;
@@ -21,19 +30,19 @@ export interface RiskModalOption {
 }
 
 export interface RiskModalRisk {
-  id: string;
+  id:string;
   name?: string | null;
   description?: string | null;
   consequences?: string | null;
   occurrenceProbability?: number | null;
   impactProbability?: number | null;
-  damageOperations?: string | null;
-  damageIndividuals?: string | null;
-  damageOtherOrgs?: string | null;
+  damageOperations?: number | null;
+  damageIndividuals?: number | null;
+  damageOtherOrgs?: number | null;
+  damageAssets?: number | null;
   recommendation?: string | null;
-  riskLevel?: number | null;
+  priority?: RiskPriority | null;
   findIds?: string[] | null;
-  damageAssetIds?: string[] | null;
 }
 
 export interface RiskModalSubmitData {
@@ -43,12 +52,13 @@ export interface RiskModalSubmitData {
   consequences: string;
   occurrenceProbability: number;
   impactProbability: number;
-  damageOperations: string;
-  damageIndividuals: string;
-  damageOtherOrgs: string;
+  damageOperations: number;
+  damageIndividuals: number;
+  damageOtherOrgs: number;
+  damageAssets: number;
   recommendation: string;
+  priority: RiskPriority;
   findIds: string[];
-  damageAssetIds: string[];
 }
 
 type RiskModalField =
@@ -60,7 +70,9 @@ type RiskModalField =
   | "damageOperations"
   | "damageIndividuals"
   | "damageOtherOrgs"
-  | "recommendation";
+  | "damageAssets"
+  | "recommendation"
+  | "priority";
 
 interface RiskModalFormState {
   name: string;
@@ -71,7 +83,9 @@ interface RiskModalFormState {
   damageOperations: string;
   damageIndividuals: string;
   damageOtherOrgs: string;
+  damageAssets: string;
   recommendation: string;
+  priority: RiskPriority;
 }
 
 interface RiskModalProps {
@@ -81,6 +95,8 @@ interface RiskModalProps {
   risk?: RiskModalRisk | null;
   findings?: RiskModalOption[];
   probabilityRange?: { min: number; max: number };
+  /** Project's configured damage scale (RiskConfig.minRange/maxRange). Falls back to 0–10 until loaded. */
+  damageRange?: { min: number; max: number };
   onClose: () => void;
   onSubmit: (data: RiskModalSubmitData) => void;
 }
@@ -94,11 +110,15 @@ export interface RiskModalValidationErrors {
   damageOperations?: string;
   damageIndividuals?: string;
   damageOtherOrgs?: string;
+  damageAssets?: string;
   recommendation?: string;
+  priority?: string;
 }
 
 const PROBABILITY_MIN_DEFAULT = 0;
 const PROBABILITY_MAX_DEFAULT = 100;
+const DAMAGE_MIN_DEFAULT = 0;
+const DAMAGE_MAX_DEFAULT = 10;
 
 function createEmptyFormState(): RiskModalFormState {
   return {
@@ -110,7 +130,9 @@ function createEmptyFormState(): RiskModalFormState {
     damageOperations: "",
     damageIndividuals: "",
     damageOtherOrgs: "",
+    damageAssets: "",
     recommendation: "",
+    priority: "P3",
   };
 }
 
@@ -118,15 +140,10 @@ function toInputValue(value: string | number | null | undefined): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
-function parseProbability(value: string): number | null {
+function parseNumeric(value: string): number | null {
   const trimmed = value.trim();
-
-  if (trimmed === "") {
-    return null;
-  }
-
+  if (trimmed === "") return null;
   const parsed = Number(trimmed.replace(",", "."));
-
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -134,29 +151,23 @@ function validateRequiredText(
   value: string,
   message: string,
 ): string | undefined {
-  if (!value.trim()) {
-    return message;
-  }
-
+  if (!value.trim()) return message;
   return undefined;
 }
 
-function validateProbability(
+function validateNumeric(
   value: string,
   label: string,
   min: number,
   max: number,
 ): string | undefined {
-  const parsed = parseProbability(value);
-
+  const parsed = parseNumeric(value);
   if (parsed === null) {
-    return `${label} deve ser um número entre ${min} e ${max}.`;
+    return `${label} deve ser um número.`;
   }
-
   if (parsed < min || parsed > max) {
     return `${label} deve ficar entre ${min} e ${max}.`;
   }
-
   return undefined;
 }
 
@@ -164,6 +175,8 @@ function validateRiskModalDraft(
   form: RiskModalFormState,
   probMin: number,
   probMax: number,
+  dmgMin: number,
+  dmgMax: number,
 ): RiskModalValidationErrors {
   return {
     name: validateRequiredText(form.name, "Informe o nome do risco."),
@@ -175,34 +188,47 @@ function validateRiskModalDraft(
       form.consequences,
       "Informe o impacto potencial para o negócio.",
     ),
-    occurrenceProbability: validateProbability(
+    occurrenceProbability: validateNumeric(
       form.occurrenceProbability,
       "Probabilidade de ocorrência",
       probMin,
       probMax,
     ),
-    impactProbability: validateProbability(
+    impactProbability: validateNumeric(
       form.impactProbability,
       "Probabilidade de impacto",
       probMin,
       probMax,
     ),
-    damageOperations: validateRequiredText(
+    damageOperations: validateNumeric(
       form.damageOperations,
-      "Informe os possíveis danos às operações do cliente.",
+      "Danos às operações",
+      dmgMin,
+      dmgMax,
     ),
-    damageIndividuals: validateRequiredText(
+    damageIndividuals: validateNumeric(
       form.damageIndividuals,
-      "Informe os possíveis danos aos indivíduos.",
+      "Danos a indivíduos",
+      dmgMin,
+      dmgMax,
     ),
-    damageOtherOrgs: validateRequiredText(
+    damageOtherOrgs: validateNumeric(
       form.damageOtherOrgs,
-      "Informe os possíveis danos a outras organizações.",
+      "Danos a outras organizações",
+      dmgMin,
+      dmgMax,
+    ),
+    damageAssets: validateNumeric(
+      form.damageAssets,
+      "Danos a ativos",
+      dmgMin,
+      dmgMax,
     ),
     recommendation: validateRequiredText(
       form.recommendation,
       "Informe o plano de ação sugerido.",
     ),
+    priority: validateRequiredText(form.priority, "Selecione a prioridade."),
   };
 }
 
@@ -227,10 +253,7 @@ function FieldError({
   id: string;
   message?: string;
 }): ReactElement | null {
-  if (!message) {
-    return null;
-  }
-
+  if (!message) return null;
   return (
     <p id={id} className="text-xs text-destructive">
       {message}
@@ -267,7 +290,10 @@ function LinkedOptionsSection({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent): void {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -327,7 +353,9 @@ function LinkedOptionsSection({
                     >
                       <span>{option.label}</span>
                       {isSelected && (
-                        <span className="text-xs text-primary font-medium">✓</span>
+                        <span className="text-xs text-primary font-medium">
+                          ✓
+                        </span>
                       )}
                     </button>
                   );
@@ -342,7 +370,6 @@ function LinkedOptionsSection({
         <div className="flex flex-wrap gap-2">
           {selectedIds.map((id) => {
             const selectedOption = options.find((option) => option.id === id);
-
             return (
               <Badge key={id} variant="outline" className="gap-1 px-2 py-1">
                 {selectedOption?.label ?? id}
@@ -369,32 +396,24 @@ export default function RiskModal({
   risk = null,
   findings = [],
   probabilityRange,
+  damageRange,
   onClose,
   onSubmit,
 }: RiskModalProps): ReactElement {
   const probMin = probabilityRange?.min ?? PROBABILITY_MIN_DEFAULT;
   const probMax = probabilityRange?.max ?? PROBABILITY_MAX_DEFAULT;
+  const dmgMin = damageRange?.min ?? DAMAGE_MIN_DEFAULT;
+  const dmgMax = damageRange?.max ?? DAMAGE_MAX_DEFAULT;
+
   const [form, setForm] = useState<RiskModalFormState>(createEmptyFormState());
   const [findIds, setFindIds] = useState<string[]>([]);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [touchedFields, setTouchedFields] = useState<
-    Record<RiskModalField, boolean>
-  >({
-    name: false,
-    description: false,
-    consequences: false,
-    occurrenceProbability: false,
-    impactProbability: false,
-    damageOperations: false,
-    damageIndividuals: false,
-    damageOtherOrgs: false,
-    recommendation: false,
-  });
+    Partial<Record<RiskModalField, boolean>>
+  >({});
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!open) return;
 
     if (mode === "edit" && risk) {
       setForm({
@@ -406,41 +425,20 @@ export default function RiskModal({
         damageOperations: toInputValue(risk.damageOperations),
         damageIndividuals: toInputValue(risk.damageIndividuals),
         damageOtherOrgs: toInputValue(risk.damageOtherOrgs),
+        damageAssets: toInputValue(risk.damageAssets),
         recommendation: toInputValue(risk.recommendation),
+        priority: risk.priority ?? "P3",
       });
       setFindIds([...(risk.findIds ?? [])]);
-      setSubmitAttempted(false);
-      setTouchedFields({
-        name: false,
-        description: false,
-        consequences: false,
-        occurrenceProbability: false,
-        impactProbability: false,
-        damageOperations: false,
-        damageIndividuals: false,
-        damageOtherOrgs: false,
-        recommendation: false,
-      });
-      return;
+    } else {
+      setForm(createEmptyFormState());
+      setFindIds([]);
     }
-
-    setForm(createEmptyFormState());
-    setFindIds([]);
     setSubmitAttempted(false);
-    setTouchedFields({
-      name: false,
-      description: false,
-      consequences: false,
-      occurrenceProbability: false,
-      impactProbability: false,
-      damageOperations: false,
-      damageIndividuals: false,
-      damageOtherOrgs: false,
-      recommendation: false,
-    });
+    setTouchedFields({});
   }, [open, mode, risk]);
 
-  const errors = validateRiskModalDraft(form, probMin, probMax);
+  const errors = validateRiskModalDraft(form, probMin, probMax, dmgMin, dmgMax);
   const showError = (field: RiskModalField): string | undefined =>
     submitAttempted || touchedFields[field] ? errors[field] : undefined;
 
@@ -449,7 +447,7 @@ export default function RiskModal({
   const subtitle =
     mode === "create"
       ? "Registre um risco com todos os campos necessários, vinculando achados e ativos afetados."
-      : "Revise e ajuste o risco selecionado sem sair do padrão visual usado nos ativos.";
+      : "Revise e ajuste o risco selecionado.";
 
   const primaryButtonLabel = loading
     ? mode === "create"
@@ -460,32 +458,44 @@ export default function RiskModal({
       : "Salvar alterações";
 
   function handleFieldChange(field: RiskModalField, value: string): void {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function handlePriorityChange(value: RiskPriority | null): void {
+    if (value === null) return;
+    setForm((current) => ({ ...current, priority: value }));
   }
 
   function handleBlur(field: RiskModalField): void {
-    setTouchedFields((current) => ({
-      ...current,
-      [field]: true,
-    }));
+    setTouchedFields((current) => ({ ...current, [field]: true }));
   }
 
   function handleSubmit(): void {
     setSubmitAttempted(true);
+    const validationErrors = validateRiskModalDraft(
+      form,
+      probMin,
+      probMax,
+      dmgMin,
+      dmgMax,
+    );
+    if (hasValidationErrors(validationErrors)) return;
 
-    const validationErrors = validateRiskModalDraft(form, probMin, probMax);
+    const occurrenceProbability = parseNumeric(form.occurrenceProbability);
+    const impactProbability = parseNumeric(form.impactProbability);
+    const damageOperations = parseNumeric(form.damageOperations);
+    const damageIndividuals = parseNumeric(form.damageIndividuals);
+    const damageOtherOrgs = parseNumeric(form.damageOtherOrgs);
+    const damageAssets = parseNumeric(form.damageAssets);
 
-    if (hasValidationErrors(validationErrors)) {
-      return;
-    }
-
-    const occurrenceProbability = parseProbability(form.occurrenceProbability);
-    const impactProbability = parseProbability(form.impactProbability);
-
-    if (occurrenceProbability === null || impactProbability === null) {
+    if (
+      occurrenceProbability === null ||
+      impactProbability === null ||
+      damageOperations === null ||
+      damageIndividuals === null ||
+      damageOtherOrgs === null ||
+      damageAssets === null
+    ) {
       return;
     }
 
@@ -496,19 +506,15 @@ export default function RiskModal({
       consequences: form.consequences.trim(),
       occurrenceProbability,
       impactProbability,
-      damageOperations: form.damageOperations.trim(),
-      damageIndividuals: form.damageIndividuals.trim(),
-      damageOtherOrgs: form.damageOtherOrgs.trim(),
+      damageOperations,
+      damageIndividuals,
+      damageOtherOrgs,
+      damageAssets,
       recommendation: form.recommendation.trim(),
+      priority: form.priority,
       findIds: [...findIds],
-      damageAssetIds: [] as string[],
     });
   }
-
-  const riskLevelValue =
-    risk?.riskLevel === null || risk?.riskLevel === undefined
-      ? "Calculado automaticamente pelo sistema"
-      : String(risk.riskLevel);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -598,7 +604,9 @@ export default function RiskModal({
           <section className="grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-medium">Probabilidades</h3>
-              <Badge variant="secondary">Escala de {probMin} a {probMax}</Badge>
+              <Badge variant="secondary">
+                Escala de {probMin} a {probMax}
+              </Badge>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -676,134 +684,147 @@ export default function RiskModal({
 
           <section className="grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-medium">Danos e recomendação</h3>
-              <Badge variant="secondary">Campos obrigatórios</Badge>
+              <h3 className="text-sm font-medium">Danos e Prioridade</h3>
+              <Badge variant="secondary">
+                Escala de {dmgMin} a {dmgMax}
+              </Badge>
             </div>
-
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor={makeFieldId("damageOperations")}>
-                  Possíveis danos às operações
+                  Danos às operações
                 </Label>
-                <Textarea
+                <Input
+                  type="number"
                   id={makeFieldId("damageOperations")}
-                  placeholder="Explique o impacto nas operações do cliente"
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageOperations}
-                  onChange={(event) =>
-                    handleFieldChange("damageOperations", event.target.value)
+                  onChange={(e) =>
+                    handleFieldChange("damageOperations", e.target.value)
                   }
                   onBlur={() => handleBlur("damageOperations")}
                   disabled={loading}
-                  className="min-h-[100px]"
-                  aria-invalid={Boolean(showError("damageOperations"))}
-                  aria-describedby={
-                    showError("damageOperations")
-                      ? `${makeFieldId("damageOperations")}-error`
-                      : undefined
-                  }
                 />
                 <FieldError
                   id={`${makeFieldId("damageOperations")}-error`}
                   message={showError("damageOperations")}
                 />
               </div>
-
               <div className="grid gap-2">
                 <Label htmlFor={makeFieldId("damageIndividuals")}>
-                  Possíveis danos aos indivíduos
+                  Danos a indivíduos
                 </Label>
-                <Textarea
+                <Input
+                  type="number"
                   id={makeFieldId("damageIndividuals")}
-                  placeholder="Explique o impacto sobre pessoas envolvidas"
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageIndividuals}
-                  onChange={(event) =>
-                    handleFieldChange("damageIndividuals", event.target.value)
+                  onChange={(e) =>
+                    handleFieldChange("damageIndividuals", e.target.value)
                   }
                   onBlur={() => handleBlur("damageIndividuals")}
                   disabled={loading}
-                  className="min-h-[100px]"
-                  aria-invalid={Boolean(showError("damageIndividuals"))}
-                  aria-describedby={
-                    showError("damageIndividuals")
-                      ? `${makeFieldId("damageIndividuals")}-error`
-                      : undefined
-                  }
                 />
                 <FieldError
                   id={`${makeFieldId("damageIndividuals")}-error`}
                   message={showError("damageIndividuals")}
                 />
               </div>
-
               <div className="grid gap-2">
                 <Label htmlFor={makeFieldId("damageOtherOrgs")}>
-                  Possíveis danos a outras organizações
+                  Danos a outras organizações
                 </Label>
-                <Textarea
+                <Input
+                  type="number"
                   id={makeFieldId("damageOtherOrgs")}
-                  placeholder="Explique impactos em parceiros ou terceiros"
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
                   value={form.damageOtherOrgs}
-                  onChange={(event) =>
-                    handleFieldChange("damageOtherOrgs", event.target.value)
+                  onChange={(e) =>
+                    handleFieldChange("damageOtherOrgs", e.target.value)
                   }
                   onBlur={() => handleBlur("damageOtherOrgs")}
                   disabled={loading}
-                  className="min-h-[100px]"
-                  aria-invalid={Boolean(showError("damageOtherOrgs"))}
-                  aria-describedby={
-                    showError("damageOtherOrgs")
-                      ? `${makeFieldId("damageOtherOrgs")}-error`
-                      : undefined
-                  }
                 />
                 <FieldError
                   id={`${makeFieldId("damageOtherOrgs")}-error`}
                   message={showError("damageOtherOrgs")}
                 />
               </div>
-
               <div className="grid gap-2">
-                <Label htmlFor={makeFieldId("recommendation")}>
-                  Recomendação
+                <Label htmlFor={makeFieldId("damageAssets")}>
+                  Danos a ativos
                 </Label>
-                <Textarea
-                  id={makeFieldId("recommendation")}
-                  placeholder="Plano de ação sugerido"
-                  value={form.recommendation}
-                  onChange={(event) =>
-                    handleFieldChange("recommendation", event.target.value)
+                <Input
+                  type="number"
+                  id={makeFieldId("damageAssets")}
+                  min={dmgMin}
+                  max={dmgMax}
+                  placeholder={`${dmgMin} a ${dmgMax}`}
+                  value={form.damageAssets}
+                  onChange={(e) =>
+                    handleFieldChange("damageAssets", e.target.value)
                   }
-                  onBlur={() => handleBlur("recommendation")}
+                  onBlur={() => handleBlur("damageAssets")}
                   disabled={loading}
-                  className="min-h-[100px]"
-                  aria-invalid={Boolean(showError("recommendation"))}
-                  aria-describedby={
-                    showError("recommendation")
-                      ? `${makeFieldId("recommendation")}-error`
-                      : undefined
-                  }
                 />
                 <FieldError
-                  id={`${makeFieldId("recommendation")}-error`}
-                  message={showError("recommendation")}
+                  id={`${makeFieldId("damageAssets")}-error`}
+                  message={showError("damageAssets")}
+                />
+              </div>
+
+              <div className="grid gap-2 sm:col-span-2">
+                <Label htmlFor={makeFieldId("priority")}>Prioridade</Label>
+                <Select
+                  value={form.priority}
+                  onValueChange={handlePriorityChange}
+                  disabled={loading}
+                >
+                  <SelectTrigger id={makeFieldId("priority")}>
+                    <SelectValue placeholder="Selecione a prioridade">
+                      {priorityConfig[form.priority]?.label || "Selecione a prioridade"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError
+                  id={`${makeFieldId("priority")}-error`}
+                  message={showError("priority")}
                 />
               </div>
             </div>
-          </section>
 
-          <section className="grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-medium">Classificação de risco</h3>
-              <Badge variant="secondary">Leitura somente</Badge>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="risk-level">Nível de risco</Label>
-              <Input id="risk-level" value={riskLevelValue} disabled />
-              <p className="text-xs text-muted-foreground">
-                Esse valor é normalizado e recalculado pelo sistema com base nas
-                configurações do projeto.
-              </p>
+            <div className="grid gap-2 mt-4">
+              <Label htmlFor={makeFieldId("recommendation")}>
+                Recomendação
+              </Label>
+              <Textarea
+                id={makeFieldId("recommendation")}
+                placeholder="Plano de ação sugerido"
+                value={form.recommendation}
+                onChange={(e) =>
+                  handleFieldChange("recommendation", e.target.value)
+                }
+                onBlur={() => handleBlur("recommendation")}
+                disabled={loading}
+                className="min-h-[100px]"
+              />
+              <FieldError
+                id={`${makeFieldId("recommendation")}-error`}
+                message={showError("recommendation")}
+              />
             </div>
           </section>
 

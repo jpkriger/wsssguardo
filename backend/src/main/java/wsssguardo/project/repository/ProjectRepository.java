@@ -11,7 +11,7 @@ import wsssguardo.project.Project;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    List<Project> findByCustomerId(UUID customerId);
+    List<Project> findByCompanyId(UUID companyId);
 
     @Query("""
             select p.id
@@ -23,4 +23,21 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             order by p.createdAt desc
             """)
     List<UUID> findProjectIdsByUserId(@Param("userId") UUID userId);
+
+    @Query("""
+            select count(pu) > 0
+            from ProjectUser pu
+            where pu.user.id = :userId
+                and pu.project.id = :projectId
+                and pu.deletedAt is null
+            """)
+    boolean existsMember(@Param("userId") UUID userId, @Param("projectId") UUID projectId);
+
+    @Query("""
+            select p
+            from Project p
+            where p.id in :ids
+                and p.deletedAt is null
+            """)
+    List<Project> findAllByIdIn(@Param("ids") List<UUID> ids);
 }

@@ -3,6 +3,7 @@ package wsssguardo.risk.dto.responsedto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import wsssguardo.risk.RiskPriority;
 
 public record RiskResponseDTO(
     UUID id,
@@ -13,12 +14,14 @@ public record RiskResponseDTO(
     String consequences,
     Float occurrenceProbability,
     Float impactProbability,
-    String damageOperations,
-    List<UUID> damageAssetIds,
-    String damageIndividuals,
-    String damageOtherOrgs,
+    Float damageOperations,
+    Float damageIndividuals,
+    Float damageOtherOrgs,
+    Float damageAssets,
+    Float generalRisk,
+    RiskPriority priority,
+    String aiSummary,
     String recommendation,
-    Integer riskLevel,
     String createdBy,
     LocalDateTime createdAt,
     LocalDateTime updatedAt

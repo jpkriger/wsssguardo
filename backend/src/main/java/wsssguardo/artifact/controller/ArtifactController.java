@@ -26,6 +26,7 @@ import wsssguardo.artifact.service.ArtifactService;
 import wsssguardo.shared.openapi.ApiCreate;
 import wsssguardo.shared.openapi.ApiGetById;
 import wsssguardo.shared.openapi.ApiListAll;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Artifacts", description = "Artifact operations scoped to a project")
 @RestController
@@ -34,19 +35,23 @@ import wsssguardo.shared.openapi.ApiListAll;
 public class ArtifactController {
 
     private final ArtifactService service;
+    private final ProjectAccessService projectAccessService;
 
     @ApiListAll
     @GetMapping("/listByProject/")
     public List<ArtifactResponseDTO> listByProject(
             @PathVariable UUID projectId,
             @RequestParam(required = false) ArtifactType type) {
+        projectAccessService.assertAccess(projectId);
         return service.listByProject(projectId, type);
     }
 
     @ApiCreate
     @PostMapping("/create/")
-    public ResponseEntity<ArtifactResponseDTO> create(@PathVariable UUID projectId, @Valid @RequestBody ArtifactRequestDTO request) {
-
+    public ResponseEntity<ArtifactResponseDTO> create(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody ArtifactRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
         ArtifactResponseDTO created = service.create(projectId, request);
         URI location = URI.create("/api/projects/" + projectId + "/artifacts/" + created.id());
         return ResponseEntity.created(location).body(created);
@@ -54,20 +59,28 @@ public class ArtifactController {
 
     @ApiGetById
     @GetMapping("/get/{id}")
-    public ResponseEntity<ArtifactResponseDTO> getById(@PathVariable UUID projectId, @PathVariable UUID id) {
+    public ResponseEntity<ArtifactResponseDTO> getById(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.getById(projectId, id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ArtifactResponseDTO> update(@PathVariable UUID projectId, @PathVariable UUID id,
-                                                      @Valid @RequestBody ArtifactUpdateRequestDTO request) {
-
+    public ResponseEntity<ArtifactResponseDTO> update(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id,
+            @Valid @RequestBody ArtifactUpdateRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.update(projectId, id, request));
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID projectId, @PathVariable UUID id) {
-        service.delete(projectId, id);
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID projectId,
+            @PathVariable UUID id) {
+        projectAccessService.assertAccess(projectId);
+        service.delete(projectId, id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

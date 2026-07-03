@@ -1,4 +1,4 @@
-import { parseApiErrorResponse } from "./errors";
+import apiClient from "@/lib/api-client";
 
 export interface AssetResponse {
     id: string;
@@ -9,6 +9,7 @@ export interface AssetResponse {
     createdBy: string;
     createdAt: string;
     updatedAt: string;
+    findingsCount: number;
 }
 
 export interface AssetPageResponse {
@@ -21,35 +22,38 @@ export interface AssetPageResponse {
     last: boolean;
 }
 
-const BASE = "/api/assets";
+function base(projectId: string): string {
+    return `projects/${projectId}/assets`;
+}
 
-export async function fetchAssetsByProject(
+export function fetchAssetsByProject(
     projectId: string,
     page: number = 0,
     size: number = 5,
 ): Promise<AssetPageResponse> {
-    const params = new URLSearchParams({
-        page: String(page),
-        size: String(size),
-    });
-
-    const url = `${BASE}/project/${projectId}?${params.toString()}`;
-    const res = await fetch(url);
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<AssetPageResponse>;
+    return apiClient
+        .get(base(projectId), {
+            searchParams: { page: String(page), size: String(size) },
+        })
+        .json<AssetPageResponse>();
 }
 
-export async function deleteAsset(id: string): Promise<void> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, { method: "DELETE" });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
+export async function fetchAllAssetsByProject(
+    projectId: string,
+): Promise<AssetResponse[]> {
+    const PAGE_SIZE = 100;
+    const all: AssetResponse[] = [];
+    let page = 0;
+    for (;;) {
+        const res = await fetchAssetsByProject(projectId, page, PAGE_SIZE);
+        all.push(...res.content);
+        if (res.last || res.content.length === 0) break;
+        page += 1;
+    }
+    return all;
 }
 
 export interface AssetCreateRequest {
-    projectId: string;
     name: string;
     description: string;
     content: string;
@@ -61,27 +65,14 @@ export interface AssetUpdateRequest {
     content?: string;
 }
 
-export async function createAsset(data: AssetCreateRequest): Promise<AssetResponse> {
-    const res = await fetch(BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
-
-    if (!res.ok) throw await parseApiErrorResponse(res, BASE);
-
-    return res.json() as Promise<AssetResponse>;
+export function createAsset(projectId: string, data: AssetCreateRequest): Promise<AssetResponse> {
+    return apiClient.post(base(projectId), { json: data }).json<AssetResponse>();
 }
 
-export async function updateAsset(id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
-    const url = `${BASE}/${id}`;
-    const res = await fetch(url, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-    });
+export function updateAsset(projectId: string, id: string, data: AssetUpdateRequest): Promise<AssetResponse> {
+    return apiClient.patch(`${base(projectId)}/${id}`, { json: data }).json<AssetResponse>();
+}
 
-    if (!res.ok) throw await parseApiErrorResponse(res, url);
-
-    return res.json() as Promise<AssetResponse>;
+export async function deleteAsset(projectId: string, id: string): Promise<void> {
+    await apiClient.delete(`${base(projectId)}/${id}`);
 }

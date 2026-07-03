@@ -2,8 +2,6 @@ package wsssguardo.find;
 
 import java.util.List;
 
-import org.hibernate.annotations.SQLDelete;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,7 +18,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import wsssguardo.artifact.Artifact;
 import wsssguardo.asset.Asset;
-import wsssguardo.find.domain.FindCategory;
 import wsssguardo.find.domain.FindSeverity;
 import wsssguardo.project.Project;
 import wsssguardo.risk.Risk;
@@ -33,7 +30,6 @@ import wsssguardo.shared.domain.BaseEntity;
 @Getter
 @Setter
 @Builder
-@SQLDelete(sql = "UPDATE finds SET deleted_at = NOW() WHERE id = ?")
 public class Find extends BaseEntity {
 
   @Column(nullable = false)
@@ -42,9 +38,6 @@ public class Find extends BaseEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "project_id", nullable = false)
   private Project project;
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  private List<FindCategory> categories;
 
   @ManyToMany(fetch = FetchType.LAZY)
   private List<Asset> assets;
@@ -56,9 +49,6 @@ public class Find extends BaseEntity {
   private List<Risk> risks;
 
   private String sector;
-
-  @Column(name = "quantitative_criticality")
-  private Integer quantitativeCriticality;
 
   @Column(columnDefinition = "TEXT")
   private String description;

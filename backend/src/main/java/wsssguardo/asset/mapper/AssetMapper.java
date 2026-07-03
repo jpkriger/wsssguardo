@@ -1,30 +1,36 @@
 package wsssguardo.asset.mapper;
 
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
 import wsssguardo.asset.Asset;
-import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
-import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.asset.dto.requestdto.AssetCreateRequestDTO;
 import wsssguardo.asset.dto.requestdto.AssetUpdateRequestDTO;
+import wsssguardo.asset.dto.responsedto.AssetPageResponseDTO;
+import wsssguardo.asset.dto.responsedto.AssetResponseDTO;
 import wsssguardo.project.Project;
-import java.time.LocalDateTime;
 
 @Component
 public class AssetMapper {
 
-    public Asset toEntity(AssetCreateRequestDTO request, Project project, String username) {
+    public Asset toEntity(AssetCreateRequestDTO request, Project project) {
         Asset asset = Asset.builder()
                 .name(request.name())
                 .description(request.description())
                 .content(request.content())
                 .project(project)
                 .build();
-        asset.setCreatedBy(username);
         return asset;
     }
 
     public AssetResponseDTO toResponse(Asset asset) {
+        return toResponse(asset, 0L);
+    }
+
+    public AssetResponseDTO toResponse(Asset asset, long findingsCount) {
         return new AssetResponseDTO(
                 asset.getId(),
                 asset.getName(),
@@ -33,12 +39,15 @@ public class AssetMapper {
                 asset.getProject().getId(),
                 asset.getCreatedBy(),
                 asset.getCreatedAt(),
-                asset.getUpdatedAt());
+                asset.getUpdatedAt(),
+                findingsCount);
     }
 
-    public AssetPageResponseDTO toPageDTO(Page<Asset> page) {
+    public AssetPageResponseDTO toPageDTO(Page<Asset> page, Map<UUID, Long> findingCounts) {
         return new AssetPageResponseDTO(
-                page.getContent().stream().map(this::toResponse).toList(),
+                page.getContent().stream()
+                        .map(a -> toResponse(a, findingCounts.getOrDefault(a.getId(), 0L)))
+                        .toList(),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
@@ -53,29 +62,19 @@ public class AssetMapper {
      * isolado.
      * Atualiza auditoria apenas se ao menos um campo foi alterado.
      */
-    public Asset updateEntity(Asset asset, AssetUpdateRequestDTO request, String username) {
-        boolean changed = false;
+    public Asset updateEntity(Asset asset, AssetUpdateRequestDTO request) {
 
-        changed |= applyName(asset, request.name());
-        changed |= applyDescription(asset, request.description());
-        changed |= applyContent(asset, request.content());
-
-        if (changed) {
-            applyAudit(asset, username);
-        }
+        applyName(asset, request.name());
+        applyDescription(asset, request.description());
+        applyContent(asset, request.content());
 
         return asset;
-    }
-
-    public void deleteEntity(Asset asset, String deletedBy) {
-        asset.setDeletedAt(LocalDateTime.now());
-        asset.setDeletedBy(deletedBy);
     }
 
     // --- métodos de campo: responsabilidade única, retornam se houve mudança ---
 
     boolean applyName(Asset asset, String name) {
-        if (name == null) {
+        if (name == null || name.trim().isBlank()) {
             return false;
         }
         asset.setName(name);
@@ -98,8 +97,4 @@ public class AssetMapper {
         return true;
     }
 
-    void applyAudit(Asset asset, String username) {
-        asset.setUpdatedAt(LocalDateTime.now());
-        asset.setLastModifiedBy(username);
-    }
 }

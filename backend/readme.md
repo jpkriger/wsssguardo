@@ -52,40 +52,40 @@ Referência implementada: `entityobject`.
 - `GET /api/projects`
 - `GET /api/projects?ids=<uuid>&ids=<uuid>`
 - `GET /api/projects?userId=<uuid>`
-<<<<<<< HEAD
 - `POST /api/risks`
-=======
 - `GET /api/finds/getFindingNameByProjectId/{projectId}`
->>>>>>> develop
 
 O endpoint de projetos aceita três modos de consulta no mesmo controller:
 
-- Sem parâmetros retorna a lista completa de projetos (`id`, `name`, `customerId`, `startDate`, `endDate`, `status`).
+- Sem parâmetros retorna a lista completa de projetos (`id`, `name`, `companyId`, `startDate`, `endDate`, `status`).
 - `ids` repetido retorna detalhes de projetos preservando a ordem solicitada.
 - `userId` retorna lista de IDs (UUID) dos projetos relacionados ao usuário.
 
-<<<<<<< HEAD
-## Contrato: criar risco
+## Contratos documentados
 
-`POST /api/risks` cria um risco usando o contrato derivado da migration `risks`, incluindo relações com `project`, `finds` e `damageAssets`.
+- [Contrato da API de relatório](../docs/report-api-contract.md)
+- Os endpoints de risco usam a rota base `/api/projects/{projectId}/risks`:
+
+### Riscos
+
+`POST /api/projects/{projectId}/risks`
 
 Request:
 
 ```json
 {
-  "projectId": "00000000-0000-0000-0000-000000000001",
   "name": "Unauthorized data exposure",
-  "findIds": ["00000000-0000-0000-0000-000000000002"],
+  "findIds": ["uuid"],
   "description": "Personal data exposed in public endpoint",
   "consequences": "Privacy incident",
   "occurrenceProbability": 0.7,
   "impactProbability": 0.9,
-  "damageOperations": "Incident response required",
-  "damageAssetIds": ["00000000-0000-0000-0000-000000000003"],
-  "damageIndividuals": "Personal data exposure",
-  "damageOtherOrgs": "Partner notification",
+  "damageOperations": 8,
+  "damageAssets": 6,
+  "damageIndividuals": 9,
+  "damageOtherOrgs": 7,
   "recommendation": "Restrict endpoint and add tests",
-  "riskLevel": 9000
+  "priority": "P1"
 }
 ```
 
@@ -93,37 +93,40 @@ Response `201 Created`:
 
 ```json
 {
-  "id": "00000000-0000-0000-0000-000000000010",
-  "projectId": "00000000-0000-0000-0000-000000000001",
+  "id": "uuid",
+  "projectId": "uuid",
   "name": "Unauthorized data exposure",
-  "findIds": ["00000000-0000-0000-0000-000000000002"],
+  "findIds": ["uuid"],
   "description": "Personal data exposed in public endpoint",
   "consequences": "Privacy incident",
   "occurrenceProbability": 0.7,
   "impactProbability": 0.9,
-  "damageOperations": "Incident response required",
-  "damageAssetIds": ["00000000-0000-0000-0000-000000000003"],
-  "damageIndividuals": "Personal data exposure",
-  "damageOtherOrgs": "Partner notification",
+  "damageOperations": 8,
+  "damageAssets": 6,
+  "damageIndividuals": 9,
+  "damageOtherOrgs": 7,
+  "generalRisk": 7.5,
+  "priority": "P1",
+  "aiSummary": null,
   "recommendation": "Restrict endpoint and add tests",
-  "riskLevel": 9000,
-  "createdBy": "authenticatedUser",
-  "createdAt": "2026-04-30T10:00:00",
+  "createdBy": "user",
+  "createdAt": "2026-06-19T00:00:00",
   "updatedAt": null
 }
 ```
 
-Erros padronizados pelo `GlobalExceptionHandler`:
+`PUT /api/projects/{projectId}/risks/{id}` aceita os mesmos campos de criação como atualização parcial. `priority` é manual e aceita `P1`, `P2`, `P3`, `P4` ou `P5`. `aiSummary` é persistido para preenchimento por outro fluxo e pode retornar `null`.
 
-- `400 Bad Request`: validação de body, como `projectId` ausente, `name` vazio ou `riskLevel` fora de `0..10000`.
-- `404 Not Found`: `Project`, `Find` ou `Asset` informado por UUID não existe.
+`generalRisk` não é aceito no request. O backend calcula a média aritmética de `damageOperations`, `damageAssets`, `damageIndividuals` e `damageOtherOrgs` em criação e atualização. As quatro notas são obrigatórias no risco persistido e devem respeitar `riskConfig.minRange` e `riskConfig.maxRange` da configuração do projeto; valores fora da escala retornam `400 Bad Request`.
 
-Teste local do endpoint:
+Teste local:
 
 ```bash
-./mvnw test -Dtest=RiskServiceImplTest,RiskControllerIntegrationTest
-=======
-O endpoint de achados por projeto retorna uma lista enxuta para seleção:
+./mvnw test
+./mvnw clean verify
+```
+
+- O endpoint `GET /api/finds/getFindingNameByProjectId/{projectId}` retorna uma lista enxuta para seleção:
 
 ```json
 [
@@ -132,7 +135,6 @@ O endpoint de achados por projeto retorna uma lista enxuta para seleção:
     "name": "Nome do achado"
   }
 ]
->>>>>>> develop
 ```
 
 ## Qualidade

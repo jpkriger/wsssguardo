@@ -11,8 +11,6 @@ public record ProjectUpdateRequest(
     @Size(max = 255, message = "name must not exceed 255 characters")
     String name,
 
-    UUID customerId,
-
     LocalDate startDate,
     LocalDate endDate,
 

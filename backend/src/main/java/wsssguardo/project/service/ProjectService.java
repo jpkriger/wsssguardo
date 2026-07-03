@@ -1,8 +1,10 @@
 package wsssguardo.project.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,7 +13,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,23 +20,30 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import wsssguardo.artifact.repository.ArtifactRepository;
 import wsssguardo.asset.repository.AssetRepository;
-import wsssguardo.customer.Customer;
-import wsssguardo.customer.repository.CustomerRepository;
+import wsssguardo.company.Company;
+import wsssguardo.company.repository.CompanyRepository;
 import wsssguardo.find.repository.FindRepository;
 import wsssguardo.project.Project;
+import wsssguardo.project.domain.ProjectDeletionAudit;
 import wsssguardo.project.domain.ProjectStatus;
 import wsssguardo.project.domain.ProjectUser;
-import wsssguardo.project.domain.UserProjectLevel;
+import wsssguardo.project.domain.projectConfiguration.ProjectConfiguration;
 import wsssguardo.project.domain.projectConfiguration.RiskCategory;
+import wsssguardo.project.domain.projectConfiguration.RiskConfig;
 import wsssguardo.project.dto.ProjectCreateRequest;
 import wsssguardo.project.dto.ProjectResponse;
 import wsssguardo.project.dto.ProjectSummaryDTO;
 import wsssguardo.project.dto.ProjectUpdateRequest;
+import wsssguardo.project.dto.RiskCategoryDTO;
+import wsssguardo.project.dto.RiskConfigUpdateDTO;
 import wsssguardo.project.mapper.ProjectMapper;
+import wsssguardo.project.repository.ProjectDeletionAuditRepository;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.project.repository.ProjectUserRepository;
 import wsssguardo.risk.repository.RiskRepository;
 import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
+import wsssguardo.shared.security.ProjectAccessService;
 import wsssguardo.user.User;
 import wsssguardo.user.repository.UserRepository;
 
@@ -44,19 +52,24 @@ import wsssguardo.user.repository.UserRepository;
 public class ProjectService {
 
     private final ProjectRepository repository;
-    private final CustomerRepository customerRepository;
+    private final ProjectUserRepository projectUserRepository;
+    private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
     private final ArtifactRepository artifactRepository;
     private final FindRepository findRepository;
     private final RiskRepository riskRepository;
+    private final ProjectDeletionAuditRepository projectDeletionAuditRepository;
     private final ProjectMapper mapper;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional(readOnly = true)
     public List<ProjectResponse> listAllProjects() {
-        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
-            .map(mapper::toResponse)
-            .toList();
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findAllByIdIn(accessible).stream()
+                .sorted(Comparator.comparing(Project::getCreatedAt).reversed())
+                .map(mapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -65,14 +78,16 @@ public class ProjectService {
             return List.of();
         }
 
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
         Map<UUID, Project> projectsById = repository.findAllById(ids).stream()
-            .collect(Collectors.toMap(Project::getId, Function.identity()));
+                .filter(p -> accessible.contains(p.getId()))
+                .collect(Collectors.toMap(Project::getId, Function.identity()));
 
         return ids.stream()
-            .map(projectsById::get)
-            .filter(Objects::nonNull)
-            .map(mapper::toResponse)
-            .toList();
+                .map(projectsById::get)
+                .filter(Objects::nonNull)
+                .map(mapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -80,25 +95,46 @@ public class ProjectService {
         if (userId == null) {
             return List.of();
         }
-
-        return repository.findProjectIdsByUserId(userId);
+        // Retorna somente a interseção com os projetos acessíveis ao usuário corrente.
+        List<UUID> accessible = projectAccessService.getAccessibleProjectIds();
+        return repository.findProjectIdsByUserId(userId).stream()
+                .filter(accessible::contains)
+                .toList();
     }
 
     @Transactional
     public ProjectResponse createProject(ProjectCreateRequest request) {
         validateDateRange(request.startDate(), request.endDate());
+        validateRiskConfig(request.riskConfig());
 
-        Customer customer = customerRepository.findById(request.customerId())
-            .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
+        Company company = companyRepository.findById(request.companyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company", request.companyId()));
         List<ProjectUser> projectUsers = buildProjectUsers(request.consultantIds());
 
+        RiskConfig riskConfig = RiskConfig.builder()
+                .minRange(request.riskConfig().minRange())
+                .maxRange(request.riskConfig().maxRange())
+                .categories(request.riskConfig().categories().stream()
+                        .map(cat -> RiskCategory.builder()
+                                .label(cat.label())
+                                .minRange(cat.minRange())
+                                .maxRange(cat.maxRange())
+                                .build())
+                        .toList())
+                .build();
+
+        ProjectConfiguration configuration = ProjectConfiguration.builder()
+                .riskConfig(riskConfig)
+                .build();
+
         Project project = Project.builder()
-            .name(request.name().trim())
-            .customer(customer)
-            .startDate(request.startDate())
-            .endDate(request.endDate())
-            .status(ProjectStatus.IN_PROGRESS)
-            .build();
+                .name(request.name().trim())
+                .company(company)
+                .startDate(request.startDate())
+                .endDate(request.endDate())
+                .status(ProjectStatus.IN_PROGRESS)
+                .configuration(configuration)
+                .build();
 
         projectUsers.forEach(projectUser -> projectUser.setProject(project));
         project.setProjectUsers(projectUsers);
@@ -110,7 +146,7 @@ public class ProjectService {
     @Transactional
     public ProjectResponse updateProject(UUID id, ProjectUpdateRequest request) {
         Project project = repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project", id));
 
         LocalDate nextStartDate = request.startDate() != null ? request.startDate() : project.getStartDate();
         LocalDate nextEndDate = request.endDate() != null ? request.endDate() : project.getEndDate();
@@ -124,12 +160,6 @@ public class ProjectService {
             project.setName(normalizedName);
         }
 
-        if (request.customerId() != null) {
-            Customer customer = customerRepository.findById(request.customerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
-            project.setCustomer(customer);
-        }
-
         if (request.startDate() != null) {
             project.setStartDate(request.startDate());
         }
@@ -139,9 +169,7 @@ public class ProjectService {
         }
 
         if (request.consultantIds() != null) {
-            List<ProjectUser> projectUsers = buildProjectUsers(request.consultantIds());
-            projectUsers.forEach(projectUser -> projectUser.setProject(project));
-            project.setProjectUsers(projectUsers);
+            mergeProjectUsers(project, request.consultantIds());
         }
 
         if (request.status() != null) {
@@ -154,7 +182,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public ProjectSummaryDTO getSummary(UUID projectId) {
         Project project = repository.findById(projectId)
-            .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
 
         long assetCount    = assetRepository.countByProjectId(projectId);
         long artifactCount = artifactRepository.countByProjectId(projectId);
@@ -162,35 +190,34 @@ public class ProjectService {
         long riskCount     = riskRepository.countByProjectId(projectId);
 
         List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
-        List<Integer> riskLevels      = riskRepository.findRiskLevelsByProjectId(projectId);
-        long[] counts = classifyRisks(riskLevels, categories);
+        List<Float> generalRisks      = riskRepository.findGeneralRisksByProjectId(projectId);
+        long[] counts = classifyRisks(generalRisks, categories);
 
         LocalDate endDate       = project.getEndDate();
         Integer daysRemaining   = endDate != null
-            ? (int) ChronoUnit.DAYS.between(LocalDate.now(), endDate)
-            : null;
+                ? (int) ChronoUnit.DAYS.between(LocalDate.now(), endDate)
+                : null;
 
         return new ProjectSummaryDTO(
-            assetCount, artifactCount, findingCount, riskCount,
-            counts[2], counts[1], counts[0],
+                assetCount, artifactCount, findingCount, riskCount,
+                counts[2], counts[1], counts[0],
             endDate, daysRemaining
         );
     }
 
     /** Returns [low, medium, high] counts indexed by category position (sorted by minRange). */
-    private long[] classifyRisks(List<Integer> riskLevels, List<RiskCategory> categories) {
-        if (categories.isEmpty() || riskLevels.isEmpty()) return new long[]{0, 0, 0};
+    private long[] classifyRisks(List<Float> generalRisks, List<RiskCategory> categories) {
+        if (categories.isEmpty() || generalRisks.isEmpty()) return new long[]{0, 0, 0};
 
         List<RiskCategory> sorted = categories.stream()
-            .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
-            .toList();
+                .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
+                .toList();
 
         long low = 0, medium = 0, high = 0;
-        for (Integer level : riskLevels) {
+        for (Float level : generalRisks) {
             int idx = -1;
             for (int i = 0; i < sorted.size(); i++) {
-                RiskCategory cat = sorted.get(i);
-                if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+                if (isInRiskCategory(level, sorted, i)) {
                     idx = i;
                     break;
                 }
@@ -202,11 +229,29 @@ public class ProjectService {
         return new long[]{low, medium, high};
     }
 
-    @Transactional
-    public void deleteProject(UUID id) {
-        Project project = repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Project", id));
+    private boolean isInRiskCategory(Float level, List<RiskCategory> categories, int index) {
+        RiskCategory category = categories.get(index);
+        boolean isLast = index == categories.size() - 1;
+        if (isLast) {
+            return level >= category.getMinRange() && level <= category.getMaxRange();
+        }
+        return level >= category.getMinRange() && level < categories.get(index + 1).getMinRange();
+    }
 
+    @Transactional
+    public void deleteProject(UUID id, String username) {
+        Project project = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", id));
+
+        projectDeletionAuditRepository.save(ProjectDeletionAudit.builder()
+                .projectName(project.getName())
+                .companyName(project.getCompany().getName())
+                .projectStatus(project.getStatus())
+                .projectStartDate(project.getStartDate())
+                .projectEndDate(project.getEndDate())
+                .deletedBy(username)
+                .deletedAt(LocalDateTime.now())
+                .build());
         repository.delete(project);
     }
 
@@ -216,30 +261,111 @@ public class ProjectService {
         }
     }
 
+    private void validateRiskConfig(RiskConfigUpdateDTO riskConfig) {
+        if (riskConfig == null) {
+            throw new ApiException("riskConfig must not be null", HttpStatus.BAD_REQUEST);
+        }
+
+        if (riskConfig.minRange() == null || riskConfig.maxRange() == null) {
+            throw new ApiException("minRange and maxRange must not be null", HttpStatus.BAD_REQUEST);
+        }
+
+        if (riskConfig.minRange() >= riskConfig.maxRange()) {
+            throw new ApiException("minRange must be less than maxRange", HttpStatus.BAD_REQUEST);
+        }
+
+        if (riskConfig.categories() == null || riskConfig.categories().isEmpty()) {
+            throw new ApiException("categories must not be empty", HttpStatus.BAD_REQUEST);
+        }
+
+        // Validate each category
+        for (RiskCategoryDTO category : riskConfig.categories()) {
+            if (category.label() == null || category.label().isBlank()) {
+                throw new ApiException("category label must not be blank", HttpStatus.BAD_REQUEST);
+            }
+
+            if (category.minRange() == null || category.maxRange() == null) {
+                throw new ApiException("category minRange and maxRange must not be null", HttpStatus.BAD_REQUEST);
+            }
+
+            if (category.minRange() >= category.maxRange()) {
+                throw new ApiException("category minRange must be less than maxRange", HttpStatus.BAD_REQUEST);
+            }
+
+            // Validate that category ranges are within project range
+            if (category.minRange() < riskConfig.minRange() || category.maxRange() > riskConfig.maxRange()) {
+                throw new ApiException("category ranges must be within project minRange and maxRange",
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
+
+    private void mergeProjectUsers(Project project, List<UUID> consultantIds) {
+        List<UUID> uniqueIds = consultantIds.stream().distinct().toList();
+
+        List<User> users = userRepository.findAllById(uniqueIds);
+        Set<UUID> foundIds = users.stream().map(User::getId).collect(Collectors.toSet());
+        List<UUID> missingIds = uniqueIds.stream().filter(uid -> !foundIds.contains(uid)).toList();
+        if (!missingIds.isEmpty()) {
+            throw new ResourceNotFoundException("User", missingIds.get(0));
+        }
+        Map<UUID, User> usersById = users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
+
+        Set<UUID> newUserIds = new HashSet<>(uniqueIds);
+
+        // Carrega todos os ProjectUser do projeto, inclusive soft-deletados,
+        // para poder reativar registros já existentes sem violar a unique constraint.
+        Map<UUID, ProjectUser> existingByUserId = projectUserRepository
+                .findAllByProjectIdIncludingDeleted(project.getId())
+                .stream()
+                .collect(Collectors.toMap(pu -> pu.getUser().getId(), Function.identity()));
+
+        // Remove da coleção gerenciada quem não está na nova lista (orphanRemoval → soft-delete).
+        project.getProjectUsers().removeIf(pu -> !newUserIds.contains(pu.getUser().getId()));
+
+        for (UUID userId : uniqueIds) {
+            ProjectUser existing = existingByUserId.get(userId);
+            if (existing == null) {
+                // Usuário nunca esteve no projeto — cria novo registro.
+                ProjectUser newPu = ProjectUser.builder()
+                        .user(usersById.get(userId))
+                        .project(project)
+                        .build();
+                project.getProjectUsers().add(newPu);
+            } else if (existing.getDeletedAt() != null) {
+                // Usuário estava no projeto mas foi removido — reativa o registro existente.
+                existing.setDeletedAt(null);
+                existing.setDeletedBy(null);
+                ProjectUser reactivated = projectUserRepository.save(existing);
+                project.getProjectUsers().add(reactivated);
+            }
+            // else: já está ativo na coleção, sem ação necessária.
+        }
+    }
+
     private List<ProjectUser> buildProjectUsers(List<UUID> consultantIds) {
         if (consultantIds == null || consultantIds.isEmpty()) {
-            return List.of();
+            return new java.util.ArrayList<>();
         }
 
         List<UUID> uniqueConsultantIds = consultantIds.stream().distinct().toList();
         List<User> users = userRepository.findAllById(uniqueConsultantIds);
         Set<UUID> foundIds = users.stream().map(User::getId).collect(Collectors.toSet());
         List<UUID> missingIds = uniqueConsultantIds.stream()
-            .filter(id -> !foundIds.contains(id))
-            .toList();
+                .filter(id -> !foundIds.contains(id))
+                .toList();
 
         if (!missingIds.isEmpty()) {
             throw new ResourceNotFoundException("User", missingIds.get(0));
         }
 
         Map<UUID, User> usersById = users.stream()
-            .collect(Collectors.toMap(User::getId, Function.identity()));
+                .collect(Collectors.toMap(User::getId, Function.identity()));
 
         return uniqueConsultantIds.stream()
-            .map(userId -> ProjectUser.builder()
-                .user(usersById.get(userId))
-                .accessLevel(UserProjectLevel.EDITOR)
-                .build())
-            .toList();
+                .map(userId -> ProjectUser.builder()
+                        .user(usersById.get(userId))
+                        .build())
+                .toList();
     }
 }

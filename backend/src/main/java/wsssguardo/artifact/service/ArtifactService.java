@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import wsssguardo.artifact.repository.ArtifactRepository;
 import wsssguardo.project.Project;
 import wsssguardo.project.domain.projectConfiguration.RiskCategory;
 import wsssguardo.project.repository.ProjectRepository;
+import wsssguardo.shared.exception.ApiException;
 import wsssguardo.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -48,7 +50,7 @@ public class ArtifactService {
 
         List<RiskCategory> categories = project.getConfiguration().getRiskConfig().getCategories();
         Map<UUID, long[]> findingsMap = toFindingsMap(repository.findFindingsSummaryByProjectId(projectId));
-        Map<UUID, long[]> risksMap = buildRisksMap(repository.findRiskLevelsByArtifactAndProjectId(projectId), categories);
+        Map<UUID, long[]> risksMap = buildRisksMap(repository.findGeneralRisksByArtifactAndProjectId(projectId), categories);
 
         return results.stream()
                 .map(artifact -> {
@@ -125,9 +127,13 @@ public class ArtifactService {
     }
 
     @Transactional
-    public void delete(UUID projectId, UUID id) {
+    public void delete(UUID projectId, UUID id, String username) {
         Artifact artifact = requireArtifactExists(projectId, id);
-        repository.delete(artifact);
+        if (repository.existsActiveFindLink(id)) {
+            throw new ApiException("Artifact has linked findings and cannot be deleted", HttpStatus.CONFLICT);
+        }
+        artifact.softDelete(username);
+        repository.save(artifact);
     }
 
     private Map<UUID, long[]> toFindingsMap(List<Object[]> raw) {
@@ -143,10 +149,10 @@ public class ArtifactService {
     }
 
     private Map<UUID, long[]> buildRisksMap(List<Object[]> raw, List<RiskCategory> categories) {
-        Map<UUID, List<Integer>> levelsByArtifact = new HashMap<>();
+        Map<UUID, List<Float>> levelsByArtifact = new HashMap<>();
         for (Object[] row : raw) {
             UUID artifactId = (UUID) row[0];
-            Integer level = row[1] != null ? ((Number) row[1]).intValue() : null;
+            Float level = row[1] != null ? ((Number) row[1]).floatValue() : null;
             if (level != null) {
                 levelsByArtifact.computeIfAbsent(artifactId, k -> new ArrayList<>()).add(level);
             }
@@ -173,10 +179,10 @@ public class ArtifactService {
     }
 
     private long[] resolveSingleRisksSummary(UUID projectId, UUID artifactId, List<RiskCategory> categories) {
-        List<Object[]> raw = repository.findRiskLevelsByArtifactAndProjectId(projectId);
-        List<Integer> levels = raw.stream()
+        List<Object[]> raw = repository.findGeneralRisksByArtifactAndProjectId(projectId);
+        List<Float> levels = raw.stream()
                 .filter(row -> ((UUID) row[0]).equals(artifactId))
-                .map(row -> row[1] != null ? ((Number) row[1]).intValue() : null)
+                .map(row -> row[1] != null ? ((Number) row[1]).floatValue() : null)
                 .filter(java.util.Objects::nonNull)
                 .toList();
         if (levels.isEmpty()) return new long[]{0L, 0L, 0L};
@@ -184,17 +190,16 @@ public class ArtifactService {
         return new long[]{counts[2], counts[1], counts[0]};
     }
 
-    private long[] classifyRisks(List<Integer> riskLevels, List<RiskCategory> categories) {
+    private long[] classifyRisks(List<Float> riskLevels, List<RiskCategory> categories) {
         if (categories.isEmpty() || riskLevels.isEmpty()) return new long[]{0, 0, 0};
         List<RiskCategory> sorted = categories.stream()
                 .sorted(Comparator.comparingInt(RiskCategory::getMinRange))
                 .toList();
         long low = 0, medium = 0, high = 0;
-        for (Integer level : riskLevels) {
+        for (Float level : riskLevels) {
             int idx = -1;
             for (int i = 0; i < sorted.size(); i++) {
-                RiskCategory cat = sorted.get(i);
-                if (level >= cat.getMinRange() && level <= cat.getMaxRange()) {
+                if (isInRiskCategory(level, sorted, i)) {
                     idx = i;
                     break;
                 }
@@ -203,7 +208,16 @@ public class ArtifactService {
             else if (idx == sorted.size() - 1) high++;
             else if (idx > 0) medium++;
         }
-        return new long[]{low, medium, high};
+        return new long[] { low, medium, high };
+    }
+
+    private boolean isInRiskCategory(Float level, List<RiskCategory> categories, int index) {
+        RiskCategory category = categories.get(index);
+        boolean isLast = index == categories.size() - 1;
+        if (isLast) {
+            return level >= category.getMinRange() && level <= category.getMaxRange();
+        }
+        return level >= category.getMinRange() && level < categories.get(index + 1).getMinRange();
     }
 
     private Project requireProjectExists(UUID projectId) {

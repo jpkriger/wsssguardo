@@ -25,6 +25,7 @@ import wsssguardo.find.service.FindService;
 import wsssguardo.shared.openapi.ApiCreate;
 import wsssguardo.shared.openapi.ApiGetById;
 import wsssguardo.shared.openapi.ApiListAll;
+import wsssguardo.shared.security.ProjectAccessService;
 
 @Tag(name = "Findings", description = "Finding operations scoped to a project")
 @RestController
@@ -32,18 +33,20 @@ import wsssguardo.shared.openapi.ApiListAll;
 @RequiredArgsConstructor
 public class FindController {
 
-  private final FindService service;
+    private final FindService service;
+    private final ProjectAccessService projectAccessService;
 
-  @ApiListAll
-  @GetMapping("/findingNameByProjectId")
-  public ResponseEntity<List<FindNameResponseDTO>> getFindingNameByProjectId(@PathVariable UUID projectId) {
-    List<FindNameResponseDTO> findings = service.getFindingNameByProjectId(projectId);
-    return ResponseEntity.ok(findings);
-  }
+    @ApiListAll
+    @GetMapping("/findingNameByProjectId")
+    public ResponseEntity<List<FindNameResponseDTO>> getFindingNameByProjectId(@PathVariable UUID projectId) {
+        projectAccessService.assertAccess(projectId);
+        return ResponseEntity.ok(service.getFindingNameByProjectId(projectId));
+    }
 
     @ApiListAll
     @GetMapping("/listByProject/")
     public List<FindResponseDTO> listByProject(@PathVariable UUID projectId) {
+        projectAccessService.assertAccess(projectId);
         return service.listByProject(projectId);
     }
 
@@ -52,6 +55,7 @@ public class FindController {
     public ResponseEntity<FindResponseDTO> create(
             @PathVariable UUID projectId,
             @Valid @RequestBody FindRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
         FindResponseDTO created = service.create(projectId, request);
         URI location = URI.create("/api/projects/" + projectId + "/findings/" + created.id());
         return ResponseEntity.created(location).body(created);
@@ -62,6 +66,7 @@ public class FindController {
     public ResponseEntity<FindResponseDTO> getById(
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.getById(projectId, id));
     }
 
@@ -70,6 +75,7 @@ public class FindController {
             @PathVariable UUID projectId,
             @PathVariable UUID id,
             @Valid @RequestBody FindUpdateRequestDTO request) {
+        projectAccessService.assertAccess(projectId);
         return ResponseEntity.ok(service.update(projectId, id, request));
     }
 
@@ -77,7 +83,8 @@ public class FindController {
     public ResponseEntity<Void> delete(
             @PathVariable UUID projectId,
             @PathVariable UUID id) {
-        service.delete(projectId, id);
+        projectAccessService.assertAccess(projectId);
+        service.delete(projectId, id, projectAccessService.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

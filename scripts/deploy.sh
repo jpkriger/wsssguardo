@@ -14,6 +14,7 @@ REGION="us-east-2"
 PROJECT="wsssguardo"
 BACKEND_DOMAIN="ages-api.kriger.dev"
 CERTBOT_EMAIL="jpsk145@gmail.com"
+AI_SERVICE_URL="${AI_SERVICE_URL:-https://desc-elaborator.alcaria.dev}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFRA_DIR="$ROOT_DIR/infra"
 SKIP_INFRA=false
@@ -27,8 +28,8 @@ log()  { echo ""; echo "==> $*"; }
 info() { echo "    $*"; }
 die()  { echo ""; echo "ERRO: $*" >&2; exit 1; }
 
-# ─── Secrets (via env ou .env.secrets local) ───────────────────────────────────
-SECRETS_FILE="${ROOT_DIR}/.env.secrets"
+# ─── Secrets (via .env local ou variável de ambiente) ──────────────────────────
+SECRETS_FILE="${ROOT_DIR}/.env"
 [[ -f "$SECRETS_FILE" ]] && source "$SECRETS_FILE"
 
 DB_NAME="${DB_NAME:-}"
@@ -36,10 +37,20 @@ DB_USERNAME="${DB_USERNAME:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-}"
 
-[[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
-[[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env.secrets ou como variável de ambiente."
+# Arquivamento: o servidor recebe só a keystore de assinatura (signer.p12) e a
+# pública do cofre (vault-public.crt) — NUNCA a privada do cofre (fica offline).
+ARCHIVE_KEYS_DIR="${ARCHIVE_KEYS_DIR:-$ROOT_DIR/prod-keys}"
+ARCHIVE_SIGNING_KEYSTORE_PASSWORD="${ARCHIVE_SIGNING_KEYSTORE_PASSWORD:-}"
+ARCHIVE_SIGNING_KEY_ALIAS="${ARCHIVE_SIGNING_KEY_ALIAS:-archive-signer}"
+ARCHIVE_SIGNING_KEY_PASSWORD="${ARCHIVE_SIGNING_KEY_PASSWORD:-$ARCHIVE_SIGNING_KEYSTORE_PASSWORD}"
+
+[[ -z "$DB_NAME"          ]] && die "DB_NAME não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$DB_USERNAME"      ]] && die "DB_USERNAME não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$DB_PASSWORD"      ]] && die "DB_PASSWORD não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$GRAFANA_PASSWORD" ]] && die "GRAFANA_PASSWORD não definido. Configure em .env ou como variável de ambiente."
+[[ -z "$ARCHIVE_SIGNING_KEYSTORE_PASSWORD" ]] && die "ARCHIVE_SIGNING_KEYSTORE_PASSWORD não definido. Configure em .env."
+[[ -f "$ARCHIVE_KEYS_DIR/signer.p12"       ]] || die "Falta $ARCHIVE_KEYS_DIR/signer.p12 (keystore de assinatura)."
+[[ -f "$ARCHIVE_KEYS_DIR/vault-public.crt" ]] || die "Falta $ARCHIVE_KEYS_DIR/vault-public.crt (pública do cofre)."
 
 # ─── Pré-requisitos ────────────────────────────────────────────────────────────
 for cmd in aws terraform docker git dig bun; do
@@ -114,6 +125,10 @@ CF_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cloudfront_distribution_i
 FRONTEND_DOMAIN=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw frontend_domain)
 OBS_INSTANCE_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_instance_id)
 OBS_PRIVATE_IP=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw obs_private_ip)
+COGNITO_REGION=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_region)
+COGNITO_USER_POOL_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_user_pool_id)
+COGNITO_CLIENT_ID=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_client_id)
+COGNITO_CLIENT_SECRET=$(AWS_PROFILE=$AWS_PROFILE terraform output -raw cognito_client_secret)
 
 info "ECR URL    : $ECR_URL"
 info "Backend IP : $BACKEND_IP"
@@ -193,6 +208,8 @@ done
 # Prepara arquivos em base64
 COMPOSE_B64=$(base64 -w 0 < "$ROOT_DIR/docker-compose.ec2.yml")
 NGINX_B64=$(sed "s/__OBS_PRIVATE_IP__/${OBS_PRIVATE_IP}/g" "$ROOT_DIR/nginx/default.conf" | base64 -w 0)
+SIGNER_P12_B64=$(base64 -w 0 < "$ARCHIVE_KEYS_DIR/signer.p12")
+VAULT_PUB_B64=$(base64 -w 0 < "$ARCHIVE_KEYS_DIR/vault-public.crt")
 
 PROMTAIL_YML=$(cat <<PROM
 server:
@@ -225,11 +242,15 @@ EC2_SCRIPT=$(cat <<SCRIPT
 set -euo pipefail
 
 mkdir -p /opt/${PROJECT}
+mkdir -p /opt/${PROJECT}/keys
 
 echo '${COMPOSE_B64}'   | base64 -d > /opt/${PROJECT}/docker-compose.yml
 echo '${NGINX_B64}'    | base64 -d > /opt/${PROJECT}/nginx.conf
 echo '${PROMTAIL_B64}' | base64 -d > /opt/${PROJECT}/promtail.yml
-printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\n' \
+echo '${SIGNER_P12_B64}' | base64 -d > /opt/${PROJECT}/keys/signer.p12
+echo '${VAULT_PUB_B64}'  | base64 -d > /opt/${PROJECT}/keys/vault-public.crt
+chmod 600 /opt/${PROJECT}/keys/signer.p12
+printf 'ECR_URL=${ECR_URL}\nIMAGE_TAG=${IMAGE_TAG}\nCORS_ALLOWED_ORIGINS=https://${FRONTEND_DOMAIN}\nDB_NAME=${DB_NAME}\nDB_USERNAME=${DB_USERNAME}\nDB_PASSWORD=${DB_PASSWORD}\nAI_SERVICE_URL=${AI_SERVICE_URL}\nCOGNITO_REGION=${COGNITO_REGION}\nCOGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}\nCOGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}\nCOGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}\nARCHIVE_SIGNING_KEYSTORE_PASSWORD=${ARCHIVE_SIGNING_KEYSTORE_PASSWORD}\nARCHIVE_SIGNING_KEY_ALIAS=${ARCHIVE_SIGNING_KEY_ALIAS}\nARCHIVE_SIGNING_KEY_PASSWORD=${ARCHIVE_SIGNING_KEY_PASSWORD}\n' \
   > /opt/${PROJECT}/.env
 
 aws ecr get-login-password --region ${REGION} | \
@@ -256,7 +277,7 @@ if ! docker-compose up -d; then
   docker logs wsssguardo-db-1 2>&1 || true
   exit 1
 fi
-docker-compose restart nginx
+docker-compose restart nginx promtail
 SCRIPT
 )
 
