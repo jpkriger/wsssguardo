@@ -693,7 +693,7 @@ export default function ProjectReport(): ReactElement {
                                         </span>
                                         <span className="block text-xs text-muted-foreground">
                                           {risk.description ||
-                                            `Nível ${risk.generalRisk}`}
+                                            `Nível geral ${risk.generalRisk}`}
                                         </span>
                                       </span>
                                     </span>
