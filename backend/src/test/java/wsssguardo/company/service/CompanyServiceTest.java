@@ -22,6 +22,7 @@ import wsssguardo.company.Company;
 import wsssguardo.company.dto.requestdto.CompanyRequestDTO;
 import wsssguardo.company.dto.requestdto.CompanyUpdateRequestDTO;
 import wsssguardo.company.dto.responsedto.CompanyResponseDTO;
+import wsssguardo.company.dto.responsedto.CompanyWithProjectsDTO;
 import wsssguardo.company.mapper.CompanyMapper;
 import wsssguardo.company.mapper.CompanyUpdateMapper;
 import wsssguardo.company.repository.CompanyRepository;
@@ -51,6 +52,43 @@ class CompanyServiceTest {
 
     @InjectMocks
     private CompanyService service;
+
+    @Test
+    void listShouldReturnMappedCompanies() {
+        Company company = new Company();
+        company.setId(UUID.randomUUID());
+        company.setName("Acme");
+        CompanyResponseDTO expected = new CompanyResponseDTO(company.getId(), "Acme", java.time.LocalDateTime.now());
+
+        when(repository.findAll()).thenReturn(List.of(company));
+        when(mapper.toResponseDTO(company)).thenReturn(expected);
+
+        List<CompanyResponseDTO> result = service.list();
+
+        assertEquals(1, result.size());
+        assertEquals(expected, result.get(0));
+    }
+
+    @Test
+    void listWithProjectsShouldIncludeMappedProjects() {
+        Company company = new Company();
+        company.setId(UUID.randomUUID());
+        company.setName("Acme");
+        Project project = new Project();
+        project.setId(UUID.randomUUID());
+        wsssguardo.project.dto.ProjectResponse projectResponse = new wsssguardo.project.dto.ProjectResponse(
+                project.getId(), "P", company.getId(), null, null, null, List.of(), null);
+
+        when(repository.findAll()).thenReturn(List.of(company));
+        when(projectRepository.findByCompanyId(company.getId())).thenReturn(List.of(project));
+        when(projectMapper.toResponse(project)).thenReturn(projectResponse);
+
+        List<CompanyWithProjectsDTO> result = service.listWithProjects();
+
+        assertEquals(1, result.size());
+        assertEquals("Acme", result.get(0).name());
+        assertEquals(1, result.get(0).projects().size());
+    }
 
     @Test
     void createShouldReturnMappedResponse() {
