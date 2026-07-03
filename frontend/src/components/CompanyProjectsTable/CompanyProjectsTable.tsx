@@ -1,7 +1,7 @@
 import { useMemo, type ReactElement } from "react";
 import { useNavigate } from "react-router";
 // ArrowRight
-import { Plus, FolderOpen, Pencil, Trash2, CheckCheck, XCircle, ArrowRight } from "lucide-react";
+import { Plus, FolderOpen, Pencil, CheckCheck, XCircle, ArrowRight } from "lucide-react";
 import type { ProjectStatus as ApiProjectStatus } from "@/api/project";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,6 @@ interface CompanyProjectsTableProps {
   projects: CompanyProject[];
   onCreateProject?: () => void;
   onEditProject?: (id: string) => void;
-  onDeleteProject?: (id: string, name: string) => void;
   onCompleteProject?: (id: string) => void;
   onCancelProject?: (id: string) => void;
   cardClassName?: string;
@@ -64,7 +63,6 @@ export function CompanyProjectsTable({
   projects,
   onCreateProject,
   onEditProject,
-  onDeleteProject,
   onCompleteProject,
   onCancelProject,
   cardClassName = "mx-5 mt-4 mb-4 ml-16",
@@ -155,19 +153,11 @@ export function CompanyProjectsTable({
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
-            <button
-              type="button"
-              className="h-7 w-7 p-0 flex items-center justify-center rounded bg-transparent border-none cursor-pointer text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Excluir projeto"
-              onClick={(e) => { e.stopPropagation(); onDeleteProject?.(p.id, p.name); }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
           </div>
         ),
       },
     ],
-    [onCompleteProject, onCancelProject, onEditProject, onDeleteProject, navigate],
+    [onCompleteProject, onCancelProject, onEditProject, navigate],
   );
 
   return (

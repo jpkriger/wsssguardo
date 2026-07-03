@@ -20,7 +20,6 @@ import {
 import {
   createProject,
   updateProject,
-  deleteProject,
   type ProjectResponse,
   type ProjectStatus,
 } from "../api/project";
@@ -84,11 +83,10 @@ export default function Companies(): ReactElement {
   const [targetCompanyId, setTargetCompanyId] = useState<string>("");
   const [targetCompanyName, setTargetCompanyName] = useState<string>("");
 
-  // Delete state (shared between company and project)
+  // Delete state (empresa apenas — projeto só se retira via arquivamento)
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
     name: string;
-    type: "company" | "project";
   } | undefined>();
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -136,7 +134,7 @@ export default function Companies(): ReactElement {
   };
 
   const handleDeleteCompany = (id: string, name: string): void => {
-    setDeleteTarget({ id, name, type: "company" });
+    setDeleteTarget({ id, name });
   };
 
   // --- Project handlers ---
@@ -182,10 +180,6 @@ export default function Companies(): ReactElement {
     await loadCompanies();
   };
 
-  const handleDeleteProject = (projectId: string, projectName: string): void => {
-    setDeleteTarget({ id: projectId, name: projectName, type: "project" });
-  };
-
   const handleUpdateProjectStatus = async (projectId: string, status: ProjectStatus): Promise<void> => {
     try {
       await updateProject(projectId, { status });
@@ -195,17 +189,13 @@ export default function Companies(): ReactElement {
     }
   };
 
-  // --- Shared delete confirm ---
+  // --- Delete confirm (empresa) ---
 
   const confirmDelete = async (): Promise<void> => {
     if (!deleteTarget) return;
     try {
       setDeleteLoading(true);
-      if (deleteTarget.type === "company") {
-        await deleteCompany(deleteTarget.id);
-      } else {
-        await deleteProject(deleteTarget.id);
-      }
+      await deleteCompany(deleteTarget.id);
       setDeleteTarget(undefined);
       await loadCompanies();
     } catch (err) {
@@ -272,7 +262,6 @@ export default function Companies(): ReactElement {
               onDeleteCompany={handleDeleteCompany}
               onCreateProject={handleCreateProject}
               onEditProject={handleEditProject}
-              onDeleteProject={handleDeleteProject}
               onCompleteProject={(id) => void handleUpdateProjectStatus(id, "COMPLETED")}
               onCancelProject={(id) => void handleUpdateProjectStatus(id, "CANCELLED")}
             />
@@ -297,7 +286,7 @@ export default function Companies(): ReactElement {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title={deleteTarget?.type === "project" ? "Deletar Projeto" : "Deletar Empresa"}
+        title="Deletar Empresa"
         message={`Tem certeza que deseja deletar "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(undefined)}

@@ -60,10 +60,6 @@ export function updateProject(id: string, request: UpdateProjectRequest): Promis
   return apiClient.patch(`${BASE}/${id}`, { json: request }).json<ProjectResponse>();
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  await apiClient.delete(`${BASE}/${id}`);
-}
-
 export interface ProjectSummaryDTO {
   assetCount: number;
   artifactCount: number;
