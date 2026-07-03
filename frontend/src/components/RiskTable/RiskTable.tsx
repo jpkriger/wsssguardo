@@ -16,7 +16,11 @@ import {
   type RiskResponse,
 } from "@/api/risk";
 import { listFindings, type FindingResponse } from "@/api/finding";
-import { getProjectConfiguration } from "@/api/projectConfiguration";
+import {
+  getProjectConfiguration,
+  type RiskCategoryDTO,
+} from "@/api/projectConfiguration";
+import { buildGetRiskLevelConfig, DEFAULT_RISK_CATEGORIES } from "@/lib/riskLevel";
 import RiskModal, {
   type RiskModalSubmitData,
   type RiskModalRisk,
@@ -62,6 +66,9 @@ export default function RiskTable(): ReactElement {
     max: 100,
   };
   const [damageRange, setDamageRange] = useState(DEFAULT_DAMAGE_RANGE);
+  const [riskCategories, setRiskCategories] = useState<RiskCategoryDTO[]>(
+    DEFAULT_RISK_CATEGORIES,
+  );
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [riskToDelete, setRiskToDelete] = useState<RiskResponse | null>(null);
@@ -99,12 +106,16 @@ export default function RiskTable(): ReactElement {
   const loadDamageRange = useCallback(async () => {
     try {
       const config = await getProjectConfiguration(projectId);
-      const { minRange, maxRange } = config.riskConfig;
+      const { minRange, maxRange, categories } = config.riskConfig;
       if (minRange != null && maxRange != null) {
         setDamageRange({ min: minRange, max: maxRange });
       }
+      if (categories != null && categories.length > 0) {
+        setRiskCategories(categories);
+      }
     } catch {
       setDamageRange(DEFAULT_DAMAGE_RANGE);
+      setRiskCategories(DEFAULT_RISK_CATEGORIES);
     }
   }, [projectId]);
 
@@ -200,6 +211,11 @@ export default function RiskTable(): ReactElement {
     }
   }
 
+  const getRiskLevelConfig = useMemo(
+    () => buildGetRiskLevelConfig(riskCategories),
+    [riskCategories],
+  );
+
   const columns: ColumnDefinition<RiskResponse>[] = useMemo(
     () => [
       {
@@ -212,6 +228,21 @@ export default function RiskTable(): ReactElement {
             {truncateText(risk.name, 40)}
           </span>
         ),
+      },
+      {
+        id: "riskLevel",
+        label: "Nível de Risco",
+        getSortValue: (r) => r.generalRisk,
+        renderCell: (risk) => {
+          const level = getRiskLevelConfig(risk.generalRisk);
+          return (
+            <span
+              className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${level.appBadgeClassName}`}
+            >
+              {level.label}
+            </span>
+          );
+        },
       },
       {
         id: "priority",
@@ -301,7 +332,7 @@ export default function RiskTable(): ReactElement {
         ),
       },
     ],
-    [],
+    [getRiskLevelConfig],
   );
 
   return (
@@ -321,6 +352,12 @@ export default function RiskTable(): ReactElement {
             label: "Quem criou",
             type: "select",
             getValue: (r) => r.createdBy,
+          },
+          {
+            id: "riskLevel",
+            label: "Nível de Risco",
+            type: "select",
+            getValue: (r) => getRiskLevelConfig(r.generalRisk).label,
           },
           {
             id: "priority",
